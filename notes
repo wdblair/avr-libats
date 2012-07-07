@@ -1,0 +1,23 @@
+Notes for optimizing ATS for AVR.
+
+Periodically blinking an LED:
+
+ATS: 320 bytes in flash, 2 bytes of RAM
+
+Even when I specify ATS_STALOADFLAG to 0, I get the staload flag and functions.
+Deleting them brings the code down to 200 with no SRAM used.
+
+The atmega328p has 32KB of FLASH, so it isn't really an issue for now.
+
+Using an AVL Tree:
+
+For larger projects the difference with staload is hardly noticeable.
+Using an AVL Tree takes up about 39% of flash storage, yet removing
+all the staload manually decreases usage only by under 0.5% of total 
+storage ~ 150 bytes, similar to the blinkey project.
+
+The SRAM usage for the AVL tree is about 13%, not taking into account
+heap allocated memory used by closures, nodes, and data stored.
+
+Still, getting to use a verified version of an AVL tree and having room
+to spare on a $3 microcontroller seems like it could be useful.

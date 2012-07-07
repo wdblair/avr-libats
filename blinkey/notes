@@ -1,0 +1,11 @@
+Notes for optimizing ATS for AVR.
+
+Blinking an LED:
+
+C: 541 bytes
+
+Normal ATS: 973 bytes
+
+ATS after removing dynload, staload, and mainats: 631 bytes
+
+So, by default, there's a 372 byte overhead by using ATS.
