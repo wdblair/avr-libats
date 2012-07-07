@@ -1,4 +1,4 @@
-F_CPU=16000000
+F_CPU=16000000UL
 PROJECT=map
 CC=avr-gcc
 OBJCOPY=avr-objcopy
@@ -7,13 +7,13 @@ MMCU=atmega328p
 all: $(PROJECT) $(PROJECT).hex size
 
 size: $(PROJECT)
-	avr-size --mcu=atmega328p -C $(PROJECT).out
+	avr-size --mcu=$(MMCU) -C $(PROJECT).out
 
 $(PROJECT).hex: $(PROJECT)
 	$(OBJCOPY) -j .text -O ihex $(PROJECT).out $(PROJECT).hex
 
 $(PROJECT): linmap_avltree_dats.c linmap_avltree_sats.c main_dats.c
-	avr-gcc -D_ATS_PRELUDE_NONE -D_ATS_HEADER_NONE -mmcu=$(MMCU) -O2 -o $(PROJECT).out $^
+	avr-gcc -D_ATS_PRELUDE_NONE -D_ATS_HEADER_NONE -DF_CPU=$(F_CPU) -mmcu=$(MMCU) -O2 -o $(PROJECT).out $^
 
 linmap_avltree_dats.c: linmap_avltree.dats
 	avr-atscc -cc linmap_avltree.dats

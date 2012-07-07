@@ -1,8 +1,6 @@
 #ifndef _ATS_AVR_HEADER
 #define _ATS_AVR_HEADER
 
-#define F_CPU 16000000L
-
 #include <avr/io.h>
 #include <inttypes.h>
 #include <stddef.h>
