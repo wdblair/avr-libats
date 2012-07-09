@@ -1,3 +1,4 @@
-*.c
+*_dats.c
+*_sats.c
 *.out
 *.hex
