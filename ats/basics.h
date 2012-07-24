@@ -1,5 +1,5 @@
-#ifndef _ATS_AVR_HEADER
-#define _ATS_AVR_HEADER
+#ifndef _ATS_AVR_BASICS_HEADER
+#define _ATS_AVR_BASICS_HEADER
 
 #include <inttypes.h>
 #include <stddef.h>

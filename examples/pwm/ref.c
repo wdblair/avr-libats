@@ -4,11 +4,10 @@
 
 #include <util/delay.h>
 
-void InitPWM()
-{
-   TCCR2A|=(1<<WGM20)|(1<<WGM21)|(1<<COM2A1);
-   TCCR2B|=(1 << CS20);
-   DDRB|=(1<<PB3);
+void InitPWM() {
+  TCCR2A |= (1<<WGM20) | (1<<WGM21) | (1<<COM2A1);
+  TCCR2B |= (1 << CS20);
+  DDRB   |= (1<<PB3);
 }
 
 /******************************************************************
