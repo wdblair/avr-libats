@@ -1,9 +1,6 @@
 %{#
-
 #include "CATS/io.cats"
-
 %}
-
 
 abst@ype reg(n:int)
 

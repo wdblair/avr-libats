@@ -44,15 +44,17 @@ make_bits_cats = lambda { |file|
     mac_tmpl =<<MACRO
 #define avr_libats___name__(reg, __labels__) (reg __assign__ __filter__(__bits__))
 MACRO
-
+    
     name = f.to_s
     8.times { |i|
       bits = (0..i).map { |b|
         "b#{b}"
       }
-
+      
       labels = bits.join(", ")
-      sum = bits.join(" | ")
+      sum = bits.map{ |b|
+        "_BV(#{b})"
+      }.join(" | ")
 
       n = name+i.to_s
       file.puts (
