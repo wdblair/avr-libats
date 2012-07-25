@@ -4,7 +4,13 @@
   July 2012
 */
 
-#define avr_libats_setval(reg,val) reg = val
+#include <avr/io.h>
+
+#define avr_libats_setval(reg, val) reg = val
+
+#define avr_libats_wait_bit_clear(reg, bit) while(reg & _BV(bit))
+
+#define avr_libats_wait_bit_set(reg, bit) while(reg ^ _BV(bit))
 
 #define avr_libats_setbits0(reg, b0) (reg |= (_BV(b0)))
 
