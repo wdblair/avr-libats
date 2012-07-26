@@ -1,17 +1,15 @@
-//Do this by default
+//This should be automatic
 #define ATS_STALOADFLAG 0
 #define ATS_DYNLOADFLAG 0
 
 %{^
 #define F_CPU 16000000
 
-#include<ats.h>
-#include<avr/io.h>
-#include<util/delay.h>
-
+#include<ats/basics.h>
 %}
 
 staload "SATS/io.sats"
+staload "SATS/delay.sats"
 
 val TCCR2A = $extval(reg(8),"TCCR2A")
 val TCCR2B = $extval(reg(8),"TCCR2B")
@@ -37,6 +35,7 @@ fun set_pwm_output(duty: natLt(256)) : void = {
 extern
 fun delay (t: double) : void = "mac#_delay_ms"
 
+(* Glow the LED on and off indefinitely. *)
 implement main () = loop(0,1) where {
   fun loop {d: int | d == 1 || d == ~1} 
     (brightness: natLt(256), delta: int d) : void = let

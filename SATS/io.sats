@@ -18,7 +18,7 @@ fun wait_set_bit {n:nat} (
 
 fun setbits0 {n:nat} (
     r: !reg(n) >> reg(n'), b0: natLt(8)
-) : #[n':nat; 0 <= n'; n' < 25]] void = "mac#avr_libats_setbits0"
+) : #[n':nat; 0 <= n'; n' < 25] void = "mac#avr_libats_setbits0"
 
 overload setbits with setbits0
 
