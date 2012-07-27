@@ -8,21 +8,15 @@
 
 #define avr_libats_setval(reg, val) reg = val
 
-#define avr_libats_wait_bit_clear(reg, bit) while( reg & _BV(bit) )
-
-#define avr_libats_wait_bit_set(reg, bit) while( !(reg & _BV(bit)) )
+#define avr_libats_int_of_regs(high, low) low | (high << 8)
 
 #define avr_libats_setbits0(reg, b0) (reg |= (_BV(b0)))
 
-
 #define avr_libats_setbits1(reg, b0, b1) (reg |= (_BV(b0) | _BV(b1)))
-
 
 #define avr_libats_setbits2(reg, b0, b1, b2) (reg |= (_BV(b0) | _BV(b1) | _BV(b2)))
 
-
 #define avr_libats_setbits3(reg, b0, b1, b2, b3) (reg |= (_BV(b0) | _BV(b1) | _BV(b2) | _BV(b3)))
-
 
 #define avr_libats_setbits4(reg, b0, b1, b2, b3, b4) (reg |= (_BV(b0) | _BV(b1) | _BV(b2) | _BV(b3) | _BV(b4)))
 

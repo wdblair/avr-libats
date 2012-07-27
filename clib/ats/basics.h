@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <assert.h>
 
 //
 // HX-2011-02-17:
@@ -345,19 +346,14 @@ atspre_pgt (ats_ptr_type p1, ats_ptr_type p2) {
 ATSinline()
 ats_void_type
 atspre_assert_errmsg(ats_bool_type assertion, ats_ptr_type msg) {
-  if( !assertion )
-    exit(0);
+  assert(assertion);
 }
 
 ATSinline()
 ats_void_type
-atspre_assert (
-  const ats_bool_type assertion
-) {
-  if (!assertion) {
-    exit(0);
-  }
-  return ;
+atspre_assert (const ats_bool_type assertion)
+ {
+   assert(assertion);
 } // end of [atspre_assert]
 
 ATSinline()

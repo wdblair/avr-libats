@@ -6,15 +6,29 @@ abst@ype reg(n:int)
 
 praxi lemma_reg_int8 {n:nat} (r: reg(n) ) : [0 <= n; n < 256] void
 
+fun bit_is_set {n:nat} (
+  r: reg(n), b: natLt(8)
+) : bool = "mac#bit_is_set"
+
+fun bit_is_clear {n:nat} (
+  r: reg(n), b: natLt(8)
+) : bool = "mac#bit_is_clear"
+
+(* Combine two registers into an int.
+   Reads low first, then high. *)
+fun int_of_regs {n,p:nat} (
+  high: reg(n), low: reg(p)
+) : int = "mac#avr_libats_int_of_regs"
+
 symintr setbits
 
-fun wait_clear_bit {n:nat} ( 
+fun loop_until_bit_is_clear {n:nat} ( 
   r: !reg(n) >> reg(n'), b: natLt(8)
-) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_wait_bit_clear"
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#loop_until_bit_is_clear"
 
-fun wait_set_bit {n:nat} (
+fun loop_until_bit_is_set {n:nat} (
   r: !reg(n) >> reg(n'), b: natLt(8)
-) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_wait_bit_set"
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#loop_until_bit_is_set"
 
 fun setbits0 {n:nat} (
     r: !reg(n) >> reg(n'), b0: natLt(8)
