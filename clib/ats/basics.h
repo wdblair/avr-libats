@@ -32,7 +32,7 @@
 //
 #define ATScastfn(castfn, name) name
 
-#define ATSglobaldec()
+#define ATSglobaldec() volatile
 #define ATSstaticdec() static
 
 #define ATSextfun() extern

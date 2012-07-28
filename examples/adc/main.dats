@@ -1,12 +1,8 @@
 (*
   An example of periodically polling an ADC.
   Uses a watchdog timer to wake up every second,
-  collects 8 samples, sends the result over USART,
+  collects 8 samples, sends the average over USART,
   then goes back to sleep.
-  
-  Most chips have multiple ADC channels,
-  this is just an example from one
-  application.
 *)
 
 #define ATS_STALOADFLAG 0
@@ -77,7 +73,7 @@ implement main () = loop () where {
   val () = $USART.atmega328p_init(baudrate)
   val () = wdt_enable(WDTO_1S)
   val () = set_sleep_mode(SLEEP_MODE_PWR_DOWN)
-  fun loop() = let
+  fun loop () : void = let
     val () = init()
     val temp = average_sample(8, MUX1)
     val () = println! temp
