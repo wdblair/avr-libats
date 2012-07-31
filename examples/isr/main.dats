@@ -1,5 +1,7 @@
 (* An example of replacing stdio routines with an
    interrupt based equivalent.
+
+   This approach is probably filled with race conditions.
 *)
 
 #define ATS_STALOADFLAG 0
@@ -151,10 +153,43 @@ USART_RXC_vect () = let
 (* ****** ****** *)
 
 extern
-fun atmega328p_async_tx (c:char, f:FILEref) : void = "atmega328p_async_tx"
+fun atmega328p_async_tx 
+    (c:char, f:FILEref) : void = "atmega328p_async_tx"
 
 extern
-fun atmega328p_async_rx (f:FILEref) : char = "atmega328p_async_rx"
+fun atmega328p_async_rx 
+    (f:FILEref) : char = "atmega328p_async_rx"
+
+
+(* ****** ****** *)
+
+val UCSR0A = $extval(reg(8),"UCSR0A")
+val UDRE0 = $extval(natLt(8),"UDRE0")
+
+extern
+fun sleep_mode () : void
+
+implement
+atmega328p_async_tx (c, f) = {
+   val (gpf, pf | p) = get_write_buffer()
+   fun loop {l:agz}{s:pos}{n,w,r:nat | n <= s; w < s; r < s}
+       (pf: !cycbuf(char,n,s,w,r) @ l | p: ptr l) : void =
+       if cycbuf_is_full(pf | p) then let
+       	  //block until there's room.
+       	  val () = sleep_mode()
+	  in loop(pf | p) end
+       else let
+       	  val () = cycbuf_insert<char>(pf | p, c)
+       in
+	if bit_is_clear(UCSR0A,UDRE0) then {
+	   var tmp : char
+	   val () = cycbuf_remove<char>(pf | p, tmp)
+	   val () = setval(UDR0, uint8_of_char(tmp))
+	}
+       end
+   val () = loop(pf | p)
+   prval () = return_global(gpf, pf | p)
+   }
 
 (* ****** ****** *)
 
