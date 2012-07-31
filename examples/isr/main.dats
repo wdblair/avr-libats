@@ -171,14 +171,27 @@ val UDRE0 = $extval(natLt(8),"UDRE0")
 extern
 fun sleep_mode () : void
 
+(* Add in a proof techniquee to ensure proper use. *)
+
+extern
+fun cli() : void = "mac#cli"
+
+extern
+fun sei() : void = "mac#sei"
+
+(* ****** ****** *)
+
 implement
 atmega328p_async_tx (c, f) = {
    val (gpf, pf | p) = get_write_buffer()
    fun loop {l:agz} {s:pos} {n,w,r:nat | n <= s; w < s; r < s}
-       (g: global(l), pf: cycbuf(char,n,s,w,r) @ l | p: ptr l) : void =
-       if cycbuf_is_full(pf | p) then let
-       	  val () = sleep_mode()
-	  in loop(g, pf | p) end
+       (g: global(l), pf: cycbuf(char,n,s,w,r) @ l | p: ptr l) : void = let
+        val () = cli()
+       in
+         if cycbuf_is_full(pf | p) then let
+          val () = sei()
+          val () = sleep_mode()
+	 in loop(g, pf | p) end
        else let
        	  val () = cycbuf_insert<char>(pf | p, c)
        in
@@ -187,9 +200,12 @@ atmega328p_async_tx (c, f) = {
 	   val () = cycbuf_remove<char>(pf | p, tmp)
 	   val () = setval(UDR0, uint8_of_char(tmp))
            prval () = return_global(g, pf | p)
+           val () = sei()
 	} else {
           prval () = return_global(g, pf | p)
+          val () = sei()
         }
+       end
        end
     val () = loop(gpf, pf | p)
   }
