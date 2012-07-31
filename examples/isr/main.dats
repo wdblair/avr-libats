@@ -1,6 +1,7 @@
 (* An example of replacing stdio routines with an
    interrupt based equivalent.
 *)
+
 #define ATS_STALOADFLAG 0
 #define ATS_DYNLOADFLAG 0
 
@@ -45,49 +46,116 @@ ats_ptr_type get_write_buffer() {
 }
 %}
 
+staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 
 (* ****** ****** *)
 
+val UDR0 = $extval(reg(8),"UDR0")
+
+(* ****** ****** *)
 
 (* An address int the .data section, cannot free it. *)
 absview global(l:addr)
 
-abst@ype cycbuf (a:t@ype, n: int, s: int, w: int, r: int)
+viewtypedef cycbuf (a:t@ype,n:int, s: int, w: int, r: int)
   = $extype_struct "cycbuf_t" of {
       w = int w,
       r = int r,
+      n = int n,
       size = int s,
       base = @[a][s]
-  }
+    }
 
 extern
-fun {a:t@ype} get_read_buffer 
-  () : [n,w,r:nat] [s:pos] [l:agz] (
-  global(l), cycbuf(a,n,s,w,r) @ l | ptr l
+fun get_read_buffer 
+  () : [s:pos] [n,w,r:nat | n <= s; w < s; r < s] [l:agz] (
+  global(l), cycbuf(char,n,s,w,r) @ l | ptr l
 ) = "mac#get_read_buffer"
         
 extern
-fun {a:t@ype} get_write_buffer
-  () : [n,w,r:nat] [s:pos] [l:agz] (
-  global(l), cycbuf(a,n,s,w,r) @ l | ptr l
+fun get_write_buffer
+  () : [s:pos] [n,w,r:nat | n <= s; w < s; r < s]  [l:agz] (
+  global(l), cycbuf(char,n,s,w,r) @ l | ptr l
 ) = "mac#get_write_buffer"
 
 extern
-praxi {a:t@ype} return_global {n,s,w,r:nat} {l:agz} (
-  pfg: global(l), pf: cycbuf(a,n,s,w,r) @ l | p: ptr l
+praxi {a:t@ype} return_global {l:agz} (
+  pfg: global(l), pf: a @ l | p: ptr l
 ) : void
 
-extern
-fun {a:t@ype} cycbuf_insert () : void
+fun {a:t@ype} cycbuf_insert {l:agz} {s:pos} {n:nat | n < s} {w, r: nat | n < s; w < s; r < s} (
+    pf: !cycbuf(a, n, s, w, r) @ l >> cycbuf(a, n+1, s, w', r) @ l | p: ptr l, x: a
+) : #[w':nat | w' < s] void = let 
+    val () = p->n := p->n + 1
+    val () = p->base.[p->w] := x
+  in
+    p->w := (p->w + 1) nmod1 p->size
+  end
+
+fun {a:t@ype} cycbuf_remove {l:agz} {s,n:pos} {w,r:nat | n <= s; w < s; r < s} (
+    pf: !cycbuf(a, n, s, w, r) @ l >> cycbuf(a, n-1, s, w, r') @ l | p: ptr l, x: &a? >> a
+) : #[r':nat | r' < s] void = let
+    val () = p->n := p->n - 1
+    val () = x := p->base.[p->r]
+  in
+    p->r := (p->r + 1) nmod1 p->size
+  end
+
+fun {a:t@ype} cycbuf_is_empty {l:agz} {s:pos} {n,w,r:nat | n <= s; w < s; r < s} (
+    pf: !cycbuf(a,n,s,w,r) @ l | p: ptr l
+) : bool(n == 0) = p->n = 0
+
+fun {a:t@ype} cycbuf_is_full {l:agz} {s:pos} {n,w,r:nat | n <= s; w < s; r < s} (
+    pf: !cycbuf(a,n,s,w,r) @ l | p: ptr l
+) : bool(n >= s) = p->size = p->n
+
+(* ****** ****** *)
 
 extern
-fun {a:t@ype} cycbuf_remove () : void
+castfn char_of_reg(r:reg(8)) : char
 
 extern
-fun {a:t@ype} cycbuf_is_empty () : bool
+castfn uint8_of_char(c:char) : natLt(256)
+
+(* ****** ****** *)
+
+implement 
+USART_TXC_vect () = let
+  val (gpf, pf | p) = get_write_buffer()
+ in 
+  if cycbuf_is_empty<char>(pf | p) then {
+     prval () = return_global(gpf, pf | p)
+  } else {
+   var tmp : char
+   val () = cycbuf_remove<char>(pf | p , tmp)
+   val () = setval(UDR0,uint8_of_char(tmp))
+   prval () = return_global(gpf, pf | p)
+  }
+ end 
+
+implement 
+USART_RXC_vect () = let
+  val contents = char_of_reg(UDR0)
+  val (gpf, pf | p) = get_read_buffer()
+  val full = cycbuf_is_full<char>(pf | p)
+ in
+   if full then {
+      prval () = return_global(gpf, pf | p)
+   } else {
+      	val () = cycbuf_insert<char>(pf | p, contents)
+	prval () = return_global(gpf, pf | p)
+   }
+ end
+
+(* ****** ****** *)
 
 extern
-fun {a:t@ype} cycbuf_is_full () : bool
+fun atmega328p_async_tx (c:char, f:FILEref) : void = "atmega328p_async_tx"
+
+extern
+fun atmega328p_async_rx (f:FILEref) : char = "atmega328p_async_rx"
+
+(* ****** ****** *)
 
 implement main () = ()

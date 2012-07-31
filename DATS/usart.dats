@@ -4,6 +4,10 @@ staload "SATS/usart.sats"
 %{^
 #include <stdio.h>
 
+//correct
+//FDEFV_SETUP_STREAM(int(*)(char,FILE*)put, int(*)(FILE*)get, flag)
+
+//functions are of incorrect type.
 static FILE mystdio = 
   FDEV_SETUP_STREAM(atmega328p_tx,
                     atmega328p_rx, 
