@@ -16,6 +16,8 @@
 #include <ats/basics.h>
 #include <avr/sleep.h>
 
+#include <util/atomic.h>
+
 declare_isr(USART_RXC_vect);
 declare_isr(USART_TXC_vect);
 
@@ -25,9 +27,9 @@ static char rbuffer[25];
 static char wbuffer[25];
 
 typedef struct {
-  ats_int_type w;
-  ats_int_type r;
-  ats_int_type size;
+  uint8_t w;
+  uint8_t r;
+  uint8_t size;
   ats_ptr_type base;
 } cycbuf_t;
 
@@ -172,12 +174,11 @@ fun sleep_mode () : void
 implement
 atmega328p_async_tx (c, f) = {
    val (gpf, pf | p) = get_write_buffer()
-   fun loop {l:agz}{s:pos}{n,w,r:nat | n <= s; w < s; r < s}
-       (pf: !cycbuf(char,n,s,w,r) @ l | p: ptr l) : void =
+   fun loop {l:agz} {s:pos} {n,w,r:nat | n <= s; w < s; r < s}
+       (g: global(l), pf: cycbuf(char,n,s,w,r) @ l | p: ptr l) : void =
        if cycbuf_is_full(pf | p) then let
-       	  //block until there's room.
        	  val () = sleep_mode()
-	  in loop(pf | p) end
+	  in loop(g, pf | p) end
        else let
        	  val () = cycbuf_insert<char>(pf | p, c)
        in
@@ -185,11 +186,13 @@ atmega328p_async_tx (c, f) = {
 	   var tmp : char
 	   val () = cycbuf_remove<char>(pf | p, tmp)
 	   val () = setval(UDR0, uint8_of_char(tmp))
-	}
+           prval () = return_global(g, pf | p)
+	} else {
+          prval () = return_global(g, pf | p)
+        }
        end
-   val () = loop(pf | p)
-   prval () = return_global(gpf, pf | p)
-   }
+    val () = loop(gpf, pf | p)
+  }
 
 (* ****** ****** *)
 
