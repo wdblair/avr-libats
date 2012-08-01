@@ -44,6 +44,18 @@ ats_ptr_type get_write_buffer() {
   return &write;
 }
 
+static FILE mystdio =
+  FDEV_SETUP_STREAM(atmega328p_tx,
+                    atmega328p_rx,
+                    _FDEV_SETUP_RW
+                    );
+
+ATSinline()
+ats_void_type redirect_stdio() {
+  stdin = &mystdio;
+  stdout = &mystdio;
+}
+
 %}
 
 staload "SATS/io.sats"
@@ -59,7 +71,7 @@ val UDR0 = $extval(reg(8), "UDR0")
 (* An address in the .data section, cannot free it. *)
 absview global(l:addr)
 
-viewtypedef cycbuf_array (a:t@ype,n:int, s: int, w: int, r: int)
+viewtypedef cycbuf_array (a:t@ype, n:int, s: int, w: int, r: int)
   = $extype_struct "cycbuf_t" of {
       w = int w,
       r = int r,
@@ -162,12 +174,19 @@ USART_RXC_vect (locked | (* *)) = let
 (* ****** ****** *)
 
 extern
+fun redirect_stdio () : void = "mac#redirect_stdio"
+
+extern
+fun atmega328p_async_init
+  (pf: !INT_CLEAR | baud: uint16) : void
+
+extern
 fun atmega328p_async_tx 
-    (c:char, f:FILEref) : void = "atmega328p_async_tx"
+  (c:char, f:FILEref) : void = "atmega328p_async_tx"
 
 extern
 fun atmega328p_async_rx 
-    (f:FILEref) : char = "atmega328p_async_rx"
+  (f:FILEref) : char = "atmega328p_async_rx"
 
 
 (* ****** ****** *)
@@ -175,8 +194,29 @@ fun atmega328p_async_rx
 val UCSR0A = $extval(reg(8),"UCSR0A")
 val UDRE0 = $extval(natLt(8),"UDRE0")
 
+val UBRR0L = $extval(reg(8), "UBRR0L")
+val UBBR0H = $extval(reg(8), "UBBR0H")
+val UCSROC = $extval(reg(8), "UCSROC")
+val UCSR0B = $extval(reg(8), "UCSR0B")
+val UCSR0A = $extval(reg(8), "UCSR0A")
+
+val UDR0 = $extval(reg(8), "UDR0")
+
+val UCSZ01 = $extval(natLt(8), "UXSZ01")
+val UCSZ00 = $extval(natLt(8), "UXSZ00")
+val RXEN0 = $extval(natLt(8), "RXEN0")
+val TXEN0 = $extval(natLt(8), "TXEN0")
+val RXC0 =  $extval(natLt(8), "RXC0")
+val UDRE0 = $extval(natLt(8), "UDRE0")
+val F_CPU = $extval(lint, "F_CPU")
+
 (* ****** ****** *)
 
+implement
+atmega328p_async_init (locked | baud ) = {
+  
+}
+  
 implement
 atmega328p_async_tx (c, f) = {
    val (gpf, pf | p) = get_write_buffer()
@@ -226,4 +266,16 @@ atmega328p_async_rx (f) = let
   end
 in loop(gpf, pf | p) end
 
-implement main () = ()
+(* ****** ****** *)
+
+//interrupts are off by default
+extern
+fun main_interrupts_disabled 
+  (pf: INT_CLEAR | (* *) ) : void = "mainats"
+
+overload main with main_interrupts_disabled
+
+implement main (locked | (* *) ) = sei(locked | (* *))
+
+
+  
