@@ -45,8 +45,8 @@ ats_ptr_type get_write_buffer() {
 }
 
 static FILE mystdio =
-  FDEV_SETUP_STREAM(atmega328p_tx,
-                    atmega328p_rx,
+  FDEV_SETUP_STREAM(atmega328p_async_tx,
+                    atmega328p_async_rx,
                     _FDEV_SETUP_RW
                     );
 
@@ -57,6 +57,8 @@ ats_void_type redirect_stdio() {
 }
 
 %}
+
+staload "libc/SATS/stdio.sats"
 
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
@@ -96,8 +98,8 @@ fun get_write_buffer
 ) = "mac#get_write_buffer"
 
 extern
-praxi {a:t@ype} return_global {l:agz} (
-  pfg: global(l), pf: a @ l | p: ptr l
+praxi return_global {a:t@ype} {l:agz} (
+  pfg: global(l), pf: a @ l
 ) : void
 
 fun {a:t@ype} cycbuf_insert {l:agz} {s:pos} {n:nat | n < s} 
@@ -148,12 +150,12 @@ USART_TXC_vect (locked | (* *) ) = let
   val (gpf, pf | p) = get_write_buffer()
  in 
   if cycbuf_is_empty<char>(pf | p) then {
-     prval () = return_global(gpf, pf | p)
+     prval () = return_global(gpf, pf)
   } else {
    var tmp : char
    val () = cycbuf_remove<char>(locked, pf | p ,tmp)
    val () = setval(UDR0,uint8_of_char(tmp))
-   prval () = return_global(gpf, pf | p)
+   prval () = return_global(gpf, pf)
   }
  end
 
@@ -164,10 +166,10 @@ USART_RXC_vect (locked | (* *)) = let
   val full = cycbuf_is_full<char>(pf | p)
  in
    if full then {
-      prval () = return_global(gpf, pf | p)
+      prval () = return_global(gpf, pf)
    } else {
       	val () = cycbuf_insert<char>(locked, pf | p, contents)
-	prval () = return_global(gpf, pf | p)
+	prval () = return_global(gpf, pf)
    }
  end
 
@@ -210,24 +212,51 @@ val RXC0 =  $extval(natLt(8), "RXC0")
 val UDRE0 = $extval(natLt(8), "UDRE0")
 val F_CPU = $extval(lint, "F_CPU")
 
+val RXCIE0 = $extval(natLt(8), "RXCIE0")
+val TXCIE0 = $extval(natLt(8), "TXCIE0")
+
 (* ****** ****** *)
+
+
+extern
+castfn uint16_of_long (x: lint) : uint16
+
+extern
+castfn uint8_of_uint16 (x: uint16) : [n: nat | n < 256] int n
+
+extern
+castfn int216 (x:int) : uint16
+
+extern
+castfn int2eight(x:int) : [n:nat | n < 256] int n
 
 implement
 atmega328p_async_init (locked | baud ) = {
-  
+  val vreg = uint8_of_uint16 (
+              (uint16_of_long(F_CPU) / (baud * int216(16))) - int216(1)
+             )
+  val () = setval(UBRR0L, vreg)
+  val high = int2eight(vreg >> 8)
+  val () = setval(UBBR0H, high)
+  //Set mode to asynchronous, no parity bit, 8 bit frame, and 1 stop bit
+  val () = setbits(UCSROC, UCSZ01, UCSZ00)
+  //Enable TX and RX and interrupts
+  val () = setbits(UCSR0B, RXEN0, TXEN0, RXCIE0, TXCIE0)
+  //Enable the standard library
+  val () = redirect_stdio()
 }
   
 implement
 atmega328p_async_tx (c, f) = {
    val (gpf, pf | p) = get_write_buffer()
    fun loop {l:agz} {n:nat} ( 
-      g: global(l), pf: cycbuf(char, n) @ l | p: ptr l
+      g: global(l), pf: cycbuf(char, n) @ l | p: ptr l, c: char
    ) : void = let
       val (locked | () ) = cli()
    in
       if cycbuf_is_full (pf | p) then let
           val () = sei_and_sleep_cpu(locked | (* *))
-        in loop(g, pf | p) end
+        in loop(g, pf | p, c) end
       else let
           val () = cycbuf_insert<char>(locked, pf | p, c)
        in
@@ -236,14 +265,14 @@ atmega328p_async_tx (c, f) = {
 	  val () = cycbuf_remove<char>(locked, pf | p, tmp)
           val set = sei(locked | (* *))
 	  val () = setval(UDR0, uint8_of_char(tmp))
-          prval () = return_global(g, pf | p)
+          prval () = return_global(g, pf)
 	} else {
-           prval () = return_global(g, pf | p)
+           prval () = return_global(g, pf)
            val () = sei(locked | (* *))
         }
        end
    end
-   val () = loop(gpf, pf | p)
+   val () = loop(gpf, pf | p, c)
 }
 
 implement
@@ -261,21 +290,25 @@ atmega328p_async_rx (f) = let
       var tmp : char
       val () = cycbuf_remove<char>(locked, pf | p, tmp)
       val () = sei(locked | (* *))
-      prval () = return_global(g, pf | p)
+      prval () = return_global(g, pf)
     in tmp end
   end
 in loop(gpf, pf | p) end
 
 (* ****** ****** *)
 
-//interrupts are off by default
-extern
-fun main_interrupts_disabled 
-  (pf: INT_CLEAR | (* *) ) : void = "mainats"
-
-overload main with main_interrupts_disabled
-
-implement main (locked | (* *) ) = sei(locked | (* *))
-
-
-  
+implement main (locked | (* *) ) = let
+  val () = atmega328p_async_init(locked | uint16_of_int(9800))
+  val () = sei(locked | (* *) )
+  fun loop () : void = let
+      val c = char_of_int(getchar())
+      val () =
+	case+ c of 
+	| _ when c = 'x' => println! "Temperature Read!"
+	| _ when c = 'y' => println! "Accelerometer Read!"
+	| _ when c = 'f' => println! "Message Sent!"
+	| _ => println! "Error"
+      in
+	loop()
+      end
+  in loop() end

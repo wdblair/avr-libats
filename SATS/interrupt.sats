@@ -37,3 +37,9 @@ fun USART_TXC_vect_interrupts_disabled
   (pf: !INT_CLEAR | (* none *) ) : void = "USART_TXC_vect"
 
 overload USART_TXC_vect with USART_TXC_vect_interrupts_disabled
+
+(* Interrupts are off by default. *)
+fun main_interrupts_disabled 
+  (pf: INT_CLEAR | (* *) ) : void = "mainats"
+
+overload main with main_interrupts_disabled
