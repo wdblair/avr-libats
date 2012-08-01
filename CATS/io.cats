@@ -1,8 +1,5 @@
-/**
-  Author: Will Blair
-  wdblair AT cs dot bu dot edu
-  July 2012
-*/
+#ifndef _AVR_LIBATS_IO_HEADER
+#define _AVR_LIBATS_IO_HEADER
 
 #include <avr/io.h>
 
@@ -76,3 +73,5 @@
 
 
 #define avr_libats_clearbits7(reg, b0, b1, b2, b3, b4, b5, b6, b7) (reg &= ~(_BV(b0) | _BV(b1) | _BV(b2) | _BV(b3) | _BV(b4) | _BV(b5) | _BV(b6) | _BV(b7)))
+
+#endif
