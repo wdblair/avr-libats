@@ -87,14 +87,14 @@ viewtypedef cycbuf (a:t@ype, n:int) =
 
 extern
 fun get_read_buffer 
-  () : [s:pos] [n,w,r:nat | n <= s; w < s; r < s] [l:agz] (
-  global(l), cycbuf_array(char,n,s,w,r) @ l | ptr l
+  () : [s:pos; n:nat; l:agz] (
+  global(l), cycbuf(char, n) @ l | ptr l
 ) = "mac#get_read_buffer"
         
 extern
 fun get_write_buffer
-  () : [s:pos] [n,w,r:nat | n <= s; w < s; r < s]  [l:agz] (
-  global(l), cycbuf_array(char,n,s,w,r) @ l | ptr l
+  () : [s:pos; n:nat; l:agz] (
+  global(l), cycbuf(char,n) @ l | ptr l
 ) = "mac#get_write_buffer"
 
 extern
@@ -312,3 +312,4 @@ implement main (locked | (* *) ) = let
 	loop()
       end
   in loop() end
+  
