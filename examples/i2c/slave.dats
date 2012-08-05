@@ -134,6 +134,10 @@ var status_reg with vstatus_reg = $extval(status_reg_t, "status_reg")
 viewdef vstatus_reg = status_reg_t @ status_reg
 prval global_state = global_new{vstatus_reg}(vstatus_reg)
 
+var twi_busy with vtwi_busy = $extval(bool, "twi_busy")
+viewdef vtwi_busy = bool @ twi_busy
+prval global_twi_busy = global_new{vtwi_busy}(vtwi_busy)
+
 (* ****** ****** *)
 
 // reg = (addr << TWI_ADR_BITS) | (TRUE << TWI_GEN_BIT)
@@ -144,7 +148,7 @@ fun set_address (
 ) : void = "mac#set_address"
 
 extern
-fun twi_slave_init(addr: twi_address, gen_addr: bool) : void
+fun twi_slave_init(pf: !INT_CLEAR | addr: twi_address, gen_addr: bool) : void
 
 extern
 fun twi_transceiver_busy () : bool
@@ -161,13 +165,25 @@ fun twi_start () : bool
 (* ****** ****** *)
 
 implement
-twi_slave_init(addr, gen_addr) = begin
+twi_slave_init(pf | addr, gen_addr) = begin
   set_address(addr, gen_addr);
   clear_and_setbits(TWCR, TWEN);
 end
 
+implement 
+twi_transceiver_busy () = let
+  prval (pf) = global_get(global_twi_busy)
+  val x = twi_busy
+  prval () = global_return(pf, global_twi_busy)
+in x end
+
+local
+
+  fun sleep_until_ready (
+    ) : void
+
+in 
+
+end
 (* ****** ****** *)
 
-implement main () = let
-   val () = ()
- in end
