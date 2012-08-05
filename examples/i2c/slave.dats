@@ -49,8 +49,11 @@ static volatile status_reg_t status_reg = {0};
 
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
+staload "SATS/sleep.sats"
 
 staload "prelude/SATS/integer.sats"
+
+
 
 (* ****** ****** *)
 
@@ -126,13 +129,13 @@ var msgsize with vmsgsize = $extval(int, "msgsize")
 viewdef vmsgsize = int @ msgsize
 prval global_msgsize = global_new{vmsgsize}(vmsgsize)
 
-var state with vstate =  $extval(int, "state")
-viewdef vstate = int @ state
+var state with vstate =  $extval(uchar, "state")
+viewdef vstate = uchar @ state
 prval global_state = global_new{vstate}(vstate)
 
 var status_reg with vstatus_reg = $extval(status_reg_t, "status_reg")
 viewdef vstatus_reg = status_reg_t @ status_reg
-prval global_state = global_new{vstatus_reg}(vstatus_reg)
+prval global_status_reg = global_new{vstatus_reg}(vstatus_reg)
 
 var twi_busy with vtwi_busy = $extval(bool, "twi_busy")
 viewdef vtwi_busy = bool @ twi_busy
@@ -177,13 +180,41 @@ twi_transceiver_busy () = let
   prval () = global_return(pf, global_twi_busy)
 in x end
 
+(* 
+   I *think* we don't need to clear/set interrupts for
+   the following functions that modify twi_busy as long as we do
+   so immediately after enabling the TWI Interrupt.
+   On AVR, the instruction following one that enables interrupts
+   is guarunteed to execute without interruption.
+   
+   Combining enabling interrupts with modifying the busy variable
+   could be helpful for clarity.
+*)
 local
 
-  fun sleep_until_ready (
-    ) : void
+  fun sleep_until_ready
+    () : void = let
+      val (locked | ()) = cli()
+      in 
+        if twi_transceiver_busy() then let
+            val () = sei_and_sleep_cpu(locked | (* *))
+          in sleep_until_ready() end
+        else let
+          val () = sei(locked | (* *))
+        in end
+      end
+      
+in
 
-in 
+implement 
+twi_get_state_info () = let
+  val () = sleep_until_ready()
+  prval (pf) = global_get(global_state)
+  val x = state
+  prval () = global_return(pf, global_state)
+in x end
 
 end
+
 (* ****** ****** *)
 
