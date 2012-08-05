@@ -44,13 +44,13 @@ implement atmega328p_init(baud) = {
 }
 
 fun atmega328p_rx (f: FILEref) : int = c where {
-    val () = loop_until_bit_is_set(UCSR0A,RXC0)
+    val () = loop_until_bit_is_set(UCSR0A, RXC0)
     val c = reg2int(UDR0)
 }
-  
+
 fun atmega328p_tx (c: char, f: FILEref) : void = {
     val () = loop_until_bit_is_clear(UCSR0A, UDRE0)
-    val () = setval(UDR0,char_to_8(c))
+    val () = setval(UDR0, char_to_8(c))
 }
 
 %{
