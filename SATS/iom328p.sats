@@ -1,4 +1,3 @@
-
 macdef PINB = $extval(reg(8), "PINB")
 macdef PINB0 = $extval(natLt(8), "PINB0")
 macdef PINB1 = $extval(natLt(8), "PINB1")

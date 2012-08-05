@@ -11,21 +11,10 @@
 staload "SATS/io.sats"
 staload "SATS/delay.sats"
 
-val TCCR2A = $extval(reg(8),"TCCR2A")
-val TCCR2B = $extval(reg(8),"TCCR2B")
-val DDRB = $extval(reg(8),"DDRB")
-val OCR2A = $extval(reg(8),"OCR2A")
-
-val WGM20  = $extval(natLt(8), "WGM20")
-val WGM21  = $extval(natLt(8), "WGM21")
-val COM2A1 = $extval(natLt(8), "COM2A1")
-val CS20 = $extval(natLt(8), "CS20")
-val PB3 = $extval(natLt(8), "PB3")
-
 fun init_pwm () : void = {
   val () = setbits(TCCR2A, WGM20, WGM21, COM2A1)
   val () = setbits(TCCR2B, CS20)
-  val () = setbits(DDRB, PB3)
+  val () = setbits(DDRB, PINB3)
 }
 
 fun set_pwm_output(duty: natLt(256)) : void = {

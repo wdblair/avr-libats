@@ -30,19 +30,6 @@ fun set_sleep_mode (mode : int) : void = "mac#wdt_enable"
 extern
 fun sleep_mode () : void = "mac#sleep_mode"
 
-val ADMUX = $extval(reg(8),"ADMUX")
-val ADCSRA = $extval(reg(8),"ADCSRA")
-val ADCH = $extval(reg(8),"ADCH")
-val ADCL = $extval(reg(8),"ADCL")
-val ADMUX = $extval(reg(8),"ADMUX")
-
-val ADPS2 = $extval(natLt(8), "ADPS2")
-val ADPS1 = $extval(natLt(8), "ADPS1")
-val ADPS0 = $extval(natLt(8), "ADPS0")
-val ADEN = $extval(natLt(8), "ADEN")
-val ADSC = $extval(natLt(8), "ADSC")
-val MUX1 = $extval(natLt(8), "MUX1")
-
 val WDTO_1S = $extval(int, "WDTO_1S")
 val SLEEP_MODE_PWR_DOWN = $extval(int, "SLEEP_MODE_PWR_DOWN")
 

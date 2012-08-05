@@ -66,10 +66,6 @@ staload "SATS/sleep.sats"
 
 (* ****** ****** *)
 
-val UDR0 = $extval(reg(8), "UDR0")
-
-(* ****** ****** *)
-
 (* An address in the .data section, cannot free it. *)
 absview global (l:addr)
 
@@ -193,30 +189,9 @@ fun atmega328p_async_rx
 
 (* ****** ****** *)
 
-val UCSR0A = $extval(reg(8),"UCSR0A")
-val UDRE0 = $extval(natLt(8),"UDRE0")
-
-val UBRR0L = $extval(reg(8), "UBRR0L")
-val UBBR0H = $extval(reg(8), "UBBR0H")
-val UCSROC = $extval(reg(8), "UCSROC")
-val UCSR0B = $extval(reg(8), "UCSR0B")
-val UCSR0A = $extval(reg(8), "UCSR0A")
-
-val UDR0 = $extval(reg(8), "UDR0")
-
-val UCSZ01 = $extval(natLt(8), "UXSZ01")
-val UCSZ00 = $extval(natLt(8), "UXSZ00")
-val RXEN0 = $extval(natLt(8), "RXEN0")
-val TXEN0 = $extval(natLt(8), "TXEN0")
-val RXC0 =  $extval(natLt(8), "RXC0")
-val UDRE0 = $extval(natLt(8), "UDRE0")
 val F_CPU = $extval(lint, "F_CPU")
 
-val RXCIE0 = $extval(natLt(8), "RXCIE0")
-val TXCIE0 = $extval(natLt(8), "TXCIE0")
-
 (* ****** ****** *)
-
 
 extern
 castfn uint16_of_long (x: lint) : uint16
@@ -237,9 +212,9 @@ atmega328p_async_init (locked | baud ) = {
              )
   val () = setval(UBRR0L, vreg)
   val high = int2eight(vreg >> 8)
-  val () = setval(UBBR0H, high)
+  val () = setval(UBRR0H, high)
   //Set mode to asynchronous, no parity bit, 8 bit frame, and 1 stop bit
-  val () = setbits(UCSROC, UCSZ01, UCSZ00)
+  val () = setbits(UCSR0C, UCSZ01, UCSZ00)
   //Enable TX and RX and interrupts
   val () = setbits(UCSR0B, RXEN0, TXEN0, RXCIE0, TXCIE0)
   //Enable the standard library

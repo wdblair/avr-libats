@@ -7,9 +7,10 @@ abst@ype reg(n:int)
 praxi lemma_reg_int8 {n:nat} (r: reg(n) ) : [0 <= n; n < 256] void
 
 // Need to figure out a good way to either include the right SATS file
-// conditionally (from the -mmcu flag) or use specific implementation
-// to bind register names to specific devices.
-staload "iom328p.sats"
+// conditionally from the -mmcu flag or use specific implementation
+// to bind register names to devices. Only running code on Arduino now
+// so atmega328p is fine.
+#include "SATS/iom328p.sats"
 
 fun bit_is_set {n:nat} (
   r: reg(n), b: natLt(8)

@@ -137,6 +137,12 @@ prval global_state = global_new{vstatus_reg}(vstatus_reg)
 (* ****** ****** *)
 
 // reg = (addr << TWI_ADR_BITS) | (TRUE << TWI_GEN_BIT)
+// it's a lot easier to just do this in C
+extern
+fun set_address ( 
+  a:twi_address, g:bool
+) : void = "mac#set_address"
+
 extern
 fun twi_slave_init(addr: twi_address, gen_addr: bool) : void
 
@@ -154,17 +160,11 @@ fun twi_start () : bool
 
 (* ****** ****** *)
 
-macdef TWAR = $extval(reg(8), "TWAR")
-
 implement
-twi_slave_init(addr, gen_addr) = let
-  fun set_address (
-    a:twi_address, g:bool
-  ) : void= "mac#set_address"
-  val set_address(addr, gen_addr)
-  val () = clear_and_setbits(TWCR, TWEN)
-in end
-
+twi_slave_init(addr, gen_addr) = begin
+  set_address(addr, gen_addr);
+  clear_and_setbits(TWCR, TWEN);
+end
 
 (* ****** ****** *)
 
