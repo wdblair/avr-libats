@@ -8,5 +8,4 @@
     sei();                              \
     sleep_cpu();                        \
   } while(0)
-
 #endif 

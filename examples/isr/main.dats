@@ -1,5 +1,6 @@
-(* An example of replacing stdio routines with an
-   interrupt based equivalent.
+(* 
+    An example of replacing stdio routines with an
+    interrupt based solution for tx and rx.
 *)
 
 #define ATS_STALOADFLAG 0
@@ -7,9 +8,6 @@
 
 %{^
 #define F_CPU 16000000
-
-#define declare_isr(vector, ...)                                        \
-  void vector (void) __attribute__ ((signal,__INTR_ATTRS)) __VA_ARGS__
 
 #include <ats/basics.h>
 
@@ -42,18 +40,6 @@ ats_ptr_type get_read_buffer() {
 ATSinline()
 ats_ptr_type get_write_buffer() {
   return &write;
-}
-
-static FILE mystdio =
-  FDEV_SETUP_STREAM(atmega328p_async_tx,
-                    atmega328p_async_rx,
-                    _FDEV_SETUP_RW
-                    );
-
-ATSinline()
-ats_void_type redirect_stdio() {
-  stdin = &mystdio;
-  stdout = &mystdio;
 }
 
 %}
@@ -186,6 +172,9 @@ extern
 fun atmega328p_async_rx 
   (f:FILEref) : char = "atmega328p_async_rx"
 
+extern
+fun atmega328p_async_flush
+  () : void = "atmega328p_asynx_flush"
 
 (* ****** ****** *)
 
@@ -235,7 +224,7 @@ atmega328p_async_tx (c, f) = {
       else let
           val () = cycbuf_insert<char>(locked, pf | p, c)
        in
-        if bit_is_clear(UCSR0A,UDRE0) then {
+        if bit_is_clear(UCSR0A, UDRE0) then {
           var tmp : char
 	  val () = cycbuf_remove<char>(locked, pf | p, tmp)
           val set = sei(locked | (* *))
@@ -269,6 +258,41 @@ atmega328p_async_rx (f) = let
     in tmp end
   end
 in loop(gpf, pf | p) end
+
+(* Should be called after fflush on stdout. *)
+implement
+atmega328p_async_flush () = let
+  val (gpf, pf | p) = get_read_buffer()
+  fun loop {l:agz} {n:nat} (
+    g: global(l), pf: cycbuf(char,n) @ l | p: ptr l
+  ) : void = let
+    val (locked | () ) = cli()
+  in 
+    if cycbuf_is_empty<char>(pf | p) then let
+        val () = sei(locked | (* *))
+        prval () = return_global(g, pf)
+      in  end
+    else let
+      val () = sei_and_sleep_cpu(locked | (* *) )
+     in loop(g, pf | p) end
+  end
+in loop(gpf, pf | p) end
+      
+(* ****** ****** *)
+
+%{
+ATSinline()
+ats_void_type redirect_stdio() {
+  stdin = &mystdio;
+  stdout = &mystdio;
+}
+
+static FILE mystdio =
+  FDEV_SETUP_STREAM(atmega328p_async_tx,
+                    atmega328p_async_rx,
+                    _FDEV_SETUP_RW
+                    );
+%}
 
 (* ****** ****** *)
 
