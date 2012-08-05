@@ -6,6 +6,11 @@ abst@ype reg(n:int)
 
 praxi lemma_reg_int8 {n:nat} (r: reg(n) ) : [0 <= n; n < 256] void
 
+// Need to figure out a good way to either include the right SATS file
+// conditionally (from the -mmcu flag) or use specific implementation
+// to bind register names to specific devices.
+staload "iom328p.sats"
+
 fun bit_is_set {n:nat} (
   r: reg(n), b: natLt(8)
 ) : bool = "mac#bit_is_set"
@@ -46,7 +51,6 @@ overload setbits with setbits1
 fun setbits2 {n:nat} (
     r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8)
 ) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_setbits2"
-
 
 overload setbits with setbits2
 
@@ -203,3 +207,61 @@ overload clearbits with clearbits7
 
 fun setval {n:nat}
   (r: !reg(n) >> reg(n'), n: natLt(256)) : #[n':nat | 0 <= n; n < 256] void = "mac#avr_libats_setval"
+  
+symintr clear_and_setbits
+
+fun clear_and_setbits0 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_clear_and_setbits0"
+
+
+overload clear_and_setbits with clear_and_setbits0
+
+fun clear_and_setbits1 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_clear_and_setbits1"
+
+
+overload clear_and_setbits with clear_and_setbits1
+
+fun clear_and_setbits2 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_clear_and_setbits2"
+
+
+overload clear_and_setbits with clear_and_setbits2
+
+fun clear_and_setbits3 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8), b3: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_clear_and_setbits3"
+
+
+overload clear_and_setbits with clear_and_setbits3
+
+fun clear_and_setbits4 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8), b3: natLt(8), b4: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_clear_and_setbits4"
+
+
+overload clear_and_setbits with clear_and_setbits4
+
+fun clear_and_setbits5 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8), b3: natLt(8), b4: natLt(8), b5: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_clear_and_setbits5"
+
+
+overload clear_and_setbits with clear_and_setbits5
+
+fun clear_and_setbits6 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8), b3: natLt(8), b4: natLt(8), b5: natLt(8), b6: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_clear_and_setbits6"
+
+
+overload clear_and_setbits with clear_and_setbits6
+
+fun clear_and_setbits7 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8), b3: natLt(8), b4: natLt(8), b5: natLt(8), b6: natLt(8), b7: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_clear_and_setbits7"
+
+
+overload clear_and_setbits with clear_and_setbits7

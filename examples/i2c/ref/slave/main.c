@@ -50,7 +50,7 @@ static volatile unsigned char TWI_msgReceivedSize = 0; //Total number of bytes r
 // Also used to determine how deep we can sleep.
 static volatile unsigned char TWI_busy = 0;
 
-union TWI_statusReg_t TWI_statusReg = {0};           // TWI_statusReg is defined in TWI_Slave.h
+static volatile union TWI_statusReg_t TWI_statusReg = {0}; // TWI_statusReg is defined in TWI_Slave.h
 
 /****************************************************************************
 Call this function to set up the TWI slave to its initial standby state.
@@ -102,7 +102,7 @@ void TWI_Start_Transceiver_With_Data( unsigned char *msg, unsigned char msgSize 
 {
   unsigned char temp;
 
-  while ( TWI_Transceiver_Busy() ) {}             // Wait until TWI is ready for next transmission.
+  while ( TWI_Transceiver_Busy() ) {}           // Wait until TWI is ready for next transmission.
 
   TWI_msgSize = msgSize;                        // Number of data to transmit.
   for ( temp = 0; temp < msgSize; temp++ )      // Copy data that may be transmitted if the TWI Master requests data.

@@ -71,7 +71,7 @@ val UDR0 = $extval(reg(8), "UDR0")
 (* ****** ****** *)
 
 (* An address in the .data section, cannot free it. *)
-absview global(l:addr)
+absview global (l:addr)
 
 viewtypedef cycbuf_array (a:t@ype, n:int, s: int, w: int, r: int)
   = $extype_struct "cycbuf_t" of {
@@ -312,4 +312,3 @@ implement main (locked | (* *) ) = let
 	loop()
       end
   in loop() end
-  
