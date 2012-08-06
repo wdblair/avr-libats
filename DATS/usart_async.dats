@@ -40,6 +40,7 @@ staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
 staload "SATS/global.sats"
+staload "SATS/usart.sats"
 
 viewtypedef cycbuf_array (a:t@ype, n:int, s: int, w: int, r: int)
   = $extype_struct "cycbuf_t" of {

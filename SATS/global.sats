@@ -5,6 +5,6 @@
 (* An address in the .data section, cannot free it. *)
 absview global (l:addr)
 
-praxi return_global {a:t@ype} {l:agz} (
+praxi return_global {a:viewt@ype} {l:agz} (
   pfg: global(l), pf: a @ l
 ) : void

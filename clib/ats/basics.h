@@ -32,7 +32,7 @@
 //
 #define ATScastfn(castfn, name) name
 
-#define ATSglobaldec() volatile
+#define ATSglobaldec()
 #define ATSstaticdec() static
 
 #define ATSextfun() extern
@@ -88,6 +88,7 @@
 typedef int ats_int_type ;
 typedef void ats_void_type ;
 typedef char ats_char_type ;
+typedef unsigned char ats_uchar_type ;
 typedef int ats_bool_type ;
 typedef double ats_double_type ;
 typedef size_t ats_size_type ;

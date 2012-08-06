@@ -8,12 +8,8 @@
 #define ATS_STALOADFLAG 0
 #define ATS_DYNLOADFLAG 0
 
-//An awesome feature of ATS: using this one 
-//define we prove all memory manipulations
-//are accurate. This
-//constant is defined in the C code as well,
-//so that adds another bit of stability.
-#define BUFF_SIZE 4
+//have to define this in two places unfortunately
+#define BUFF_SIZE 4 
 
 (* ****** ****** *)
 
@@ -67,14 +63,12 @@
 
 (* ****** ****** *)
 
-
 %{^
+#define BUFF_SIZE 4
+
 #define F_CPU 16000000
 
 #include <ats/basics.h>
-
-#define declare_isr(vector, ...)                                        \
-  void vector (void) __attribute__ ((signal,__INTR_ATTRS)) __VA_ARGS__
 
   union status_reg_t
   {
@@ -88,7 +82,24 @@
       };
   };
 
-static volatile status_reg_t status_reg = {0};
+//ATS doesn't support union.
+typedef union status_reg_t status_reg_t;
+
+typedef struct {
+  unsigned char data[BUFF_SIZE];
+  int msg_size;
+} buffer_t;
+
+typedef struct {
+  buffer_t buffer;
+  status_reg_t status_reg;
+  unsigned char state;
+  unsigned char twi_busy;
+} twi_state_t;
+
+static volatile twi_state_t twi_state;
+
+#define get_twi_state() (twi_state_t * volatile)&twi_state
 
 #define status_reg_set_all(reg, char) reg.all = char
 #define status_reg_get_all(reg) reg.all
@@ -110,6 +121,7 @@ static volatile status_reg_t status_reg = {0};
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
+staload "SATS/global.sats"
 
 staload "prelude/SATS/integer.sats"
 
@@ -164,18 +176,7 @@ typedef twi_address = [n:int | n >= 0 | n < 128] int n
 
 (* ****** ****** *)
 
-absprop global(view)
-
-extern
-praxi global_new {v:view} (pf: v) : global(v)
-
-extern
-praxi global_get {v:view} ( g: global(v) ) : (v)
-
-extern
-praxi global_return {v:view} (pf: v, g: global(v) ) : void
-
-(* ****** ****** *)
+macdef BUFF_SIZE = $extval(int,"BUFF_SIZE")
 
 stadef buff_size  = BUFF_SIZE
 
@@ -185,28 +186,25 @@ viewtypedef buffer_t (size: int, n: int)
   msg_size= int n
 }
 
-var buffer with vbuffer = $extval( buffer_t(buff_size, 0), "buffer")
-viewdef vbuffer = [n:nat | n <= buff_size] buffer_t(buff_size, n) @ buffer
-prval global_buffer = global_new{vbuffer}(vbuffer)
-
-var state with vstate =  $extval(uchar, "state")
-viewdef vstate = uchar @ state
-prval global_state = global_new{vstate}(vstate)
-
-var status_reg with vstatus_reg = $extval(status_reg_t, "status_reg")
-viewdef vstatus_reg = status_reg_t @ status_reg
-prval global_status_reg = global_new{vstatus_reg}(vstatus_reg)
-
-var twi_busy with vtwi_busy = $extval(bool, "twi_busy")
-viewdef vtwi_busy = bool @ twi_busy
-prval global_twi_busy = global_new{vtwi_busy}(vtwi_busy)
+viewtypedef twi_state_t (size: int, n: int)
+  = $extype_struct "twi_state_t" of {
+    buffer= buffer_t(size, n),
+    status_reg= status_reg_t,
+    state=uchar,
+    twi_busy=bool
+}
+  
+extern
+fun get_twi_state () : [n:nat; l:agz | n <= buff_size] (
+  global(l), twi_state_t (buff_size, n) @ l | ptr l
+) = "mac#get_twi_state"
 
 (* ****** ****** *)
 
 // reg = (addr << TWI_ADR_BITS) | (TRUE << TWI_GEN_BIT)
 // it's a lot easier to just do this in C
 extern
-fun set_address ( 
+fun set_address (
   a:twi_address, g:bool
 ) : void = "mac#set_address"
 
@@ -240,9 +238,9 @@ end
 
 implement 
 twi_transceiver_busy () = let
-  prval (pf) = global_get(global_twi_busy)
-  val x = twi_busy
-  prval () = global_return(pf, global_twi_busy)
+  val (free, pf | p) = get_twi_state()
+  val x = p->twi_busy
+  prval () = return_global(free, pf)
 in x end
 
 (* 
@@ -270,70 +268,57 @@ local
       end
       
   fun enable_twi_set_busy (b: bool) : void = {
-    prval (pf) = global_get(global_twi_busy)
+    val (free, pf | p) = get_twi_state()
     val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
-    val () = twi_busy := b
-    prval () = global_return(pf, global_twi_busy)
+    val () = p->twi_busy := b
+    prval () = return_global(free, pf)
   }
 
   fun clear_state () : void = {
+    val (free, pf | p) = get_twi_state()
     //Clear the status register
-    prval (pf) = global_get(global_status_reg)
-    val () = set_all(status_reg, uchar_of_int(0))
-    prval () = global_return(pf, global_status_reg)
+    val () = set_all(p->status_reg, uchar_of_int(0))
     //Clear the state
-    prval (pf) = global_get(global_state)
-    val () = state := uchar_of_int(TWI_NO_STATE)
-    prval () = global_return(pf, global_state)
+    val () = p->state := uchar_of_int(TWI_NO_STATE)
+    prval () = return_global(free, pf)
   }
   
-  fun {a:t@ype} copy_buffer {n:nat} {p:nat} {m:pos | m <= n; m <= p} (
-    dest: @[a][n], src: @[a][p], num: int m
-  ) : void = let
-    fun loop {i:nat | i < m}
-      (i: int i) : void = let
-      val () = dest[i] := src[i]
-    in  
-      if i = num -1 then 
-        () //geschaft!
-      else
-        loop(i+1)
-    end
- in loop(0) end
+  extern  
+  fun copy_buffer {n:nat} {p:nat} {m:pos | m <= n; m <= p} (
+    dest: @[uchar][n], src: @[uchar][p], num: int m
+  ) : void = "mac#memcpy"
 in
 
 implement 
 twi_get_state_info () = let
   val () = sleep_until_ready()
-  prval (pf) = global_get(global_state)
-  val x = state
-  prval () = global_return(pf, global_state)
+  val (free, pf | p) = get_twi_state()
+  val x = p->state
+  prval () = return_global(free, pf)
 in x end
 
 implement
 twi_start_with_data {n} (msg, size) = let
   val () = sleep_until_ready()
+  val (free, pf | p) = get_twi_state()
   //Set the size of the message and copy the buffer
-  prval (pf) = global_get(global_buffer)
-  val () = buffer.msg_size := size
-  val () = copy_buffer(buffer.data, msg, size)
-  prval () = global_return(pf, global_buffer)
+  val () = p->buffer.msg_size := size
+  val () = copy_buffer(p->buffer.data, msg, size)
   val () = clear_state()
+  prval () = return_global(free,pf)
 in enable_twi_set_busy(true) end
 
 implement twi_get_data {n} (msg, size) = let
   val () = sleep_until_ready()
-  prval (pf) = global_get(global_status_reg)
-  val lastok = get_last_trans_ok(status_reg)
+  val (free, pf | p) = get_twi_state()
+  val lastok = get_last_trans_ok(p->status_reg)
 in 
-    if get_last_trans_ok(status_reg) then let
-      prval (pfb) = global_get(global_buffer)
-      val () = copy_buffer(msg, buffer.data, size)
-      prval () = global_return(pfb, global_buffer)
-      prval () = global_return(pf, global_status_reg)
+    if get_last_trans_ok(p->status_reg) then let
+      val () = copy_buffer(msg, p->buffer.data, size)
+      prval () = return_global(free, pf)
      in lastok end
     else let
-      prval () = global_return(pf, global_status_reg)
+      prval () = return_global(free, pf)
     in lastok end
 end
 
@@ -341,8 +326,6 @@ implement twi_start() = let
   val () = sleep_until_ready()
   val () = clear_state()
 in enable_twi_set_busy(false) end
-
-
 
 end
 
