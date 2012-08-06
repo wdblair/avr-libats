@@ -82,7 +82,6 @@ def make_pin_sats file
       file.puts(pin_tmpl.gsub(/__name__/, m[1]))
     #registers
     elsif n = /^#define ([A-Z0-9_]+) _SFR_(MEM|IO)8/.match(line)
-      puts "Hello World"
       file.puts(reg_tmpl.gsub(/__name__/, n[1]))
       isreg = true
     #add an extra newline after we hit all of a register's pins.
