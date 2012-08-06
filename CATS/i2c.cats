@@ -49,4 +49,54 @@
 #define TWI_NO_STATE               0xF8  // No relevant state information available; 
 #define TWI_BUS_ERROR              0x00  // Bus error due to an illegal START or STOP condition
 
+#define get_twi_state() (twi_state_t * volatile)&twi_state
+
+#define status_reg_set_all(reg, char) reg.all = char
+#define status_reg_get_all(reg) reg.all
+
+#define status_reg_set_last_trans_ok(reg, char)  reg.last_trans_ok = char
+#define status_reg_get_last_trans_ok(reg) reg.last_trans_ok
+
+#define status_reg_set_rx_data_in_buf(reg, char)  reg.rx_data_in_buf = char
+#define status_reg_get_rx_data_in_buf(ptr) ptr->status_reg.rx_data_in_buf
+
+#define status_reg_set_gen_address_call(reg, char)  reg.rx_data_in_buf = char
+#define status_reg_get_gen_address_call(reg) reg.rx_data_in_buf
+
+#define status_reg_set_all_bytes_sent(reg, bool)  reg.all_bytes_sent = bool
+#define status_reg_get_all_bytes_sent(reg) reg.all_bytes_sent
+
+#define set_address(address, general_enabled) TWAR = (address << TWI_ADR_BITS) | (general_enabled << TWI_GEN_BIT)
+
+#define copy_buffer(dest, src, size) memcpy(*dest, *src, size)
+
+union status_reg_t
+{
+  unsigned char all;
+  struct
+  {
+    unsigned char last_trans_ok:1;
+    unsigned char rx_data_in_buf:1;
+    unsigned char gen_address_call:1;
+    unsigned char all_bytes_sent:1;
+    unsigned char unused_bits:4;
+  };
+};
+
+// ATS doesn't have a union type
+typedef union status_reg_t status_reg_t;
+
+typedef struct {
+  unsigned char data[BUFF_SIZE];
+  uint8_t msg_size;
+  uint8_t recvd_size;
+} buffer_t;
+
+typedef struct {
+  buffer_t buffer;
+  status_reg_t status_reg;
+  unsigned char state;
+  uint8_t next_byte;
+} twi_state_t;
+
 #endif

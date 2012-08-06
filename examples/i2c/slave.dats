@@ -2,7 +2,7 @@
   An example of an interrupt driven
   i2c slave device.
     
-  Adapted from an Atmel Application Note found in ref
+  Adapted from Atmel Application Note AVR311
 *)
 
 #define ATS_STALOADFLAG 0
@@ -17,51 +17,17 @@
 
 #include <ats/basics.h>
 
-  union status_reg_t
-  {
-      unsigned char all;
-      struct
-      {
-         unsigned char last_trans_ok:1;
-         unsigned char rx_data_in_buf:1;
-         unsigned char gen_address_call:1;
-         unsigned char unused_bits:5;
-      };
-  };
-
-//ATS doesn't support union.
-typedef union status_reg_t status_reg_t;
-
-typedef struct {
-  unsigned char data[BUFF_SIZE];
-  int msg_size;
-} buffer_t;
-
-typedef struct {
-  buffer_t buffer;
-  status_reg_t status_reg;
-  unsigned char state;
-} twi_state_t;
-
 static volatile twi_state_t twi_state;
 
-#define get_twi_state() (twi_state_t * volatile)&twi_state
+/*
+ Will need to make a simple dispatcher
+ since the device may be operating in 
+ either master or slave mode, but there
+ can only be one interrupt assigned to 
+ this vector.
+*/
+declare_isr(TWI_vect);
 
-#define status_reg_set_all(reg, char) reg.all = char
-#define status_reg_get_all(reg) reg.all
-
-#define status_reg_set_last_trans_ok(reg, char)  reg.last_trans_ok = char
-#define status_reg_get_last_trans_ok(reg) reg.last_trans_ok
-
-#define status_reg_set_rx_data_in_buf(reg, char)  reg.rx_data_in_buf = char
-#define status_reg_get_rx_data_in_buf(reg) reg.rx_data_in_buf
-
-#define status_reg_set_gen_address_call(reg, char)  reg.rx_data_in_buf = char
-#define status_reg_get_gen_address_call(reg) reg.rx_data_in_buf
-
-#define set_address(address, general_enabled) TWAR = (address << TWI_ADR_BITS) | (general_enabled << TWI_GEN_BIT)
-
-#define copy_buffer(dest, src, size) memcpy(*dest, *src, size)
 %}
 
 (* ****** ****** *)
@@ -73,69 +39,10 @@ staload "SATS/global.sats"
 staload "SATS/i2c.sats"
 
 (* ****** ****** *)
-
-absviewtype status_reg_t = $extype "status_reg_t"
-
-extern
-fun set_all (
-  r: !status_reg_t, c: uchar
-) : void = "mac#status_reg_set_all"
-
-extern
-fun get_all (
-  r: !status_reg_t
-) : uchar = "mac#status_reg_get_all"
-
-extern
-fun set_last_trans_ok (
-  r: !status_reg_t, c: bool
-) : void = "mac#status_set_last_trans_ok"
-
-extern
-fun get_last_trans_ok (
-  r: !status_reg_t
-) : bool = "mac#status_reg_get_last_trans_ok"
-
-
-extern
-fun set_rx_data_in_buf (
-  r: !status_reg_t, c: uchar
-) : void = "mac#status_set_rx_data_in_buf"
-
-extern
-fun get_rx_data_in_buf (
-  r: !status_reg_t
-) : uchar = "mac#status_reg_get_rx_data_in_buf"
-
-extern
-fun set_gen_address_call (
-  r: !status_reg_t, c: uchar
-) : void = "mac#status_set_gen_address_call"
-
-extern
-fun get_gen_address_call (
-  r: !status_reg_t
-) : uchar = "mac#status_reg_get_gen_address_call"
-
-(* ****** ****** *)
-
-viewtypedef buffer_t (size: int, n: int)
-  = $extype_struct "buffer_t" of {
-  data= @[uchar][size],
-  msg_size= int n
-}
-
-viewtypedef twi_state_t (size: int, n: int)
-  = $extype_struct "twi_state_t" of {
-    buffer= buffer_t(size, n),
-    status_reg= status_reg_t,
-    state=uchar,
-    twi_busy=bool
-}
   
 extern
-fun get_twi_state () : [n:nat; l:agz | n <= buff_size] (
-  global(l), twi_state_t (buff_size, n) @ l | ptr l
+fun get_twi_state () : [s,r:nat; l:agz | s <= buff_size; r <= buff_size] (
+  global(l), twi_state_t (buff_size, s, r) @ l | ptr l
 ) = "mac#get_twi_state"
 
 (* ****** ****** *)
@@ -146,7 +53,6 @@ extern
 fun set_address (
   a:twi_address, g:bool
 ) : void = "mac#set_address"
-
 
 (* ****** ****** *)
 
@@ -159,20 +65,12 @@ end
 implement
 twi_transceiver_busy () = bit_is_set(TWCR, TWIE)
 
-(* 
-   I *think* we don't need to clear/set interrupts for
-   the following functions that modify twi_busy as long as we do
-   so immediately after enabling the TWI Interrupt.
-   On AVR, the instruction following one that enables interrupts
-   is guarunteed to execute without interruption.
-   
-   Combining enabling interrupts with modifying the busy variable
-   could be helpful for clarity.
-*)
 local
-
   extern
   castfn uchar_of_uint8 (i: uint8) : uchar
+
+  extern
+  castfn uchar_of_reg8 (r: reg(8)) : uchar
 
   fun sleep_until_ready
     () : void = let
@@ -186,12 +84,8 @@ local
         in end
       end
       
-  fun enable_twi_set_busy (b: bool) : void = {
-    val (free, pf | p) = get_twi_state()
-    val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
-    val () = p->twi_busy := b
-    prval () = return_global(free, pf)
-  }
+  fun enable_twi() : void =
+    clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
 
   fun clear_state () : void = {
     val (free, pf | p) = get_twi_state()
@@ -202,10 +96,35 @@ local
     prval () = return_global(free, pf)
   }
 
-  extern  
   fun copy_buffer {d,s:int} {sz:pos | sz <= s; sz <= d} (
     dest: &(@[uchar][d]), src: &(@[uchar][s]), num: int sz
-  ) : void = "mac#copy_buffer"
+  ) : void = {
+    var i : [n:nat] int n;
+    val () = 
+      for ( i := 0; i < num ; i := i + 1) {
+        val () = dest.[i] := src.[i]
+      }
+  }
+  
+  fun reset_next_byte () : void = {
+    val (free, pf | p) = get_twi_state()
+    val () = p->next_byte := 0
+    val () = set_all_bytes_sent(p->status_reg, false)
+    prval() = return_global(free, pf)
+  }
+  
+  
+  fun read_next_byte() : void = {
+    val (free, pf | p) = get_twi_state()
+    val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
+    val () = p->next_byte := p->next_byte + 1
+    val () = p->buffer.recvd_size := p->buffer.recvd_size + 1
+    val () = set_last_trans_ok(p->status_reg, true)
+    val () = enable_twi()
+    prval () = return_global(free, pf)
+  }
+  
+  
 in
 
 implement 
@@ -217,7 +136,7 @@ twi_get_state_info () = let
 in x end
 
 implement
-twi_start_with_data {n} (msg, size) = let
+twi_start_with_data {n,p} (msg, size) = let
   val () = sleep_until_ready()
   val (free, pf | p) = get_twi_state()
   //Set the size of the message and copy the buffer
@@ -225,9 +144,9 @@ twi_start_with_data {n} (msg, size) = let
   val () = copy_buffer(p->buffer.data, msg, size)
   val () = clear_state()
   prval () = return_global(free,pf)
-in enable_twi_set_busy(true) end
+in enable_twi() end
 
-implement twi_get_data {n} (msg, size) = let
+implement twi_get_data {n,p} (msg, size) = let
   val () = sleep_until_ready()
   val (free, pf | p) = get_twi_state()
   val lastok = get_last_trans_ok(p->status_reg)
@@ -244,8 +163,107 @@ end
 implement twi_start() = let
   val () = sleep_until_ready()
   val () = clear_state()
-in enable_twi_set_busy(false) end
+in enable_twi() end
 
+extern
+castfn int_of_reg8 (r: reg(8)) : int
+
+extern
+castfn uint8_of_uchar (c: uchar) : [n: nat | n < 256] int n
+
+extern
+castfn uchar_of_reg8 (r: reg(8)) : uchar
+
+// An interesting problem could be using the modeling
+// the states the TWI module may be in using props.
+implement TWI_vect (pf | (* *)) = let
+    val twsr = int_of_reg8(TWSR)
+  in
+    case+ twsr of
+    | TWI_STX_ADR_ACK  => reset_next_byte()
+    | TWI_STX_ADR_ACK_M_ARB_LOST => reset_next_byte()
+    | TWI_STX_DATA_ACK => let
+        val (free,pf | p) = get_twi_state()
+        //Send the next byte out for delivery
+        val x = p->buffer.data.[p->next_byte]
+        val () = setval(TWDR, uint8_of_uchar(x))
+      in 
+          if p->next_byte < p->buffer.msg_size - 1 then {
+            val () = p->next_byte := p->next_byte + 1
+            prval () = return_global(free, pf)
+            val () = enable_twi()
+          } else {
+            val () = set_all_bytes_sent(p->status_reg, true)
+            prval () = return_global(free, pf)
+            val () = enable_twi()
+          }
+      end
+    | TWI_STX_DATA_NACK => let
+      val (free, pf | p) = get_twi_state()
+      val () =
+        if get_all_bytes_sent(p->status_reg) then {
+          val () = set_last_trans_ok(p->status_reg, true)
+          prval () = return_global(free, pf)
+        } else {
+          val () = p->state := uchar_of_reg8(TWSR)
+          prval () = return_global(free, pf)
+        }
+     in
+      setbits(TWCR, TWEN)
+     end
+    | TWI_SRX_GEN_ACK => {
+        val (free, pf | p) = get_twi_state()
+        val () = set_gen_address_call(p->status_reg, true)
+        prval () = return_global(free, pf)
+      }
+    | TWI_SRX_ADR_ACK => {
+        val (free, pf | p) = get_twi_state()
+        val () = set_rx_data_in_buf(p->status_reg, true)
+        val () = p->next_byte := 0
+        prval () = return_global(free, pf)
+        val () = enable_twi()
+     }
+    | TWI_SRX_ADR_DATA_ACK => read_next_byte()
+    | TWI_SRX_GEN_DATA_ACK => read_next_byte()
+      //TWI_SRX_STOP_RESTART , for some reason using the macro causes an error
+    | 0xA0 => setbits(TWCR, TWEN)
+    | _ => enable_twi()
+  end
 end
 
-(* ****** ****** *)
+extern
+castfn _c(i:int) : uchar
+
+implement main (pf | (* *) ) = let
+  val address = 0x2
+  val () = twi_slave_init(pf | address, true)
+  val () = sei(pf | (* *) )
+  val () = twi_start()
+  fun loop () : void = let
+    var !buf with pfbuf =  @[uchar](_c(0), _c(0), _c(0), _c(0))
+    val (locked | ()) = cli()
+  in 
+    if twi_transceiver_busy() then let
+        val () = sei_and_sleep_cpu(locked | (* *) )
+      in loop() end
+    else let
+      val () = sei(locked | (* *))
+      val (free, pf | p) = get_twi_state()
+     in
+      if get_last_trans_ok(p->status_reg) then
+          if get_rx_data_in_buf(pf | p) then let
+              val _ = twi_get_data(!buf, p->buffer.recvd_size)
+              val () = twi_start_with_data(!buf, p->buffer.recvd_size)
+              prval () = return_global(free, pf)
+            in loop() end
+          else let
+            val () = twi_start()
+            prval () = return_global(free, pf)
+          in loop() end
+      else let
+        prval () = return_global(free, pf)
+        in loop() end
+     end
+  end
+// 
+in loop() end
