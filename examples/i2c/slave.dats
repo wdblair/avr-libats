@@ -22,8 +22,8 @@ static volatile twi_state_t twi_state;
 /*
  Will need to make a simple dispatcher
  since the device may be operating in 
- either master or slave mode, but there
- can only be one interrupt assigned to 
+ either master or slave mode and there
+ can only be one interrupt assigned to
  this vector.
 */
 declare_isr(TWI_vect);
