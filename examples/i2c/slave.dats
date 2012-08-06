@@ -282,10 +282,10 @@ local
     val () = p->state := uchar_of_int(TWI_NO_STATE)
     prval () = return_global(free, pf)
   }
-  
+
   extern  
-  fun copy_buffer {n:nat} {p:nat} {m:pos | m <= n; m <= p} (
-    dest: @[uchar][n], src: @[uchar][p], num: int m
+  fun copy_buffer {d,s:int} {sz:pos | sz <= s; sz <= d} (
+    dest: @[uchar][d], src: @[uchar][s], num: int sz
   ) : void = "mac#memcpy"
 in
 
