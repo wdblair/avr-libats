@@ -1,12 +1,12 @@
-#ifndef _AVR_LIBATS_INTERRUPT_HEADER
-#define _AVR_LIBATS_INTERRUPT_HEADER
+#ifndef _AVR_LIBATS_I2C_HEADER
+#define _AVR_LIBATS_I2C_HEADER
+
+#define BUFF_SIZE 4
 
 //Bit and byte definitions
 #define TWI_READ_BIT  0   // Bit position for R/W bit in "address byte".
 #define TWI_ADR_BITS  1   // Bit position for LSB of the slave address bits in the init byte.
 #define TWI_GEN_BIT   0   // Bit position for LSB of the general call bit in the init byte.
-
-(* ****** ****** *)
 
 //  TWI State codes
 
@@ -58,7 +58,7 @@
 #define status_reg_get_last_trans_ok(reg) reg.last_trans_ok
 
 #define status_reg_set_rx_data_in_buf(reg, char)  reg.rx_data_in_buf = char
-#define status_reg_get_rx_data_in_buf(ptr) ptr->status_reg.rx_data_in_buf
+#define status_reg_get_rx_data_in_buf(ptr) ((twi_state_t *)ptr)->status_reg.rx_data_in_buf
 
 #define status_reg_set_gen_address_call(reg, char)  reg.rx_data_in_buf = char
 #define status_reg_get_gen_address_call(reg) reg.rx_data_in_buf
@@ -67,8 +67,6 @@
 #define status_reg_get_all_bytes_sent(reg) reg.all_bytes_sent
 
 #define set_address(address, general_enabled) TWAR = (address << TWI_ADR_BITS) | (general_enabled << TWI_GEN_BIT)
-
-#define copy_buffer(dest, src, size) memcpy(*dest, *src, size)
 
 union status_reg_t
 {

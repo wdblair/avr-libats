@@ -4,6 +4,8 @@
   using the arch sort to clean stuff up.
 *)
 
+#define ATS_STALOADFLAG 0
+
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 

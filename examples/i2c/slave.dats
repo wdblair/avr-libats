@@ -11,9 +11,6 @@
 #include "HATS/i2c.hats"
 
 %{^
-#define BUFF_SIZE 4
-
-#define F_CPU 16000000
 
 #include <ats/basics.h>
 
@@ -39,6 +36,14 @@ staload "SATS/global.sats"
 staload "SATS/i2c.sats"
 
 (* ****** ****** *)
+
+(* Interrupts are off by default. *)
+extern
+fun main_interrupts_disabled 
+  (pf: INT_CLEAR | (* *) ) : void = "mainats"
+
+overload main with main_interrupts_disabled
+
   
 extern
 fun get_twi_state () : [s,r:nat; l:agz | s <= buff_size; r <= buff_size] (
@@ -226,6 +231,7 @@ implement TWI_vect (pf | (* *)) = let
     | TWI_SRX_ADR_DATA_ACK => read_next_byte()
     | TWI_SRX_GEN_DATA_ACK => read_next_byte()
       //TWI_SRX_STOP_RESTART , for some reason using the macro causes an error
+      //using its value works though...
     | 0xA0 => setbits(TWCR, TWEN)
     | _ => enable_twi()
   end
@@ -267,3 +273,9 @@ implement main (pf | (* *) ) = let
   end
 // 
 in loop() end
+
+%{
+int main () {
+  mainats();
+}
+%}

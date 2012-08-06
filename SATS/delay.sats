@@ -2,5 +2,6 @@
 #include <util/delay.h>
 %}
 
-(* Should Preserve their libary layout. Just keeping it simple for now. *)
+#define ATS_STALOADFLAG 0
+
 fun delay (t: double) : void = "mac#_delay_ms"

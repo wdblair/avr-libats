@@ -2,7 +2,10 @@
 
 %{#
 #include <avr/interrupt.h>
+#include "CATS/interrupt.cats"
 %}
+
+#define ATS_STALOADFLAG 0
 
 absview INT_CLEAR
 
@@ -49,9 +52,3 @@ fun TWI_vect_interrupts_disabled
   (pf: !INT_CLEAR | (* none *) ) : void = "TWI_vect"
   
 overload TWI_vect with TWI_vect_interrupts_disabled
-
-(* Interrupts are off by default. *)
-fun main_interrupts_disabled 
-  (pf: INT_CLEAR | (* *) ) : void = "mainats"
-
-overload main with main_interrupts_disabled

@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <alloca.h>
 
 //
 // HX-2011-02-17:
@@ -121,7 +122,13 @@ ATSinline()
 ats_int_type
 atspre_int_of_char (ats_char_type c) { return c ; }
 
+ATSinline()
+ats_uchar_type
+atspre_uchar_of_int (ats_int_type c) { return c ; }
+
 #define ATS_MALLOC(x) malloc(x)
+#define ATS_ALLOCA(sz) alloca(sz)
+#define ATS_ALLOCA2(n, sz) alloca((n)*(sz))
 
 ATSinline()
 ats_int_type

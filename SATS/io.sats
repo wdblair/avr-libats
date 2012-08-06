@@ -2,6 +2,8 @@
 #include "CATS/io.cats"
 %}
 
+#define ATS_STALOADFLAG 0
+
 abst@ype reg(n:int)
 
 praxi lemma_reg_int8 {n:nat} (r: reg(n) ) : [0 <= n; n < 256] void

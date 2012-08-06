@@ -4,6 +4,8 @@
 #include "CATS/sleep.cats"
 %}
 
+#define ATS_STALOADFLAG 0
+
 staload "SATS/interrupt.sats"
 
 fun sei_and_sleep_cpu 

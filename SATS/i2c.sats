@@ -2,6 +2,8 @@
 #include "CATS/i2c.cats"
 %}
 
+#define ATS_STALOADFLAG 0
+
 #include "HATS/i2c.hats"
 
 staload "SATS/interrupt.sats"
@@ -91,7 +93,7 @@ fun get_all (
 
 fun set_last_trans_ok (
   r: !status_reg_t, c: bool
-) : void = "mac#status_set_last_trans_ok"
+) : void = "mac#status_reg_set_last_trans_ok"
 
 fun get_last_trans_ok (
   r: !status_reg_t
@@ -99,7 +101,7 @@ fun get_last_trans_ok (
 
 fun set_rx_data_in_buf (
   r: !status_reg_t, c: bool
-) : void = "mac#status_set_rx_data_in_buf"
+) : void = "mac#status_reg_set_rx_data_in_buf"
 
 fun get_rx_data_in_buf {sz,s,r:nat}{l:agz}(
   pf: !twi_state_t(sz, s, r) @ l | p: ptr l
@@ -107,7 +109,7 @@ fun get_rx_data_in_buf {sz,s,r:nat}{l:agz}(
 
 fun set_gen_address_call (
   r: !status_reg_t, c: bool
-) : void = "mac#status_set_gen_address_call"
+) : void = "mac#status_reg_set_gen_address_call"
 
 fun get_gen_address_call (
   r: !status_reg_t
@@ -115,11 +117,11 @@ fun get_gen_address_call (
 
 fun set_all_bytes_sent (
   r: !status_reg_t, b: bool
-) : void = "mac#status_set_all_bytes_sent"
+) : void = "mac#status_reg_set_all_bytes_sent"
 
 fun get_all_bytes_sent (
   r: !status_reg_t
-) : bool = "mac#status_get_all_bytes_sent"
+) : bool = "mac#status_reg_get_all_bytes_sent"
 
 (* ****** ****** *)
 
