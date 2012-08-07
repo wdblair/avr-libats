@@ -12,6 +12,7 @@ static char wbuffer[25];
 typedef struct {
   uint8_t w;
   uint8_t r;
+  uint8_t n;
   uint8_t size;
   ats_ptr_type base;
 } cycbuf_t;
@@ -34,13 +35,12 @@ ats_ptr_type get_write_buffer() {
 
 %}
 
-staload "libc/SATS/stdio.sats"
-
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
 staload "SATS/global.sats"
 staload "SATS/usart.sats"
+staload "SATS/stdio.sats"
 
 viewtypedef cycbuf_array (a:t@ype, n:int, s: int, w: int, r: int)
   = $extype_struct "cycbuf_t" of {

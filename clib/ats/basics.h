@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <alloca.h>
+#include <stdio.h>
 
 //
 // HX-2011-02-17:
@@ -87,6 +88,7 @@
 // from ${ATSHOME}/ccomp/runtime/ats_types.h
 //
 typedef int ats_int_type ;
+typedef unsigned int ats_uint_type;
 typedef void ats_void_type ;
 typedef char ats_char_type ;
 typedef unsigned char ats_uchar_type ;
@@ -129,6 +131,12 @@ atspre_uchar_of_int (ats_int_type c) { return c ; }
 #define ATS_MALLOC(x) malloc(x)
 #define ATS_ALLOCA(sz) alloca(sz)
 #define ATS_ALLOCA2(n, sz) alloca((n)*(sz))
+
+ATSinline()
+ats_void_type
+ats_exit_errmsg (ats_int_type n) {
+  abort();
+}
 
 ATSinline()
 ats_int_type
@@ -308,6 +316,651 @@ atspre_add_size1_size1 (
 } // end of [atspre_add_size1_size1]
 
 /*
+  Fixed size numbers
+ */
+/* ****** ****** */
+
+/* signed and unsigned integers of fixed sizes */
+
+/* ****** ****** */
+
+
+
+typedef int8_t ats_int8_type ;
+typedef uint8_t ats_uint8_type;
+typedef int16_t ats_int16_type;
+typedef uint16_t ats_uint16_type;
+
+// signed integer of size 8bit
+
+ATSinline()
+ats_int8_type
+atspre_int8_of_int (ats_int_type i) {
+  return i ;
+}
+
+ATSinline()
+ats_int_type
+atspre_int_of_int8 (ats_int8_type i) {
+  return i ;
+}
+
+// ------ ------
+
+ATSinline()
+ats_int8_type
+atspre_abs_int8 (ats_int8_type i) {
+  return (i >= 0 ? i : -i) ;
+}
+
+ATSinline()
+ats_int8_type
+atspre_neg_int8 (ats_int8_type i) {
+  return (-i) ;
+}
+
+ATSinline()
+ats_int8_type
+atspre_succ_int8 (ats_int8_type i) {
+  return (i + 1) ;
+}
+
+ATSinline()
+ats_int8_type
+atspre_pred_int8 (ats_int8_type i) {
+  return (i - 1) ;
+}
+
+ATSinline()
+ats_int8_type
+atspre_add_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 + i2) ;
+}
+
+ATSinline()
+ats_int8_type
+atspre_sub_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 - i2) ;
+}
+
+ATSinline()
+ats_int8_type
+atspre_mul_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 * i2) ;
+}
+
+ATSinline()
+ats_int8_type
+atspre_div_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 / i2) ;
+}
+
+ATSinline()
+ats_int8_type
+atspre_mod_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 % i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_lt_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 < i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_lte_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 <= i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_gt_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 > i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_gte_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 >= i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_eq_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 == i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_neq_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 != i2) ;
+}
+
+// compare, max, min
+
+ATSinline()
+ats_int_type
+atspre_compare_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  if (i1 < i2) return (-1) ;
+  else if (i1 > i2) return ( 1) ;
+  else return (0) ;
+}
+
+ATSinline()
+ats_int8_type
+atspre_max_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 >= i2) ? i1 : i2 ;
+}
+
+ATSinline()
+ats_int8_type
+atspre_min_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
+  return (i1 <= i2) ? i1 : i2 ;
+}
+
+// print functions
+
+ATSinline()
+ats_void_type
+atspre_fprint_int8 (ats_ptr_type out, ats_int8_type i) {
+  int n = fprintf ((FILE*)out, "%hhd", i) ;
+  if (n < 0) {
+    ats_exit_errmsg (n);
+  }
+  return ;
+}
+
+ATSinline()
+ats_void_type
+atspre_print_int8 (ats_int8_type i) {
+//  atspre_stdout_view_get () ;
+  atspre_fprint_int8 ((ats_ptr_type)stdout, i) ;
+//  atspre_stdout_view_set () ;
+  return ;
+}
+
+ATSinline()
+ats_void_type
+atspre_prerr_int8 (ats_int8_type i) {
+  atspre_stderr_view_get () ;
+  atspre_fprint_int8 ((ats_ptr_type)stderr, i) ;
+  atspre_stderr_view_set () ;
+  return ;
+}
+
+/* ****** ****** */
+
+// unsigned integer of size 8bit
+
+ATSinline()
+ats_uint8_type
+atspre_uint8_of_uint (ats_uint_type i) {
+  return i ;
+}
+
+ATSinline()
+ats_uint_type
+atspre_uint_of_uint8 (ats_uint8_type i) {
+  return i ;
+}
+
+// ------ ------
+
+ATSinline()
+ats_uint8_type
+atspre_succ_uint8 (ats_uint8_type i) {
+  return (i + 1) ;
+}
+
+ATSinline()
+ats_uint8_type
+atspre_pred_uint8 (ats_uint8_type i) {
+  return (i - 1) ;
+}
+
+ATSinline()
+ats_uint8_type
+atspre_add_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 + i2) ;
+}
+
+ATSinline()
+ats_uint8_type
+atspre_sub_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 - i2) ;
+}
+
+ATSinline()
+ats_uint8_type
+atspre_mul_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 * i2) ;
+}
+
+ATSinline()
+ats_uint8_type
+atspre_div_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 / i2) ;
+}
+
+ATSinline()
+ats_uint8_type
+atspre_mod_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 % i2) ;
+}
+
+// ------ ------
+
+// comparison operations
+
+ATSinline()
+ats_bool_type
+atspre_lt_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 < i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_lte_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 <= i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_gt_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 > i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_gte_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 >= i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_eq_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 == i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_neq_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 != i2) ;
+}
+
+// compare, max, min
+
+ATSinline()
+ats_int_type
+atspre_compare_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  if (i1 < i2) return (-1) ;
+  else if (i1 > i2) return ( 1) ;
+  else return (0) ;
+}
+
+ATSinline()
+ats_uint8_type
+atspre_max_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 >= i2) ? i1 : i2 ;
+}
+
+ATSinline()
+ats_uint8_type
+atspre_min_uint8_uint8 (ats_uint8_type i1, ats_uint8_type i2) {
+  return (i1 <= i2) ? i1 : i2 ;
+}
+
+// print functions
+
+ATSinline()
+ats_void_type
+atspre_fprint_uint8 (ats_ptr_type out, ats_uint8_type i) {
+  int n = fprintf ((FILE*)out, "%hhu", i) ;
+  if (n < 0) {
+    ats_exit_errmsg (n);
+  }
+  return ;
+}
+
+ATSinline()
+ats_void_type
+atspre_print_uint8 (ats_uint8_type i) {
+//  atspre_stdout_view_get () ;
+  atspre_fprint_uint8 ((ats_ptr_type)stdout, i) ;
+//  atspre_stdout_view_set () ;
+  return ;
+}
+
+ATSinline()
+ats_void_type
+atspre_prerr_uint8 (ats_uint8_type i) {
+  atspre_stderr_view_get () ;
+  atspre_fprint_uint8 ((ats_ptr_type)stderr, i) ;
+  atspre_stderr_view_set () ;
+  return ;
+}
+
+/* ****** ****** */
+
+// signed integer of size 16bit
+
+ATSinline()
+ats_int16_type
+atspre_int16_of_int (ats_int_type i) {
+  return i ;
+}
+
+ATSinline()
+ats_int_type
+atspre_int_of_int16 (ats_int16_type i) {
+  return i ;
+}
+
+// ------ ------
+
+ATSinline()
+ats_int16_type
+atspre_abs_int16 (ats_int16_type i) {
+  return (i >= 0 ? i : -i) ;
+}
+
+ATSinline()
+ats_int16_type
+atspre_neg_int16 (ats_int16_type i) {
+  return (-i) ;
+}
+
+ATSinline()
+ats_int16_type
+atspre_succ_int16 (ats_int16_type i) {
+  return (i + 1) ;
+}
+
+ATSinline()
+ats_int16_type
+atspre_pred_int16 (ats_int16_type i) {
+  return (i - 1) ;
+}
+
+ATSinline()
+ats_int16_type
+atspre_add_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 + i2) ;
+}
+
+ATSinline()
+ats_int16_type
+atspre_sub_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 - i2) ;
+}
+
+ATSinline()
+ats_int16_type
+atspre_mul_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 * i2) ;
+}
+
+ATSinline()
+ats_int16_type
+atspre_div_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 / i2) ;
+}
+
+ATSinline()
+ats_int16_type
+atspre_mod_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 % i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_lt_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 < i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_lte_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 <= i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_gt_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 > i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_gte_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 >= i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_eq_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 == i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_neq_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 != i2) ;
+}
+
+// compare, max, min
+
+ATSinline()
+ats_int_type
+atspre_compare_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  if (i1 < i2) return (-1) ;
+  else if (i1 > i2) return ( 1) ;
+  else return (0) ;
+}
+
+ATSinline()
+ats_int16_type
+atspre_max_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 >= i2) ? i1 : i2 ;
+}
+
+ATSinline()
+ats_int16_type
+atspre_min_int16_int16 (ats_int16_type i1, ats_int16_type i2) {
+  return (i1 <= i2) ? i1 : i2 ;
+}
+
+// print functions
+
+ATSinline()
+ats_void_type
+atspre_fprint_int16 (ats_ptr_type out, ats_int16_type i) {
+  int n = fprintf ((FILE*)out, "%d", i) ;
+  if (n < 0) {
+    ats_exit_errmsg (n);
+  }
+  return ;
+}
+
+ATSinline()
+ats_void_type
+atspre_print_int16 (ats_int16_type i) {
+//  atspre_stdout_view_get () ;
+  atspre_fprint_int16 ((ats_ptr_type)stdout, i) ;
+//  atspre_stdout_view_set () ;
+  return ;
+}
+
+ATSinline()
+ats_void_type
+atspre_prerr_int16 (ats_int16_type i) {
+  atspre_stderr_view_get () ;
+  atspre_fprint_int16 ((ats_ptr_type)stderr, i) ;
+  atspre_stderr_view_set () ;
+  return ;
+}
+
+/* ****** ****** */
+
+//
+// unsigned integer of size 16bit
+//
+
+ATSinline()
+ats_uint16_type
+atspre_uint16_of_int (ats_int_type i) { return i ; }
+ATSinline()
+ats_int_type
+atspre_int_of_uint16 (ats_uint16_type i) { return i ; }
+
+ATSinline()
+ats_uint16_type
+atspre_uint16_of_uint (ats_uint_type i) { return i ; }
+ATSinline()
+ats_uint_type
+atspre_uint_of_uint16 (ats_uint16_type i) { return i ; }
+
+// ------ ------
+
+ATSinline()
+ats_uint16_type
+atspre_succ_uint16 (ats_uint16_type i) {
+  return (i + 1) ;
+}
+
+ATSinline()
+ats_uint16_type
+atspre_pred_uint16 (ats_uint16_type i) {
+  return (i - 1) ;
+}
+
+ATSinline()
+ats_uint16_type
+atspre_add_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 + i2) ;
+}
+
+ATSinline()
+ats_uint16_type
+atspre_sub_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 - i2) ;
+}
+
+ATSinline()
+ats_uint16_type
+atspre_mul_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 * i2) ;
+}
+
+ATSinline()
+ats_uint16_type
+atspre_div_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 / i2) ;
+}
+
+ATSinline()
+ats_uint16_type
+atspre_mod_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 % i2) ;
+}
+
+// ------ ------
+
+// comparison operations
+
+ATSinline()
+ats_bool_type
+atspre_lt_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 < i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_lte_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 <= i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_gt_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 > i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_gte_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 >= i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_eq_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 == i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_neq_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 != i2) ;
+}
+
+// compare, max, min
+
+ATSinline()
+ats_int_type
+atspre_compare_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  if (i1 < i2) return (-1) ;
+  else if (i1 > i2) return ( 1) ;
+  else return (0) ;
+}
+
+ATSinline()
+ats_uint16_type
+atspre_max_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 >= i2) ? i1 : i2 ;
+}
+
+ATSinline()
+ats_uint16_type
+atspre_min_uint16_uint16 (ats_uint16_type i1, ats_uint16_type i2) {
+  return (i1 <= i2) ? i1 : i2 ;
+}
+
+//
+// print functions
+//
+
+ATSinline()
+ats_void_type
+atspre_fprint_uint16 (ats_ptr_type out, ats_uint16_type i) {
+  int n = fprintf ((FILE*)out, "%hu", i) ;
+  if (n < 0) {
+    ats_exit_errmsg (n) ;
+  }
+  return ;
+}
+
+ATSinline()
+ats_void_type
+atspre_print_uint16 (ats_uint16_type i) {
+//  atspre_stdout_view_get () ;
+  atspre_fprint_uint16 ((ats_ptr_type)stdout, i) ;
+//  atspre_stdout_view_set () ;
+  return ;
+}
+
+ATSinline()
+ats_void_type
+atspre_prerr_uint16 (ats_uint16_type i) {
+  atspre_stderr_view_get () ;
+  atspre_fprint_uint16 ((ats_ptr_type)stderr, i) ;
+  atspre_stderr_view_set () ;
+  return ;
+}
+
+
+/*
   closures
  */
 
@@ -397,5 +1050,6 @@ atspre_tostrptr_int
 // end of [atspre_tostrptr_int]
 
 #define ats_closure_fun(f) ((ats_clo_ptr_type)f)->closure_fun
+
 
 #endif

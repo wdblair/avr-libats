@@ -1,12 +1,22 @@
 staload "SATS/io.sats"
 staload "SATS/usart.sats"
+staload "SATS/stdio.sats"
 
 %{^
-#include <stdio.h>
+#include "ats/basics.h"
 %}
+
+#define ATS_STALOADFLAG 0
+#define ATS_DYNLOADFLAG 0
 
 extern
 fun redirect_stdio () : void = "redirect_stdio"
+
+extern
+fun atmega328p_rx (f: FILEref) : int = "atmega328p_rx"
+
+extern
+fun atmega328p_tx (c: char, f: FILEref) : int = "atmega328p_tx"
 
 extern
 castfn int2eight(x:int) : [n:nat | n < 256] int n
@@ -43,14 +53,15 @@ implement atmega328p_init(baud) = {
   val () = redirect_stdio()
 }
 
-fun atmega328p_rx (f: FILEref) : int = c where {
+implement atmega328p_rx (f) = c where {
     val () = loop_until_bit_is_set(UCSR0A, RXC0)
     val c = reg2int(UDR0)
 }
 
-fun atmega328p_tx (c: char, f: FILEref) : void = {
+implement atmega328p_tx (c, f) = res where {
     val () = loop_until_bit_is_clear(UCSR0A, UDRE0)
     val () = setval(UDR0, char_to_8(c))
+    val res = 0
 }
 
 %{
@@ -60,7 +71,6 @@ static FILE mystdio =
                     _FDEV_SETUP_RW
                     );
 
-ATSinline()
 ats_void_type
 redirect_stdio () {
   stdout = &mystdio;

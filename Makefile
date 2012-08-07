@@ -1,1 +1,0 @@
-# Compile the ATS library for Arduino (Atmega328p)
