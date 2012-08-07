@@ -2,21 +2,16 @@
     An example of replacing stdio routines with an
     interrupt based solution for tx and rx.
 *)
-
 #define ATS_STALOADFLAG 0
 #define ATS_DYNLOADFLAG 0
 
 %{^
-#define F_CPU 16000000
-
-#include <ats/basics.h>
-
+#include "ats/basics.h"
 %}
-
-staload "libc/SATS/stdio.sats"
 
 staload "SATS/interrupt.sats"
 staload "SATS/usart.sats"
+staload "SATS/stdio.sats"
 
 (* ****** ****** *)
 
@@ -27,9 +22,9 @@ implement main (locked | (* *) ) = let
       val c = char_of_int(getchar())
       val () =
 	case+ c of 
-	| _ when c = 'x' => println! "Temperature Read!"
-	| _ when c = 'y' => println! "Accelerometer Read!"
-	| _ when c = 'f' => println! "Message Sent!"
+	| _ when c = 't' => println! "Temp"
+	| _ when c = 's' => println! "Speed"
+	| _ when c = 'd' => println! "Depth"
 	| _ => println! "Error"
       in
 	loop()

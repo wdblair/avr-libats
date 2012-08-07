@@ -6,3 +6,4 @@
 scripts/*.sats
 scripts/*.cats
 scripts/*.dats
+DATS/libats.a

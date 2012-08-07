@@ -91,6 +91,7 @@ typedef int ats_int_type ;
 typedef unsigned int ats_uint_type;
 typedef void ats_void_type ;
 typedef char ats_char_type ;
+typedef char ats_schar_type ;
 typedef unsigned char ats_uchar_type ;
 typedef int ats_bool_type ;
 typedef double ats_double_type ;
@@ -120,13 +121,32 @@ typedef void *ats_ref_type ;
 #define ATS_GC_INIT() (void)0
 #define mainats_prelude() (void)0
 
+/* ****** ****** */
+
 ATSinline()
 ats_int_type
 atspre_int_of_char (ats_char_type c) { return c ; }
 
 ATSinline()
+ats_char_type
+atspre_char_of_int (ats_int_type i) { return i ; }
+
+ATSinline()
+ats_schar_type
+atspre_schar_of_int (ats_int_type i) { return i ; }
+
+ATSinline()
 ats_uchar_type
 atspre_uchar_of_int (ats_int_type c) { return c ; }
+
+ATSinline()
+ats_bool_type
+atspre_eq_char_char
+(ats_char_type c1, ats_char_type c2) {
+  return (c1 == c2) ;
+} // end of [atspre_eq_char_char]
+
+/* ****** ****** */
 
 #define ATS_MALLOC(x) malloc(x)
 #define ATS_ALLOCA(sz) alloca(sz)
@@ -1004,6 +1024,10 @@ atspre_pgt (ats_ptr_type p1, ats_ptr_type p2) {
 #define atspre_ipow atspre_pow_int_int1
 #define atspre_npow atspre_pow_int_int1
 
+#define atspre_nmod atspre_mod_int_int
+#define atspre_nmod1 atspre_mod_int_int
+#define atspre_nmod2 atspre_mod_int_int
+
 ATSinline()
 ats_void_type
 atspre_assert_errmsg(ats_bool_type assertion, ats_ptr_type msg) {
@@ -1051,5 +1075,69 @@ atspre_tostrptr_int
 
 #define ats_closure_fun(f) ((ats_clo_ptr_type)f)->closure_fun
 
+/* Strings  */
+
+ATSinline()
+ats_void_type
+atspre_fprint_string
+(const ats_ptr_type out, const ats_ptr_type s) {
+  int n = fprintf ((FILE *)out, "%s", (char*)s);
+  if (n < 0) { 
+    ats_exit_errmsg(n);
+  } // end of [if]
+  return ;
+} /* end of [atspre_fprint_string] */
+
+
+ATSinline()
+ats_void_type
+atspre_print_string (const ats_ptr_type s) {
+  //  atspre_stdout_view_get() ;
+  atspre_fprint_string((ats_ptr_type)stdout, s) ;
+  //  atspre_stdout_view_set() ;
+  return ;
+} /* end of [atspre_print_string] */
+
+ATSinline()
+ats_void_type
+atspre_fprint_newline (
+  const ats_ptr_type out
+) {
+  fprintf((FILE*)out, "\n") ;
+  fflush((FILE*)out) ;
+  return ;
+} // end of [atspre_fprint_newline]
+
+ATSinline()
+ats_void_type
+atspre_fprint_char (
+  ats_ptr_type out, ats_char_type c
+) {
+  int n = fputc ((unsigned char)c, (FILE *)out) ;
+  if (n < 0) {
+    ats_exit_errmsg (n) ;
+  } // end of [if]
+  return ;
+} // end of [atspre_fprint_char]
+
+ATSinline()
+ats_void_type
+atspre_print_char
+  (ats_char_type c) {
+//  atspre_stdout_view_get () ;
+  atspre_fprint_char((ats_ptr_type)stdout, c) ;
+//  atspre_stdout_view_set () ;
+  return ;
+}
+
+
+ATSinline()
+ats_void_type
+atspre_print_newline () {
+  //atspre_stdout_view_get() ;
+  atspre_fprint_newline((ats_ptr_type)stdout) ;
+  //atspre_stdout_view_set() ;
+  return ;
+} // end of [atspre_print_newline]
 
 #endif

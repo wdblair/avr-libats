@@ -3,9 +3,8 @@
 #define ATS_DYNLOADFLAG 0
 
 %{^
-#define F_CPU 16000000
-
 #include<ats/basics.h>
+
 %}
 
 staload "SATS/io.sats"
