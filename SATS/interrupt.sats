@@ -7,8 +7,6 @@
 
 #define ATS_STALOADFLAG 0
 
-absview INT_CLEAR
-
 fun cli
   () : (INT_CLEAR | void ) = "mac#cli"
 

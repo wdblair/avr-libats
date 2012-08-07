@@ -3,6 +3,9 @@
   i2c slave device.
     
   Adapted from Atmel Application Note AVR311
+  
+  Compiles to a svelte 850 byte hex file after
+  staload is removed.
 *)
 
 #define ATS_STALOADFLAG 0
@@ -36,14 +39,6 @@ staload "SATS/global.sats"
 staload "SATS/i2c.sats"
 
 (* ****** ****** *)
-
-(* Interrupts are off by default. *)
-extern
-fun main_interrupts_disabled 
-  (pf: INT_CLEAR | (* *) ) : void = "mainats"
-
-overload main with main_interrupts_disabled
-
   
 extern
 fun get_twi_state () : [s,r:nat; l:agz | s <= buff_size; r <= buff_size] (
@@ -179,7 +174,7 @@ castfn uint8_of_uchar (c: uchar) : [n: nat | n < 256] int n
 extern
 castfn uchar_of_reg8 (r: reg(8)) : uchar
 
-// An interesting problem could be using the modeling
+// An interesting problem could be modeling
 // the states the TWI module may be in using props.
 implement TWI_vect (pf | (* *)) = let
     val twsr = int_of_reg8(TWSR)
@@ -273,9 +268,3 @@ implement main (pf | (* *) ) = let
   end
 // 
 in loop() end
-
-%{
-int main () {
-  mainats();
-}
-%}
