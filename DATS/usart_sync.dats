@@ -65,15 +65,14 @@ implement atmega328p_tx (c, f) = res where {
 }
 
 %{
-static FILE mystdio = 
-  FDEV_SETUP_STREAM(atmega328p_tx,
-                    atmega328p_rx, 
+static FILE mystdio =
+  FDEV_SETUP_STREAM((int(*)(char, FILE*))atmega328p_tx,
+                    (int(*)(FILE*))atmega328p_rx,
                     _FDEV_SETUP_RW
                     );
-
 ats_void_type
 redirect_stdio () {
   stdout = &mystdio;
   stdin = &mystdio;
- }
+}
 %}

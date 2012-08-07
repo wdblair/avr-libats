@@ -15,29 +15,29 @@ fun sei
 
 fun PCINT0_vect () : void = "PCINT0_vect"
 
-symintr USART_RXC_vect
+symintr USART_RX_vect
 
-fun USART_RXC_vect_interrupts_enabled 
-  () : void = "USART_RXC_vect"
+fun USART_RX_vect_interrupts_enabled 
+  () : void = "USART_RX_vect"
 
-overload USART_RXC_vect with USART_RXC_vect_interrupts_enabled 
+overload USART_RX_vect with USART_RX_vect_interrupts_enabled 
 
-fun USART_RXC_vect_interrupts_disabled 
-  (pf: !INT_CLEAR | (* none *)) : void = "USART_RXC_vect"
+fun USART_RX_vect_interrupts_disabled 
+  (pf: !INT_CLEAR | (* none *)) : void = "USART_RX_vect"
 
-overload USART_RXC_vect with USART_RXC_vect_interrupts_disabled 
+overload USART_RX_vect with USART_RX_vect_interrupts_disabled 
 
-symintr USART_TXC_vect
+symintr USART_TX_vect
 
-fun USART_TXC_vect_interrupts_enabled 
-  () : void = "USART_TXC_vect"
+fun USART_TX_vect_interrupts_enabled 
+  () : void = "USART_TX_vect"
 
-overload USART_TXC_vect with USART_TXC_vect_interrupts_enabled
+overload USART_TX_vect with USART_TX_vect_interrupts_enabled
 
-fun USART_TXC_vect_interrupts_disabled 
-  (pf: !INT_CLEAR | (* none *) ) : void = "USART_TXC_vect"
+fun USART_TX_vect_interrupts_disabled 
+  (pf: !INT_CLEAR | (* none *) ) : void = "USART_TX_vect"
 
-overload USART_TXC_vect with USART_TXC_vect_interrupts_disabled
+overload USART_TX_vect with USART_TX_vect_interrupts_disabled
 
 symintr TWI_vect
 

@@ -1,36 +1,42 @@
+#define ATS_STALOADFLAG 0
+#define ATS_DYNLOADFLAG 0
+
 %{^
 #include <ats/basics.h>
 
-declare_isr(USART_RXC_vect);
-declare_isr(USART_TXC_vect);
-
-typedef cycbuf_t char*
-
-static char rbuffer[25];
-static char wbuffer[25];
+declare_isr(USART_RX_vect);
+declare_isr(USART_TX_vect);
 
 typedef struct {
   uint8_t w;
   uint8_t r;
   uint8_t n;
   uint8_t size;
-  ats_ptr_type base;
+  char** base;
 } cycbuf_t;
 
-volatile char rbuffer[25];
-volatile char wbuffer[25];
+/*
+  Not sure if the extra volatiles are needed here since
+  the cycbuf_t is already volatile.
+*/
 
-volatile cycbuf_t read = {0, 0, 25,(char*) rbuffer};
-volatile cycbuf_t write = {0, 0, 25,(char*) wbuffer};
+static volatile char rbuffer[25];
+static volatile char wbuffer[25];
+
+static char * volatile rptr = rbuffer;
+static char * volatile wptr = wbuffer;
+
+volatile cycbuf_t read = {0, 0, 0, 25, &rptr};
+volatile cycbuf_t write = {0, 0, 0, 25, &wptr};
 
 ATSinline()
 ats_ptr_type get_read_buffer() {
-  return &read;
+  return (cycbuf_t * volatile)&read;
 }
 
 ATSinline()
 ats_ptr_type get_write_buffer() {
-  return &write;
+  return (cycbuf_t * volatile)&write;
 }
 
 %}
@@ -110,7 +116,7 @@ castfn uint8_of_char(c:char) : natLt(256)
 (* ****** ****** *)
 
 implement 
-USART_TXC_vect (locked | (* *) ) = let
+USART_TX_vect (locked | (* *) ) = let
   val (gpf, pf | p) = get_write_buffer()
  in 
   if cycbuf_is_empty<char>(pf | p) then {
@@ -124,7 +130,7 @@ USART_TXC_vect (locked | (* *) ) = let
  end
 
 implement
-USART_RXC_vect (locked | (* *)) = let
+USART_RX_vect (locked | (* *)) = let
   val contents = char_of_reg(UDR0)
   val (gpf, pf | p) = get_read_buffer()
   val full = cycbuf_is_full<char>(pf | p)
@@ -140,15 +146,15 @@ USART_RXC_vect (locked | (* *)) = let
 (* ****** ****** *)
 
 extern
-fun redirect_stdio () : void = "mac#redirect_stdio"
+fun redirect_stdio () : void = "redirect_stdio"
 
 extern
 fun atmega328p_async_tx 
-  (c:char, f:FILEref) : void = "atmega328p_async_tx"
+  (c:char, f:FILEref) : int = "atmega328p_async_tx"
 
 extern
 fun atmega328p_async_rx 
-  (f:FILEref) : char = "atmega328p_async_rx"
+  (f:FILEref) : int = "atmega328p_async_rx"
 
 (* ****** ****** *)
 
@@ -185,7 +191,7 @@ atmega328p_async_init (locked | baud ) = {
 }
   
 implement
-atmega328p_async_tx (c, f) = {
+atmega328p_async_tx (c, f) = 0 where {
    val (gpf, pf | p) = get_write_buffer()
    fun loop {l:agz} {n:nat} ( 
       g: global(l), pf: cycbuf(char, n) @ l | p: ptr l, c: char
@@ -231,7 +237,7 @@ atmega328p_async_rx (f) = let
       prval () = return_global(g, pf)
     in tmp end
   end
-in loop(gpf, pf | p) end
+in int_of_char( loop(gpf, pf | p) ) end
 
 implement
 atmega328p_async_flush () = let
@@ -241,7 +247,7 @@ atmega328p_async_flush () = let
   ) : void = let
     //make sure everything is out 
     //of the standard library first.
-    val _ = fflush_err(stdout_ref)
+    val _ = fflush(stdout_ref)
     val (locked | () ) = cli()
   in 
     if cycbuf_is_empty<char>(pf | p) then let
@@ -257,15 +263,15 @@ in loop(gpf, pf | p) end
 (* ****** ****** *)
 
 %{
-ATSinline()
+static FILE mystdio =
+  FDEV_SETUP_STREAM((int(*)(char,FILE*))atmega328p_async_tx,
+                    (int(*)(FILE*))atmega328p_async_rx,
+                    _FDEV_SETUP_RW
+                    );
+
 ats_void_type redirect_stdio() {
   stdin = &mystdio;
   stdout = &mystdio;
 }
 
-static FILE mystdio =
-  FDEV_SETUP_STREAM(atmega328p_async_tx,
-                    atmega328p_async_rx,
-                    _FDEV_SETUP_RW
-                    );
 %}
