@@ -1130,7 +1130,6 @@ atspre_print_char
   return ;
 }
 
-
 ATSinline()
 ats_void_type
 atspre_print_newline () {

@@ -8,10 +8,10 @@
 #define ATS_STALOADFLAG 0
 
 fun cli
-  () : (INT_CLEAR | void ) = "mac#cli"
+  (pf: INT_SET | (* none *) ) : (INT_CLEAR | void ) = "mac#cli"
 
 fun sei
-  (pf: INT_CLEAR | (* none *) ) : void = "mac#sei"
+  (pf: INT_CLEAR | (* none *) ) : (INT_SET | void ) = "mac#sei"
 
 fun PCINT0_vect () : void = "PCINT0_vect"
 

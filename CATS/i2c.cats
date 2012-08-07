@@ -49,8 +49,6 @@
 #define TWI_NO_STATE               0xF8  // No relevant state information available; 
 #define TWI_BUS_ERROR              0x00  // Bus error due to an illegal START or STOP condition
 
-#define get_twi_state() (twi_state_t * volatile)&twi_state
-
 #define status_reg_set_all(reg, char) reg.all = char
 #define status_reg_get_all(reg) reg.all
 
@@ -97,4 +95,5 @@ typedef struct {
   uint8_t next_byte;
 } twi_state_t;
 
+#define get_twi_state() (twi_state_t * volatile)&twi_state
 #endif

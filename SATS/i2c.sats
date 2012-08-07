@@ -7,6 +7,7 @@
 #include "HATS/i2c.hats"
 
 staload "SATS/interrupt.sats"
+staload "SATS/global.sats"
 
 //Bit and byte definitions
 #define TWI_READ_BIT  0   // Bit position for R/W bit in "address byte".
@@ -125,20 +126,30 @@ fun get_all_bytes_sent (
 
 (* ****** ****** *)
 
+fun get_twi_state () : [s,r:nat; l:agz | s <= buff_size; r <= buff_size] (
+  global(l), twi_state_t (buff_size, s, r) @ l | ptr l
+) = "mac#get_twi_state"
+
 fun twi_slave_init (
   pf: !INT_CLEAR | addr: twi_address, gen_addr: bool
 ) : void
 
 fun twi_transceiver_busy () : bool
 
-fun twi_get_state_info () : uchar
+fun twi_get_state_info (pf: !INT_SET | (* *) ) : uchar
+
+fun last_trans_ok() : bool
+
+fun rx_data_in_buf() : bool
+
+fun recvd_size() : int
 
 fun twi_start_with_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
-  msg: &(@[uchar][n]), sz: int p
+  pf: !INT_SET | msg: &(@[uchar][n]), sz: int p
 ) : void
 
 fun twi_get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
-  msg: &(@[uchar][n]), sz: int p
+  pf: !INT_SET | msg: &(@[uchar][n]), sz: int p
 ) : bool
 
-fun twi_start () : void
+fun twi_start (pf: !INT_SET | (* *)) : void

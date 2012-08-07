@@ -20,4 +20,4 @@ fun atmega328p_init (baud: uint16) : void
 
 fun atmega328p_async_init(pf: !INT_CLEAR | baud: uint16) : void
 
-fun atmega328p_async_flush () : void
+fun atmega328p_async_flush (pf: !INT_SET | (* *)) : void

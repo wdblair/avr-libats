@@ -7,27 +7,20 @@
 declare_isr(USART_RX_vect);
 declare_isr(USART_TX_vect);
 
+
+//Remove the size component, make it like
+//the i2c example where a static constant
+//enforces constraints.
 typedef struct {
   uint8_t w;
   uint8_t r;
   uint8_t n;
   uint8_t size;
-  char** base;
+  char base[25];
 } cycbuf_t;
 
-/*
-  Not sure if the extra volatiles are needed here since
-  the cycbuf_t is already volatile.
-*/
-
-static volatile char rbuffer[25];
-static volatile char wbuffer[25];
-
-static char * volatile rptr = rbuffer;
-static char * volatile wptr = wbuffer;
-
-volatile cycbuf_t read = {0, 0, 0, 25, &rptr};
-volatile cycbuf_t write = {0, 0, 0, 25, &wptr};
+volatile cycbuf_t read = {0, 0, 0, 25, {0}};
+volatile cycbuf_t write = {0, 0, 0, 25, {0}};
 
 ATSinline()
 ats_ptr_type get_read_buffer() {
@@ -124,7 +117,7 @@ USART_TX_vect (locked | (* *) ) = let
   } else {
    var tmp : char
    val () = cycbuf_remove<char>(locked, pf | p ,tmp)
-   val () = setval(UDR0,uint8_of_char(tmp))
+   val () = setval(UDR0, uint8_of_char(tmp))
    prval () = return_global(gpf, pf)
   }
  end
@@ -150,11 +143,11 @@ fun redirect_stdio () : void = "redirect_stdio"
 
 extern
 fun atmega328p_async_tx 
-  (c:char, f:FILEref) : int = "atmega328p_async_tx"
+  (pf: !INT_SET | c:char, f:FILEref) : int = "atmega328p_async_tx"
 
 extern
 fun atmega328p_async_rx 
-  (f:FILEref) : int = "atmega328p_async_rx"
+  (pf: !INT_SET | f:FILEref) : int = "atmega328p_async_rx"
 
 (* ****** ****** *)
 
@@ -189,76 +182,83 @@ atmega328p_async_init (locked | baud ) = {
   //Enable the standard library
   val () = redirect_stdio()
 }
-  
+
+ 
 implement
-atmega328p_async_tx (c, f) = 0 where {
+atmega328p_async_tx (pf0 | c, f) = 0 where {
    val (gpf, pf | p) = get_write_buffer()
    fun loop {l:agz} {n:nat} ( 
-      g: global(l), pf: cycbuf(char, n) @ l | p: ptr l, c: char
+      pf0: !INT_SET, g: global(l), pf: cycbuf(char, n) @ l | p: ptr l, c: char
    ) : void = let
-      val (locked | () ) = cli()
+      val (locked | () ) = cli(pf0 | (* *))
    in
       if cycbuf_is_full (pf | p) then let
-          val () = sei_and_sleep_cpu(locked | (* *))
-        in loop(g, pf | p, c) end
+          val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
+          prval () = pf0 := enabled
+        in loop(pf0, g, pf | p, c) end
       else let
           val () = cycbuf_insert<char>(locked, pf | p, c)
        in
         if bit_is_clear(UCSR0A, UDRE0) then {
           var tmp : char
 	  val () = cycbuf_remove<char>(locked, pf | p, tmp)
-          val set = sei(locked | (* *))
+          val (enabled | () ) = sei(locked | (* *))
 	  val () = setval(UDR0, uint8_of_char(tmp))
           prval () = return_global(g, pf)
+          prval () = pf0 := enabled
 	} else {
            prval () = return_global(g, pf)
-           val () = sei(locked | (* *))
+           val (enabled | ()) = sei(locked | (* *))
+           prval () = pf0 := enabled
         }
        end
    end
-   val () = loop(gpf, pf | p, c)
+   val () = loop(pf0, gpf, pf | p, c)
 }
 
 implement
-atmega328p_async_rx (f) = let
+atmega328p_async_rx (pf0 | f) = let
   val (gpf, pf | p) = get_read_buffer()
   fun loop {l:agz} {n:nat} (
-    g: global(l), pf: cycbuf(char,n) @ l | p: ptr l
+    pf0: !INT_SET, g: global(l), pf: cycbuf(char,n) @ l | p: ptr l
   ) : char = let
-    val (locked | () ) = cli()
+    val (locked | () ) = cli(pf0 | (* *))
   in 
     if cycbuf_is_empty<char>(pf | p) then let
-      val () = sei_and_sleep_cpu(locked | (* *) )
-     in loop(g, pf | p) end
+      val (enabled | () ) = sei_and_sleep_cpu(locked | (* *) )
+      prval () = pf0 := enabled
+     in loop(pf0, g, pf | p) end
     else let
       var tmp : char
       val () = cycbuf_remove<char>(locked, pf | p, tmp)
-      val () = sei(locked | (* *))
+      val (enabled | () ) = sei(locked | (* *))
       prval () = return_global(g, pf)
+      prval () = pf0 := enabled
     in tmp end
   end
-in int_of_char( loop(gpf, pf | p) ) end
+in int_of_char( loop(pf0, gpf, pf | p) ) end
 
 implement
-atmega328p_async_flush () = let
+atmega328p_async_flush (pf0 | (* *)) = let
   val (gpf, pf | p) = get_read_buffer()
   fun loop {l:agz} {n:nat} (
-    g: global(l), pf: cycbuf(char, n) @ l | p: ptr l
+    pf0: !INT_SET, g: global(l), pf: cycbuf(char, n) @ l | p: ptr l
   ) : void = let
-    //make sure everything is out 
-    //of the standard library first.
+    //empty stdout first
     val _ = fflush(stdout_ref)
-    val (locked | () ) = cli()
+    val (locked | () ) = cli(pf0 | (* *) )
   in 
     if cycbuf_is_empty<char>(pf | p) then let
-        val () = sei(locked | (* *))
+        val (enabled | () ) = sei(locked | (* *))
         prval () = return_global(g, pf)
+        prval () = pf0 := enabled
       in  end
     else let
-      val () = sei_and_sleep_cpu(locked | (* *) )
-     in loop(g, pf | p) end
+      val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
+      prval () = pf0 := enabled
+     in loop(pf0, g, pf | p) end
   end
-in loop(gpf, pf | p) end
+in loop(pf0, gpf, pf | p) end
 
 (* ****** ****** *)
 

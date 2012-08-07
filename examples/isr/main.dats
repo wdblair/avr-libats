@@ -15,10 +15,10 @@ staload "SATS/stdio.sats"
 
 (* ****** ****** *)
 
-implement main (locked | (* *) ) = let
+implement main (locked | (* *) ) = {
   val () = atmega328p_async_init(locked | uint16_of_int(9800))
-  val () = sei(locked | (* *) )
-  fun loop () : void = let
+  val (enabled | () ) = sei(locked | (* *) )
+  fun loop (pf: INT_SET | (* *)) : (INT_CLEAR | void) = let
       val c = char_of_int(getchar())
       val () =
 	case+ c of 
@@ -27,6 +27,8 @@ implement main (locked | (* *) ) = let
 	| _ when c = 'd' => println! "Depth"
 	| _ => println! "Error"
       in
-	loop()
+	loop(pf | (* *))
       end
-  in loop() end
+  val (pf0 | () ) = loop(enabled | (* *))
+  prval () = locked := pf0
+}
