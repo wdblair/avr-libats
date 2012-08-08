@@ -117,6 +117,20 @@ twi_get_state_info (enabled | (* *) ) = let
 in x end
 
 implement
+twi_last_trans_ok () = let
+  val (free, pf | p) = get_twi_state()
+  val x = get_last_trans_ok(p->status_reg)
+  prval () = return_global(free, pf)
+in x end
+
+implement
+twi_rx_data_in_buf () = let
+  val (free, pf | p) = get_twi_state()
+  val x = p->buffer.recvd_size
+  prval () = return_global(free, pf)
+in x end
+
+implement
 twi_start_with_data {n, p} (enabled | msg, size) = let
   val () = sleep_until_ready(enabled | (* *) )
   val (free, pf | p) = get_twi_state()

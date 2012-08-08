@@ -29,30 +29,29 @@ implement main (pf0 | (* *) ) = let
   val address = 0x2
   val () = twi_slave_init(pf0 | address, true)
   val (pf1 | () ) = sei(pf0 | (* *) )
-  val () = twi_start(pf1 | (* *))
+  val () = twi_start(pf1 | (* *) )
   fun loop (enabled: INT_SET | (* *) ) : (INT_CLEAR | void) = let
     var !buf with pfbuf =  @[uchar][4](_c(0))
-    val (locked | ()) = cli(enabled | (* *))
-  in 
-    if twi_transceiver_busy() then let
+    val (locked | ()) = cli (enabled | (* *))
+  in
+    if twi_transceiver_busy () then let
         val (enabled | () ) = sei_and_sleep_cpu(locked | (* *) )
       in loop(enabled | (* *)) end
     else let
       val (enabled | () ) = sei(locked | (* *))
-      val (free, pf | p) = get_twi_state()
      in
-      if get_last_trans_ok(p->status_reg) then
-          if get_rx_data_in_buf(pf | p) then let
-              val _ = twi_get_data(enabled | !buf, p->buffer.recvd_size)
-              val () = twi_start_with_data(enabled | !buf, p->buffer.recvd_size)
-              prval () = return_global(free, pf)
+      if twi_last_trans_ok() then let
+            val rx = twi_rx_data_in_buf()
+          in
+            if rx > 0 && rx < 4 then let
+                val _ = twi_get_data(enabled | !buf, rx)
+                val () = twi_start_with_data(enabled | !buf, rx)
+              in loop(enabled | (* *) ) end
+            else let
+              val () = twi_start(enabled | (* *))
             in loop(enabled | (* *) ) end
-          else let
-            val () = twi_start(enabled | (* *))
-            prval () = return_global(free, pf)
-          in loop(enabled | (* *) ) end
+          end
       else let
-        prval () = return_global(free, pf)
         in loop(enabled | (* *)) end
      end
   end

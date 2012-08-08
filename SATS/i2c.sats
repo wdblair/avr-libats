@@ -67,19 +67,19 @@ typedef twi_address = [n:int | n >= 0 | n < 128] int n
 
 absviewtype status_reg_t = $extype "status_reg_t"
 
-viewtypedef buffer_t (size: int, n: int, p: int)
+viewtypedef buffer_t
   = $extype_struct "buffer_t" of {
-  data= @[uchar][size],
-  msg_size= int n,
-  recvd_size= int p
+  data= @[uchar][buff_size],
+  msg_size= [n:nat | n < buff_size] int n,
+  recvd_size= [p:nat | p <= buff_size] int p
 }
 
-viewtypedef twi_state_t (size: int, n: int, p: int)
+viewtypedef twi_state_t
   = $extype_struct "twi_state_t" of {
-    buffer=  buffer_t(size, n, p),
+    buffer=  buffer_t,
     status_reg= status_reg_t,
     state=uchar,
-    next_byte= [m:nat | m < n] int m
+    next_byte= [m:nat | m < buff_size] int m
 }
 
 (* ****** ****** *)
@@ -104,9 +104,9 @@ fun set_rx_data_in_buf (
   r: !status_reg_t, c: bool
 ) : void = "mac#status_reg_set_rx_data_in_buf"
 
-fun get_rx_data_in_buf {sz,s,r:nat}{l:agz}(
-  pf: !twi_state_t(sz, s, r) @ l | p: ptr l
-) : bool (r > 0) = "mac#status_reg_get_rx_data_in_buf"
+fun get_rx_data_in_buf (
+  r: !status_reg_t
+) : bool = "mac#status_reg_get_rx_data_in_buf"
 
 fun set_gen_address_call (
   r: !status_reg_t, c: bool
@@ -126,8 +126,8 @@ fun get_all_bytes_sent (
 
 (* ****** ****** *)
 
-fun get_twi_state () : [s,r:nat; l:agz | s <= buff_size; r <= buff_size] (
-  global(l), twi_state_t (buff_size, s, r) @ l | ptr l
+fun get_twi_state () : [l:agz] (
+  global(l), twi_state_t @ l | ptr l
 ) = "mac#get_twi_state"
 
 fun twi_slave_init (
@@ -138,11 +138,9 @@ fun twi_transceiver_busy () : bool
 
 fun twi_get_state_info (pf: !INT_SET | (* *) ) : uchar
 
-fun last_trans_ok() : bool
+fun twi_last_trans_ok () : bool
 
-fun rx_data_in_buf() : bool
-
-fun recvd_size() : int
+fun twi_rx_data_in_buf () : [n:nat | n <= buff_size] int n
 
 fun twi_start_with_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
   pf: !INT_SET | msg: &(@[uchar][n]), sz: int p

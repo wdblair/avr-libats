@@ -56,7 +56,7 @@
 #define status_reg_get_last_trans_ok(reg) reg.last_trans_ok
 
 #define status_reg_set_rx_data_in_buf(reg, char)  reg.rx_data_in_buf = char
-#define status_reg_get_rx_data_in_buf(ptr) ((twi_state_t *)ptr)->status_reg.rx_data_in_buf
+#define status_reg_get_rx_data_in_buf(reg) reg.rx_data_in_buf
 
 #define status_reg_set_gen_address_call(reg, char)  reg.rx_data_in_buf = char
 #define status_reg_get_gen_address_call(reg) reg.rx_data_in_buf
