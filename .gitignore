@@ -3,6 +3,7 @@
 *_sats.c
 *.out
 *.hex
+*.a
 scripts/*.sats
 scripts/*.cats
 scripts/*.dats

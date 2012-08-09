@@ -68,8 +68,14 @@ $cmd = $ENV{'ATSHOME'}."/bin/atsopt";
 
 unshift(@atsopt_flags, $cmd);
 
+$avrdir = $ENV{'ATSHOME'}."/contrib/avr";
+
+#Give Priority to the AVR contrib folder
+push(@atsopt_flags,"-IATS");
+push(@atsopt_flags,$avrdir);
+
 if (!@files) {
-    die "No Files given.";
+    die "No Files given.\n";
 }
 
 #Run atsopt for each file
@@ -88,10 +94,10 @@ foreach $file (@files)  {
     push(@opts,$type);
     push(@opts, $file);
 
-    print $cmd." ".join(" ", @opts)."\n";
+    print join(" ", @opts)."\n";
     
     system( { $opts[0] } @opts ) == 0 or
-        die "Compilations failed for [$file]...";
+        die "Compilations failed for [$file]...\n";
 }
 
 if($typecheck) {
@@ -102,10 +108,19 @@ if($typecheck) {
 unshift(@cflags, "avr-gcc");
 
 foreach $file (@files) {
+    @opts = @cflags;
     $cfile = ats_to_c_name($file);
-    @extras = ("-D_ATS_PRELUDE_NONE","-D_ATS_HEADER_NONE","-lats");
-    push();
-}
+    @extras = ($cfile,
+               "-O2",
+               "-I",$avrdir,
+               "-I",$avrdir."/runtime",
+               "-L",$avrdir."/lib",
+               "-D_ATS_PRELUDE_NONE","-D_ATS_HEADER_NONE",
+               "-lats");
+    push(@opts, @extras);
+    
+    print join(" ", @opts)."\n";
 
-system($cmd @cflags) == 0 or
-    die "C Compilation Failed...";
+    system( { $opts[0] } @opts) == 0 or
+        die "C Compilation Failed...\n";
+}
