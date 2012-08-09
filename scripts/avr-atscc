@@ -1,0 +1,111 @@
+#!/usr/bin/perl -w
+
+@atsopt_flags = ();
+@cflags = ();
+
+@files = ();
+
+my $typecheck = 0;
+
+#Translate an ATS filename to the C file.
+sub ats_to_c_name {
+    local($file) = ($_[0]);
+    $file =~ s/\.(dats|sats)/_$1\.c/;
+    return $file;
+}
+
+#Collect files
+while( my $arg = shift @ARGV ) {
+    if ($arg =~ /.*\.dats/ ) {
+        push(@files, $arg);
+    }
+    elsif ($arg =~ /.*\.sats/) {
+        push(@atsopt_flags, "--static");
+        push(@atsopt_flags, $arg);
+    }
+    elsif ($arg eq "-IATS") {
+        $arg = shift @ARGV;
+        push(@atsopt_flags, "-IATS");
+        push(@atsopt_flags, $arg);
+    }
+    elsif ($arg eq "-I") {
+        $arg = shift @ARGV;
+        push(@cflags, "-I");
+        push(@cflags, $arg);
+    }
+    elsif ($arg eq "-L") {
+        $arg = shift @ARGV;
+        push(@cflags, "-L");
+        push(@cflags, $arg);
+    }
+    elsif ($arg eq "-tc") {
+        $typecheck = 1;
+        push(@atsopt_flags,"--typecheck");
+    }
+    elsif ($arg eq "-DATS") {
+        $arg = shift @ARGV;
+        push(@atsopt_flags, "-DATS");
+        push(@atsopt_flags, $arg);
+    }
+    elsif ($arg =~ /^-D.*/) {
+        push(@cflags, $arg);
+    }
+
+    elsif ($arg eq "-cc") {
+        push(@cflags, "-c");
+    }
+    elsif($arg =~ /^-mmcu=.*/) {
+        push(@cflags, $arg);
+    }
+    elsif($arg eq "-o") {
+        push(@cflags, "-o");
+        $arg = shift @ARGV;
+        push(@cflags,$arg);
+    }
+}
+
+$cmd = $ENV{'ATSHOME'}."/bin/atsopt";
+
+unshift(@atsopt_flags, $cmd);
+
+if (!@files) {
+    die "No Files given.";
+}
+
+#Run atsopt for each file
+foreach $file (@files)  {
+    @opts = @atsopt_flags;
+
+    #Need to specify output first.
+    if(!$typecheck) {
+        $output = ats_to_c_name($file);
+        push(@opts, "--output");
+        push(@opts, $output);
+    }
+
+    $type = ($file =~ /.*\.dats/) ? "--dynamic" : "--static";
+
+    push(@opts,$type);
+    push(@opts, $file);
+
+    print $cmd." ".join(" ", @opts)."\n";
+    
+    system( { $opts[0] } @opts ) == 0 or
+        die "Compilations failed for [$file]...";
+}
+
+if($typecheck) {
+    exit(0);
+}
+
+#Compile the C Files.
+unshift(@cflags, "avr-gcc");
+
+foreach $file (@files) {
+    $cfile = ats_to_c_name($file);
+    @extras = ("-D_ATS_PRELUDE_NONE","-D_ATS_HEADER_NONE","-lats");
+    push();
+}
+
+system($cmd @cflags) == 0 or
+    die "C Compilation Failed...";
