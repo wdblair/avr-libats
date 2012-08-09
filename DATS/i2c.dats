@@ -81,7 +81,7 @@ local
     dest: &(@[uchar][d]), src: &(@[uchar][s]), num: int sz
   ) : void = {
     var i : [n:nat] int n;
-    val () = 
+    val () =
       for ( i := 0; i < num ; i := i + 1) {
         val () = dest.[i] := src.[i]
       }
@@ -103,9 +103,7 @@ local
     val () = set_last_trans_ok(p->status_reg, true)
     val () = enable_twi()
     prval () = return_global(free, pf)
-  }
-  
-  
+  }  
 in
 
 implement 
@@ -217,7 +215,7 @@ implement TWI_vect (pf | (* *)) = let
         val () = p->next_byte := 0
         prval () = return_global(free, pf)
         val () = enable_twi()
-     }
+      }
     | TWI_SRX_ADR_DATA_ACK => read_next_byte()
     | TWI_SRX_GEN_DATA_ACK => read_next_byte()
       //TWI_SRX_STOP_RESTART , for some reason using the macro causes an error

@@ -14,6 +14,8 @@ praxi lemma_reg_int8 {n:nat} (r: reg(n) ) : [0 <= n; n < 256] void
 // so atmega328p is fine.
 #include "SATS/iom328p.sats"
 
+macdef F_CPU = $extval(ulint, "F_CPU")
+
 fun bit_is_set {n:nat} (
   r: reg(n), b: natLt(8)
 ) : bool = "mac#bit_is_set"

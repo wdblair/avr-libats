@@ -19,6 +19,8 @@ typedef struct {
   char base[25];
 } cycbuf_t;
 
+char base[25];
+
 volatile cycbuf_t read = {0, 0, 0, 25, {0}};
 volatile cycbuf_t write = {0, 0, 0, 25, {0}};
 
@@ -48,7 +50,7 @@ viewtypedef cycbuf_array (a:t@ype, n:int, s: int, w: int, r: int)
       n = int n,
       size = int s,
       base = @[a][s]
-    }
+}
 
 viewtypedef cycbuf (a:t@ype, n:int) =
   [s,w,r:nat | n <= s; w < s; r < s] cycbuf_array(a,n,s,w,r)
@@ -76,6 +78,8 @@ fun {a:t@ype} cycbuf_insert {l:agz} {s:pos} {n:nat | n < s}
   in
     p->w := (p->w + 1) nmod1 p->size
   end
+
+//(ats_char_type*)(((((cycbuf_t*)(arg0)))->base[0]))[tmp12]
 
 fun {a:t@ype} cycbuf_remove {l:agz} {s,n:pos}
     {w,r:nat | n <= s; w < s; r < s} (
