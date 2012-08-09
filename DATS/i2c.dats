@@ -91,7 +91,6 @@ local
     prval() = return_global(free, pf)
   }
   
-  
   fun read_next_byte() : void = {
     val (free, pf | p) = get_twi_state()
     val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
