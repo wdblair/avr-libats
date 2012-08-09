@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <alloca.h>
 #include <stdio.h>
+#include <string.h>
 
 //
 // HX-2011-02-17:
@@ -1138,5 +1139,130 @@ atspre_print_newline () {
   //atspre_stdout_view_set() ;
   return ;
 } // end of [atspre_print_newline]
+
+
+typedef unsigned char byte ;
+
+//
+// HX-2010-05-24
+// In case 'memcpy' is already defined as a macro ...
+//
+#ifndef memcpy
+extern void *memcpy (void *dst, const void* src, size_t n) ;
+#endif // end of [memcpy]
+
+ATSinline()
+ats_void_type
+atspre_array_ptr_initialize_elt_tsz (
+  ats_ptr_type A
+, ats_size_type asz
+, ats_ptr_type ini
+, ats_size_type tsz
+)  {
+  int i, itsz ; int left ; ats_ptr_type p ;
+  if (asz == 0) return ;
+  memcpy (A, ini, tsz) ;
+  i = 1 ; itsz = tsz ; left = asz - i ;
+  while (left > 0) {
+    p = (ats_ptr_type)(((byte*)A) + itsz) ;
+    if (left <= i) { memcpy (p, A, left * tsz) ; return ; }
+    memcpy (p, A, itsz);
+    i = i + i ; itsz = itsz + itsz ; left = asz - i ;
+  } /* end of [while] */
+  return ;
+} /* end of [atspre_array_ptr_initialize_elt_tsz] */
+
+
+#define atspre_neg_bool1 atspre_neg_bool
+#define atspre_add_bool1_bool1 atspre_add_bool_bool
+#define atspre_mul_bool1_bool1 atspre_mul_bool_bool
+
+#define atspre_lt_bool1_bool1 atspre_lt_bool_bool
+#define atspre_lte_bool1_bool1 atspre_lte_bool_bool
+#define atspre_gt_bool1_bool1 atspre_gt_bool_bool
+#define atspre_gte_bool1_bool1 atspre_gte_bool_bool
+#define atspre_eq_bool1_bool1 atspre_eq_bool_bool
+#define atspre_neq_bool1_bool1 atspre_neq_bool_bool
+
+#define atspre_compare_bool1_bool1 atspre_compare_bool_bool
+
+
+ATSinline()
+ats_bool_type
+atspre_neg_bool
+  (ats_bool_type b) {
+  return (b ? ats_false_bool : ats_true_bool) ;
+} // end of [atspre_neg_bool]
+
+/* ****** ****** */
+
+#if(0)
+ATSinline()
+ats_bool_type
+atspre_add_bool_bool (
+  ats_bool_type b1, ats_bool_type b2
+) {
+  if (b1) { return ats_true_bool ; } else { return b2 ; }
+} // end of [atspre_add_bool_bool]
+
+ATSinline()
+ats_bool_type
+atspre_mul_bool_bool (
+  ats_bool_type b1, ats_bool_type b2
+) {
+  if (b1) { return b2 ; } else { return ats_false_bool ; }
+} // end of [atspre_mul_bool_bool]
+#endif
+#define atspre_add_bool_bool(b1, b2) ((b1) || (b2))
+#define atspre_mul_bool_bool(b1, b2) ((b1) && (b2))
+
+/* ****** ****** */
+
+ATSinline()
+ats_bool_type
+atspre_lt_bool_bool (
+  ats_bool_type b1, ats_bool_type b2
+) {
+  return (!b1 && b2) ;
+} // end of [atspre_lt_bool_bool]
+
+ATSinline()
+ats_bool_type
+atspre_lte_bool_bool (
+  ats_bool_type b1, ats_bool_type b2
+) {
+  return (!b1 || b2) ;
+} // end of [atspre_lte_bool_bool]
+
+ATSinline()
+ats_bool_type
+atspre_gt_bool_bool (
+  ats_bool_type b1, ats_bool_type b2
+) {
+  return (b1 && !b2) ;
+} // end of [atspre_gt_bool_bool]
+
+ATSinline()
+ats_bool_type
+atspre_gte_bool_bool (
+  ats_bool_type b1, ats_bool_type b2
+) {
+  return (b1 || !b2) ;
+} // end of [atspre_gte_bool_bool]
+
+ATSinline()
+ats_bool_type
+atspre_eq_bool_bool (
+  ats_bool_type b1, ats_bool_type b2
+) {
+  if (b1) { return b2 ; } else { return !b2 ; }
+} // end of [atspre_eq_bool_bool]
+
+ATSinline()
+ats_bool_type
+atspre_neq_bool_bool
+(ats_bool_type b1, ats_bool_type b2) {
+  if (b1) { return !b2 ; } else { return b2 ; }
+} // end of [atspre_neq_bool_bool]
 
 #endif
