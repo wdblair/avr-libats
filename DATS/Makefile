@@ -12,7 +12,7 @@ all: library
 
 library: $(objects)
 	ar rcs libats.a $^
-	cp libats.a ../lib/
+	mv libats.a ../lib/
 
 .phony: cleanall
 

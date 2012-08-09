@@ -1,12 +1,10 @@
+
 #define ATS_STALOADFLAG 0
 #define ATS_DYNLOADFLAG 0
 
 %{^
-#include <ats/basics.h>
-
 declare_isr(USART_RX_vect);
 declare_isr(USART_TX_vect);
-
 
 //Remove the size component, make it like
 //the i2c example where a static constant

@@ -2,10 +2,6 @@ staload "SATS/io.sats"
 staload "SATS/usart.sats"
 staload "SATS/stdio.sats"
 
-%{^
-#include "ats/basics.h"
-%}
-
 #define ATS_STALOADFLAG 0
 #define ATS_DYNLOADFLAG 0
 

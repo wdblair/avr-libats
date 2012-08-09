@@ -7,17 +7,14 @@
   routines for one interrupt vector.
 *)
 
-#define ATS_STALOADFLAG 0
-#define ATS_DYNLOADFLAG 0
-
 %{^
-#include "ats/basics.h"
-
-
 declare_isr(TWI_vect);
 
 volatile twi_state_t twi_state;
 %}
+
+#define ATS_STALOADFLAG 0
+#define ATS_DYNLOADFLAG 0
 
 (* ****** ****** *)
 

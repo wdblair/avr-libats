@@ -1,5 +1,11 @@
 #!/usr/bin/perl -w
 
+#
+# A script that wraps around atsopt and avr-gcc, mainly
+# to simplify writing AVR code in ATS.
+#
+# Author Will Blair - wdblair AT bu DOT edu
+
 @atsopt_flags = ();
 @cflags = ();
 
@@ -78,8 +84,10 @@ if (!@files) {
     die "No Files given.\n";
 }
 
+push(@atsopt_flags, @extras);
+
 #Run atsopt for each file
-foreach $file (@files)  {
+foreach $file (@files) {
     @opts = @atsopt_flags;
 
     #Need to specify output first.
@@ -116,7 +124,7 @@ foreach $file (@files) {
                "-I",$avrdir."/runtime",
                "-L",$avrdir."/lib",
                "-D_ATS_PRELUDE_NONE","-D_ATS_HEADER_NONE",
-               "-lats");
+               "-D_ATS_AVR","-lats");
     push(@opts, @extras);
     
     print join(" ", @opts)."\n";

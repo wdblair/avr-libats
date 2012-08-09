@@ -480,6 +480,8 @@ atspre_min_int8_int8 (ats_int8_type i1, ats_int8_type i2) {
   return (i1 <= i2) ? i1 : i2 ;
 }
 
+#define atspre_ineg atspre_neg_int
+
 // print functions
 
 ATSinline()

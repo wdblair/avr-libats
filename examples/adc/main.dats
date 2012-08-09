@@ -5,18 +5,13 @@
   then goes back to sleep.
 *)
 
-#define ATS_STALOADFLAG 0
-#define ATS_DYNLOADFLAG 0
-
 %{^
 #define F_CPU 16000000
-
-#include <ats/basics.h>
 #include <avr/wdt.h>
-#include <avr/sleep.h>
 %}
 
 staload "SATS/io.sats"
+staload "SATS/sleep.sats"
 staload USART = "SATS/usart.sats"
 
 val baudrate = uint16_of_int(19200)
@@ -47,15 +42,14 @@ fun sample {c:nat | c < 8}(channel: int c) : int = let
 (* First sample is trash, always do more than one. *)
 fun average_sample {n,c: nat | n > 1 ; c < 8}
   (n: int n, channel: int c) : uint16 = let
-  fun loop {i: nat} (i: int i, tot: int) : int =
-    if i = 0 then
-      tot / (n - 1)
-    else let
-      val curr = sample(channel)
-      val tot' = if i < n then tot+curr else 0
-    in loop(i-1, tot') end
-  in uint16_of_int( loop(n, 0) ) end  
-      
+  var tot : int = 0
+  var i : int
+  val () = for (i := n - 1; i > 1 ; i := i+1) {
+    val curr = sample(channel)
+    val () = tot := tot + curr
+  }
+  in uint16_of_int( tot / (n - 1) ) end
+
 implement main () = loop () where {
   val () = $USART.atmega328p_init(baudrate)
   val () = wdt_enable(WDTO_1S)

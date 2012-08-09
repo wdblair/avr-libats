@@ -13,12 +13,15 @@ settings = {
     assign: "&=",
     filter: "~"
   },
+  flipbits: {
+    assign: "^="
+  },
   clear_and_setbits: {
     assign: "=",
   }
 }
 
-functions = [:setbits, :maskbits, :clearbits, :clear_and_setbits]
+functions = [:setbits, :maskbits, :clearbits, :clear_and_setbits, :flipbits]
 
 make_bits_sats = lambda { |file|
 

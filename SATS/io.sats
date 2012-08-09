@@ -270,3 +270,61 @@ fun clear_and_setbits7 {n:nat} (
 
 
 overload clear_and_setbits with clear_and_setbits7
+
+symintr flipbits
+
+fun flipbits0 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_flipbits0"
+
+
+overload flipbits with flipbits0
+
+fun flipbits1 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_flipbits1"
+
+
+overload flipbits with flipbits1
+
+fun flipbits2 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_flipbits2"
+
+
+overload flipbits with flipbits2
+
+fun flipbits3 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8), b3: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_flipbits3"
+
+
+overload flipbits with flipbits3
+
+fun flipbits4 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8), b3: natLt(8), b4: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_flipbits4"
+
+
+overload flipbits with flipbits4
+
+fun flipbits5 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8), b3: natLt(8), b4: natLt(8), b5: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_flipbits5"
+
+
+overload flipbits with flipbits5
+
+fun flipbits6 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8), b3: natLt(8), b4: natLt(8), b5: natLt(8), b6: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_flipbits6"
+
+
+overload flipbits with flipbits6
+
+fun flipbits7 {n:nat} (
+    r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8), b3: natLt(8), b4: natLt(8), b5: natLt(8), b6: natLt(8), b7: natLt(8)
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_flipbits7"
+
+
+overload flipbits with flipbits7

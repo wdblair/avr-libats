@@ -5,15 +5,6 @@
   Adapted from Atmel Application Note AVR311.
 *)
 
-#define ATS_STALOADFLAG 0
-#define ATS_DYNLOADFLAG 0
-
-%{^
-#include "ats/basics.h"
-
-extern volatile twi_state_t twi_state;
-%}
-
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"

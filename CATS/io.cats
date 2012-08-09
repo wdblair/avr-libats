@@ -97,4 +97,27 @@
 
 #define avr_libats_clear_and_setbits7(reg, b0, b1, b2, b3, b4, b5, b6, b7) (reg = (_BV(b0) | _BV(b1) | _BV(b2) | _BV(b3) | _BV(b4) | _BV(b5) | _BV(b6) | _BV(b7)))
 
+#define avr_libats_flipbits0(reg, b0) (reg ^= (_BV(b0)))
+
+
+#define avr_libats_flipbits1(reg, b0, b1) (reg ^= (_BV(b0) | _BV(b1)))
+
+
+#define avr_libats_flipbits2(reg, b0, b1, b2) (reg ^= (_BV(b0) | _BV(b1) | _BV(b2)))
+
+
+#define avr_libats_flipbits3(reg, b0, b1, b2, b3) (reg ^= (_BV(b0) | _BV(b1) | _BV(b2) | _BV(b3)))
+
+
+#define avr_libats_flipbits4(reg, b0, b1, b2, b3, b4) (reg ^= (_BV(b0) | _BV(b1) | _BV(b2) | _BV(b3) | _BV(b4)))
+
+
+#define avr_libats_flipbits5(reg, b0, b1, b2, b3, b4, b5) (reg ^= (_BV(b0) | _BV(b1) | _BV(b2) | _BV(b3) | _BV(b4) | _BV(b5)))
+
+
+#define avr_libats_flipbits6(reg, b0, b1, b2, b3, b4, b5, b6) (reg ^= (_BV(b0) | _BV(b1) | _BV(b2) | _BV(b3) | _BV(b4) | _BV(b5) | _BV(b6)))
+
+
+#define avr_libats_flipbits7(reg, b0, b1, b2, b3, b4, b5, b6, b7) (reg ^= (_BV(b0) | _BV(b1) | _BV(b2) | _BV(b3) | _BV(b4) | _BV(b5) | _BV(b6) | _BV(b7)))
+
 #endif

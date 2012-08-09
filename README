@@ -10,7 +10,7 @@ Before installing the library, make sure you have avr-binutils, avr-gcc, and the
 library installed on your machine.
 
 To use the library, clone the repository into $ATSHOME/contrib. Next, add the scripts
-directory to your path, or copy avr-atscc to some location in your 
+directory to your path, or copy avr-atscc to some location in your
 
 To compile an ATS file to a hex file, run:
 
@@ -25,8 +25,7 @@ Next, create your .hex file in the standard way.
 
 avr-objcopy -j .text -O ihex program.out program.hex
 
-You can then flash this to your board. 
-
+You can then flash this to your board.
 
 You can read more about ATS at http://www.ats-lang.org, and try it out online at 
 http://xrats.illtyped.com/code/ats
