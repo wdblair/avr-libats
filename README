@@ -1,0 +1,32 @@
+ATS AVR
+
+This is a library that allows you to write firmware for AVR microcontrollers in ATS. 
+For programmer convenience, you can use functions found in DATS to accomplish basic
+tasks with AVR modules such as Serial/I2C communication, ADC sampling, etc. The 
+library assumes your chip is atmega328p, but it shouldn't be difficult to write firmware
+for other devices.
+
+Before installing the library, make sure you have avr-binutils, avr-gcc, and the avr-libc
+library installed on your machine.
+
+To use the library, clone the repository into $ATSHOME/contrib. Next, add the scripts
+directory to your path, or copy avr-atscc to some location in your 
+
+To compile an ATS file to a hex file, run:
+
+avr-atscc -mmcu=atmega328p -o file.out file.dats
+
+If you need to pass your CPU's clock frequency to gcc, you can either define it inside 
+your dats file, or pass the it as a command line option.
+
+avr-atscc -mmcu=atmega328p -o program.out program.dats -DF_CPU=16000000L
+
+Next, create your .hex file in the standard way.
+
+avr-objcopy -j .text -O ihex program.out program.hex
+
+You can then flash this to your board. 
+
+
+You can read more about ATS at http://www.ats-lang.org, and try it out online at 
+http://xrats.illtyped.com/code/ats
