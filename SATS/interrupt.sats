@@ -1,7 +1,6 @@
 (* Interrupt Service Routines *)
 
 %{#
-#include <avr/interrupt.h>
 #include "CATS/interrupt.cats"
 %}
 

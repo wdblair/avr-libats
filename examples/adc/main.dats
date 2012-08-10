@@ -5,8 +5,9 @@
   then goes back to sleep.
 *)
 
+staload "SATS/io.sats"
+
 %{^
-#define F_CPU 16000000
 #include <avr/wdt.h>
 %}
 
@@ -20,10 +21,7 @@ extern
 fun wdt_enable (mode: int) : void = "mac#wdt_enable"
 
 extern
-fun set_sleep_mode (mode : int) : void = "mac#wdt_enable"
-
-extern
-fun sleep_mode () : void = "mac#sleep_mode"
+fun set_sleep_mode (mode : int) : void = "mac#set_sleep_mode"
 
 val WDTO_1S = $extval(int, "WDTO_1S")
 val SLEEP_MODE_PWR_DOWN = $extval(int, "SLEEP_MODE_PWR_DOWN")
@@ -44,12 +42,14 @@ fun average_sample {n,c: nat | n > 1 ; c < 8}
   (n: int n, channel: int c) : uint16 = let
   var tot : int = 0
   var i : int
-  val () = for (i := n - 1; i > 1 ; i := i+1) {
+  val () = for (i := n ; i > 0 ; i := i+1) {
     val curr = sample(channel)
+    val () = if i = n then
+              continue
     val () = tot := tot + curr
   }
   in uint16_of_int( tot / (n - 1) ) end
-
+  
 implement main () = loop () where {
   val () = $USART.atmega328p_init(baudrate)
   val () = wdt_enable(WDTO_1S)

@@ -41,6 +41,9 @@
 #define ATSextfun() extern
 #define ATSinline() static inline
 
+#undef ATS_GC_MARKROOT
+#define ATS_GC_MARKROOT(ptr, sz) do { ; } while (0)
+
 /* ****** ****** */
 //
 // HX: boolean values

@@ -4,7 +4,7 @@ staload "SATS/delay.sats"
 fun init_pwm () : void = {
   val () = setbits(TCCR2A, WGM20, WGM21, COM2A1)
   val () = setbits(TCCR2B, CS20)
-  val () = setbits(DDRB, PINB3)
+  val () = setbits(DDRB, DDB3)
 }
 
 fun set_pwm_output(duty: natLt(256)) : void = {
