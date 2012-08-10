@@ -6,21 +6,18 @@
 declare_isr(USART_RX_vect);
 declare_isr(USART_TX_vect);
 
-//Remove the size component, make it like
-//the i2c example where a static constant
-//enforces constraints.
 typedef struct {
   uint8_t w;
   uint8_t r;
   uint8_t n;
   uint8_t size;
-  char base[25];
+  char base[];
 } cycbuf_t;
 
 char base[25];
 
-volatile cycbuf_t read = {0, 0, 0, 25, {0}};
-volatile cycbuf_t write = {0, 0, 0, 25, {0}};
+static volatile cycbuf_t read = {0, 0, 0, 25, {[0 ... 24] = 0}};
+static volatile cycbuf_t write = {0, 0, 0, 25, {[0 ... 24] = 0}};
 
 ATSinline()
 ats_ptr_type get_read_buffer() {
@@ -275,5 +272,4 @@ ats_void_type redirect_stdio() {
   stdin = &mystdio;
   stdout = &mystdio;
 }
-
 %}

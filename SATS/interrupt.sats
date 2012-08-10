@@ -12,6 +12,8 @@ fun cli
 fun sei
   (pf: INT_CLEAR | (* none *) ) : (INT_SET | void ) = "mac#sei"
 
+(* All these definitions should go inside io.sats instead (chip dependent). *)
+
 fun PCINT0_vect () : void = "PCINT0_vect"
 
 symintr USART_RX_vect

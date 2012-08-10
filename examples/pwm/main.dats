@@ -20,7 +20,7 @@ implement main () = loop(0,1) where {
   in 
     if (brightness = 255 && delta = 1) ||
        (brightness = 0 && delta = ~1) then
-      loop(brightness + ~delta,~delta)
+      loop(brightness + ~delta, ~delta)
     else
       loop(brightness+delta, delta)
   end

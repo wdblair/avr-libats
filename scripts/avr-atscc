@@ -84,8 +84,6 @@ if (!@files) {
     die "No Files given.\n";
 }
 
-push(@atsopt_flags, @extras);
-
 #Run atsopt for each file
 foreach $file (@files) {
     @opts = @atsopt_flags;
