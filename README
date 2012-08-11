@@ -23,7 +23,7 @@ avr-atscc -mmcu=atmega328p -o program.out program.dats -DF_CPU=16000000L
 
 Next, create your .hex file in the standard way.
 
-avr-objcopy -j .text -O ihex program.out program.hex
+avr-objcopy -O ihex program.out program.hex
 
 You can then flash this to your board.
 
