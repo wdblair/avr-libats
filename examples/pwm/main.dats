@@ -12,11 +12,12 @@ fun set_pwm_output(duty: natLt(256)) : void = {
 }
 
 (* Glow the LED on and off indefinitely. *)
-implement main () = loop(0,1) where {
+implement main () = let
+  val ()  = init_pwm()
   fun loop {d: int | d == 1 || d == ~1} 
     (brightness: natLt(256), delta: int d) : void = let
     val () = set_pwm_output(brightness)
-    val () = delay_ms(10.0)
+    val () = delay_ms(2.5)
   in 
     if (brightness = 255 && delta = 1) ||
        (brightness = 0 && delta = ~1) then
@@ -24,4 +25,5 @@ implement main () = loop(0,1) where {
     else
       loop(brightness+delta, delta)
   end
-}
+in loop(0,1) end
+
