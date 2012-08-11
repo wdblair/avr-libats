@@ -12,7 +12,7 @@ fun toggle_led () : void = {
 
 fun loop () : void = let
     val () = toggle_led()
-    val () = delay_ms(50.0)
+    val () = delay_ms(1000.0)
   in loop() end
    
 implement main () =

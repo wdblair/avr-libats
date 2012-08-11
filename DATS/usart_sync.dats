@@ -42,15 +42,15 @@ implement atmega328p_init(baud) = {
   val high = int2eight(vreg >> 8)
   val () = setval(UBRR0H, high)
   //Set mode to asynchronous, no parity bit, 8 bit frame, and 1 stop bit
-  val () = setbits(UCSR0C,UCSZ01,UCSZ00)
+  val () = setbits(UCSR0C, UCSZ01, UCSZ00)
   //Enable TX and RX
-  val () = setbits(UCSR0B,RXEN0,TXEN0)
+  val () = setbits(UCSR0B, RXEN0, TXEN0)
   //Enable the standard library
   val () = redirect_stdio()
 }
 
 implement atmega328p_rx (f) = c where {
-    val () = loop_until_bit_is_set(UCSR0A, RXC0)
+    val () = loop_until_bit_is_clear(UCSR0A, RXC0)
     val c = reg2int(UDR0)
 }
 

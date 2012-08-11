@@ -34,11 +34,11 @@ symintr setbits
 
 fun loop_until_bit_is_clear {n:nat} ( 
   r: !reg(n) >> reg(n'), b: natLt(8)
-) : #[n':nat; 0 <= n'; n' < 256] void = "mac#loop_until_bit_is_clear"
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_loop_until_bit_is_clear"
 
 fun loop_until_bit_is_set {n:nat} (
   r: !reg(n) >> reg(n'), b: natLt(8)
-) : #[n':nat; 0 <= n'; n' < 256] void = "mac#loop_until_bit_is_set"
+) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_loop_until_bit_is_set"
 
 fun setbits0 {n:nat} (
     r: !reg(n) >> reg(n'), b0: natLt(8)

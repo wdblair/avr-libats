@@ -7,5 +7,8 @@
 fun getchar 
   () : int = "mac#getchar"
 
+fun putchar
+  (c:char) : int = "mac#putchar"
+
 fun fflush 
   (f: FILEref) : int = "mac#fflush"

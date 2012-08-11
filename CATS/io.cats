@@ -3,6 +3,12 @@
 
 #include <avr/io.h>
 
+#define avr_libats_loop_until_bit_is_clear(reg, bit)    \
+  do { } while ( (reg & _BV(bit)) )
+
+#define avr_libats_loop_until_bit_is_set(reg, bit)      \
+  do { } while ( !(reg & _BV(bit)) )
+
 #define avr_libats_setval(reg, val) reg = val
 
 #define avr_libats_int_of_regs(high, low) low | (high << 8)

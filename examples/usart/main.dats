@@ -1,27 +1,24 @@
-//This should be automatic
-#define ATS_STALOADFLAG 0
-#define ATS_DYNLOADFLAG 0
-
 %{^
-#include<ats/basics.h>
-
+#include <ctype.h>
+#include <stdint.h>
 %}
 
 staload "SATS/io.sats"
 staload "SATS/delay.sats"
+staload "SATS/stdio.sats"
 
 (* we usually need to truncate a 16-bit int for an 8-bit register *)
 extern
-castfn _16_to_8(x:uint16) : [n:nat | n < 256] int n
+castfn _16_to_8 (x:uint16) : [n:nat | n < 256] int n
 
 extern
-castfn int2eight(x:int) : [n:nat | n < 256] int n
+castfn int2eight (x:int) : [n:nat | n < 256] int n
 
 extern
-castfn reg2char(x:reg(8)) : char
+castfn reg2char (x:reg(8)) : char
 
 extern
-castfn char_to_8(x:char) : [n:nat | n < 256] int n 
+castfn char_to_8 (x:char) : [n:nat | n < 256] int n
 
 fun usart_init
   (ubrr: uint16) : void = {
@@ -34,25 +31,50 @@ fun usart_init
     val () = setbits(UCSR0B, RXEN0, TXEN0)
   }
 
-fun usart_read_char () : char = c where {
+extern
+fun usart_read_char (f: FILEref) : int = "usart_read_char"
+
+extern 
+fun usart_send_char (c: char, f: FILEref) : int = "usart_send_char"
+
+implement usart_read_char (f) = int_of_char(c) where {
     val () = loop_until_bit_is_set(UCSR0A, RXC0)
     val c = reg2char(UDR0)
-  }
+}
   
-fun usart_send_char (c: char) : void = {
-    val () = loop_until_bit_is_clear(UCSR0A, UDRE0)
-    val () = setval(UDR0,char_to_8(c))
- }
+implement usart_send_char (c: char, f: FILEref) : int = 0 where {
+    val () = loop_until_bit_is_set(UCSR0A, UDRE0)
+    val () = setval(UDR0, char_to_8(c))
+}
 
 extern
-castfn uint16_of_int(i:int) : uint16
+castfn uint16_of_int (i:int) : uint16
+
+extern
+fun redirect_stdio () : void = "redirect_stdio"
+
+%{
+FILE mystdio =
+  FDEV_SETUP_STREAM((int(*)(char, FILE*))usart_send_char,
+                    (int(*)(FILE*))usart_read_char,
+                    _FDEV_SETUP_RW
+                    );
+ats_void_type
+redirect_stdio () {
+  stdout = &mystdio;
+  stdin = &mystdio;
+}
+%}
 
 (* Echo all characters received. *)
-implement main () = loop() where {
-  val () = usart_init(uint16_of_int(51))
+implement main () = let
+  val () = setbits(DDRB, DDB3)
+  val () = usart_init(uint16_of_int(104))
+  val () = redirect_stdio()
+  val () = println! "Hello World!"
   fun loop () : void = let
-    val () = delay(50.0)
-    val c = usart_read_char()
-    val () = usart_send_char(c)
+    val c = usart_read_char(stdout_ref)
+    val _ = usart_send_char(char_of_int(c), stdout_ref)
+    val () = flipbits(PORTB, PORTB3)
   in loop() end
-}
+in loop() end
