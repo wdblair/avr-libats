@@ -30,6 +30,11 @@ fun int_of_regs {n,p:nat} (
   high: reg(n), low: reg(p)
 ) : int = "mac#avr_libats_int_of_regs"
 
+(* Set an integer across two 8 bit registers *)
+fun set_regs_to_int {n,p:nat} (
+  high: reg(n), low: reg(p), value: uint16
+) : void = "mac#avr_libats_set_regs_to_int"
+
 symintr setbits
 
 fun loop_until_bit_is_clear {n:nat} ( 

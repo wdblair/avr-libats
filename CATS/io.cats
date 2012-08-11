@@ -2,6 +2,9 @@
 #define _AVR_LIBATS_IO_HEADER
 
 #include <avr/io.h>
+#include <ctype.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #define avr_libats_loop_until_bit_is_clear(reg, bit)    \
   do { } while ( (reg & _BV(bit)) )
@@ -12,6 +15,27 @@
 #define avr_libats_setval(reg, val) reg = val
 
 #define avr_libats_int_of_regs(high, low) low | (high << 8)
+
+#define avr_libats_set_regs_to_int(high, low, value)        \
+  do {                                                      \
+    high = (uint8_t)((value >> 8)&0xff) ;                   \
+    low = (uint8_t)(value & 0xff);                          \
+  } while(0)
+
+ATSinline()
+ats_uint16_type
+ubrr_of_baud (ats_uint16_type baud) {
+  uint16_t ubrr;
+  ldiv_t div;
+  div = ldiv((F_CPU >> 4), baud);
+  ubrr = (uint16_t)div.quot;
+  
+  if((uint32_t)(div.rem) < baud)
+    {
+      ubrr--;
+    }
+  return ubrr;
+}
 
 #define avr_libats_setbits0(reg, b0) (reg |= (_BV(b0)))
 
