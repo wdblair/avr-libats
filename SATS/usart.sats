@@ -6,15 +6,20 @@
 
 #define ATS_STALOADFLAG 0
 
+%{#
+#include "CATS/usart.cats"
+%}
+
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
-
 
 datasort arch = 
   | atmega328p
 
 (* baud rate, bits per second *)
 fun atmega328p_init (baud: uint16) : void
+
+fun ubrr_of_baud (baud: uint16) : uint16 = "mac#avr_libats_ubrr_of_baud"
 
 (* ****** ****** *)
 

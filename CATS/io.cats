@@ -22,20 +22,6 @@
     low = (uint8_t)(value & 0xff);                          \
   } while(0)
 
-ATSinline()
-ats_uint16_type
-ubrr_of_baud (ats_uint16_type baud) {
-  uint16_t ubrr;
-  ldiv_t div;
-  div = ldiv((F_CPU >> 4), baud);
-  ubrr = (uint16_t)div.quot;
-  
-  if((uint32_t)(div.rem) < baud)
-    {
-      ubrr--;
-    }
-  return ubrr;
-}
 
 #define avr_libats_setbits0(reg, b0) (reg |= (_BV(b0)))
 
