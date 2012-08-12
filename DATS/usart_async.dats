@@ -73,7 +73,8 @@ fun {a:t@ype} cycbuf_insert {l:agz} {s:pos} {n:nat | n < s}
   in
     p->w := (p->w + 1) nmod1 p->size
   end
-
+  
+//The dereference becomes this below, doesn't seem right...
 //(ats_char_type*)(((((cycbuf_t*)(arg0)))->base[0]))[tmp12]
 
 fun {a:t@ype} cycbuf_remove {l:agz} {s,n:pos}
@@ -95,7 +96,7 @@ fun {a:t@ype} cycbuf_is_empty {l:addr} {n:nat} (
 fun {a:t@ype} cycbuf_is_full {l:agz} {s:pos}
       {n,w,r:nat | n <= s; w < s; r < s} (
     pf: !cycbuf_array(a,n,s,w,r) @ l | p: ptr l
-) : bool(n >= s) = p->size = p->n
+) : bool(n >= s) = p->size <= p->n
 
 (* ****** ****** *)
 
@@ -128,6 +129,7 @@ USART_RX_vect (locked | (* *)) = let
   val full = cycbuf_is_full<char>(pf | p)
  in
    if full then {
+      val () = flipbits(PORTB, PORTB3)
       prval () = return_global(gpf, pf)
    } else {
       	val () = cycbuf_insert<char>(locked, pf | p, contents)
@@ -168,12 +170,8 @@ castfn int2eight(x:int) : [n:nat | n < 256] int n
 
 implement
 atmega328p_async_init (locked | baud ) = {
-  val vreg = uint8_of_uint16 (
-              (uint16_of_long(F_CPU) / (baud * int216(16))) - int216(1)
-             )
-  val () = setval(UBRR0L, vreg)
-  val high = int2eight(vreg >> 8)
-  val () = setval(UBRR0H, high)
+  val ubrr = ubrr_of_baud(baud)
+  val () = set_regs_to_int(UBRR0H, UBRR0L, ubrr_of_baud(baud))
   //Set mode to asynchronous, no parity bit, 8 bit frame, and 1 stop bit
   val () = setbits(UCSR0C, UCSZ01, UCSZ00)
   //Enable TX and RX and interrupts
