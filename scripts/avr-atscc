@@ -18,6 +18,9 @@ my $typecheck = 0;
 #Record the object file we're generating
 my $output_filename = "a.out";
 
+#Whether or not to make a hex file.
+my $hex = 0;
+
 #Translate an ATS filename to the C file.
 sub ats_to_c_name {
     local($file) = ($_[0]);
@@ -72,6 +75,9 @@ while( my $arg = shift @ARGV ) {
         $arg = shift @ARGV;
         push(@cflags, $arg);
         $output_filename = $arg;
+    }
+    elsif($arg eq "-h") {
+        $hex = 1;
     }
 }
 
@@ -139,8 +145,8 @@ foreach $file (@files) {
                 split(" ","-O ihex $output_filename $output_filename.hex")
         );
 
-    system ( { $objcopy[0] } @objcopy ) == 0 or
-        die "Couldn't create hex file...\n";
+    if($hex) {
+        system ( { $objcopy[0] } @objcopy ) == 0 or
+            die "Couldn't create hex file...\n";
+    }
 }
-
-
