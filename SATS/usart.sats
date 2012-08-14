@@ -25,4 +25,10 @@ fun ubrr_of_baud (baud: uint16) : uint16 = "mac#avr_libats_ubrr_of_baud"
 
 fun atmega328p_async_init(pf: !INT_CLEAR | baud: uint16) : void
 
+fun atmega328p_async_tx 
+  (pf: !INT_SET | c:char, f: FILEref) : int = "atmega328p_async_tx"
+
+fun atmega328p_async_rx 
+  (pf: !INT_SET | f:FILEref) : int = "atmega328p_async_rx"
+
 fun atmega328p_async_flush (pf: !INT_SET | (* *)) : void

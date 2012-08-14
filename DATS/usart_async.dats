@@ -14,8 +14,6 @@ typedef struct {
   char base[];
 } cycbuf_t;
 
-char base[25];
-
 static volatile cycbuf_t read = {0, 0, 0, 25, {[0 ... 24] = 0}};
 static volatile cycbuf_t write = {0, 0, 0, 25, {[0 ... 24] = 0}};
 
@@ -37,6 +35,7 @@ staload "SATS/sleep.sats"
 staload "SATS/global.sats"
 staload "SATS/usart.sats"
 staload "SATS/stdio.sats"
+staload "SATS/delay.sats"
 
 viewtypedef cycbuf_array (a:t@ype, n:int, s: int, w: int, r: int)
   = $extype_struct "cycbuf_t" of {
@@ -74,9 +73,6 @@ fun {a:t@ype} cycbuf_insert {l:agz} {s:pos} {n:nat | n < s}
     p->w := (p->w + 1) nmod1 p->size
   end
   
-//The dereference becomes this below, doesn't seem right...
-//(ats_char_type*)(((((cycbuf_t*)(arg0)))->base[0]))[tmp12]
-
 fun {a:t@ype} cycbuf_remove {l:agz} {s,n:pos}
     {w,r:nat | n <= s; w < s; r < s} (
     lpf: !INT_CLEAR,
@@ -96,7 +92,7 @@ fun {a:t@ype} cycbuf_is_empty {l:addr} {n:nat} (
 fun {a:t@ype} cycbuf_is_full {l:agz} {s:pos}
       {n,w,r:nat | n <= s; w < s; r < s} (
     pf: !cycbuf_array(a,n,s,w,r) @ l | p: ptr l
-) : bool(n >= s) = p->size <= p->n
+) : bool(n == s) = p->size = p->n
 
 (* ****** ****** *)
 
@@ -116,39 +112,36 @@ USART_TX_vect (locked | (* *) ) = let
      prval () = return_global(gpf, pf)
   } else {
    var tmp : char
-   val () = cycbuf_remove<char>(locked, pf | p ,tmp)
+   val () = cycbuf_remove<char>(locked, pf | p , tmp)
    val () = setval(UDR0, uint8_of_char(tmp))
    prval () = return_global(gpf, pf)
   }
  end
 
+//extern
+//castfn _8(c:char): [n:nat | n < 256] int n
+
+extern
+castfn _8(i:int) : [n:nat | n < 256] int n
+
 implement
 USART_RX_vect (locked | (* *)) = let
-  val contents = char_of_reg(UDR0)
   val (gpf, pf | p) = get_read_buffer()
   val full = cycbuf_is_full<char>(pf | p)
+  var contents : char = char_of_reg(UDR0)
  in
    if full then {
-      val () = flipbits(PORTB, PORTB3)
       prval () = return_global(gpf, pf)
    } else {
       	val () = cycbuf_insert<char>(locked, pf | p, contents)
 	prval () = return_global(gpf, pf)
    }
  end
-
+ 
 (* ****** ****** *)
 
 extern
 fun redirect_stdio () : void = "redirect_stdio"
-
-extern
-fun atmega328p_async_tx 
-  (pf: !INT_SET | c:char, f:FILEref) : int = "atmega328p_async_tx"
-
-extern
-fun atmega328p_async_rx 
-  (pf: !INT_SET | f:FILEref) : int = "atmega328p_async_rx"
 
 (* ****** ****** *)
 
@@ -169,13 +162,13 @@ extern
 castfn int2eight(x:int) : [n:nat | n < 256] int n
 
 implement
-atmega328p_async_init (locked | baud ) = {
+atmega328p_async_init (locked | baud) = {
   val ubrr = ubrr_of_baud(baud)
   val () = set_regs_to_int(UBRR0H, UBRR0L, ubrr_of_baud(baud))
   //Set mode to asynchronous, no parity bit, 8 bit frame, and 1 stop bit
   val () = setbits(UCSR0C, UCSZ01, UCSZ00)
   //Enable TX and RX and interrupts
-  val () = setbits(UCSR0B, RXEN0, TXEN0, RXCIE0, TXCIE0)
+  val () = setbits(UCSR0B, RXEN0, TXEN0, RXCIE0)
   //Enable the standard library
   val () = redirect_stdio()
 }
@@ -222,6 +215,7 @@ atmega328p_async_rx (pf0 | f) = let
     val (locked | () ) = cli(pf0 | (* *))
   in 
     if cycbuf_is_empty<char>(pf | p) then let
+      val () = setval(UDR0, _8(p->n + 0x30))
       val (enabled | () ) = sei_and_sleep_cpu(locked | (* *) )
       prval () = pf0 := enabled
      in loop(pf0, g, pf | p) end
