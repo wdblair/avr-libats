@@ -20,21 +20,12 @@ castfn int2eight(x:int) : [n:nat | n < 256] int n
 val F_CPU = $extval(lint, "F_CPU")
 
 extern
-castfn uint16_of_long (x: lint) : uint16
-
-extern
-castfn uint8_of_uint16 (x: uint16) : [n: nat | n < 256] int n
-
-extern
 castfn reg2int(x:reg(8)) : int
 
 extern
 castfn char_to_8(x:char) : [n:nat | n < 256] int n 
 
-extern
-castfn int216 (x:int) : uint16
-
-implement atmega328p_init(baud)= {
+implement atmega328p_init (baud) = {
   val ubrr = ubrr_of_baud(baud)
   val () = set_regs_to_int(UBRR0H, UBRR0L, ubrr)
   //Set mode to asynchronous, no parity bit, 8 bit frame, and 1 stop bit

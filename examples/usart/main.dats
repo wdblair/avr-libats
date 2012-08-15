@@ -2,6 +2,10 @@ staload "SATS/io.sats"
 staload "SATS/delay.sats"
 staload "SATS/stdio.sats"
 
+%{^
+#include "CATS/usart.cats"
+%}
+
 extern
 castfn reg2char (x:reg(8)) : char
 
@@ -21,7 +25,7 @@ extern
 castfn char_to_8(x:char) : [n:nat | n < 256] int n 
 
 extern
-fun ubrr_of_baud(baud: uint16) : uint16 = "mac#ubrr_of_baud"
+fun ubrr_of_baud(baud: uint16) : uint16 = "mac#avr_libats_ubrr_of_baud"
 
 extern
 castfn _u16(n:int) : uint16
@@ -58,8 +62,8 @@ castfn uint16_of_int (i:int) : uint16
 implement main () = let
   val () = usart_init((_u16)9600)
   fun loop () : void = let
-    val _ = println! "Howdy"
-    val () = delay_ms(250.0)
+    val c = char_of_int(getchar())
+    val _ = putchar(c)
   in loop() end
 in loop() end
 

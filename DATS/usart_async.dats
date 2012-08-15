@@ -7,11 +7,11 @@ declare_isr(USART_RX_vect);
 declare_isr(USART_TX_vect);
 
 typedef struct {
-  uint8_t w;
-  uint8_t r;
-  uint8_t n;
-  uint8_t size;
-  char base[];
+  volatile uint8_t w;
+  volatile uint8_t r;
+  volatile uint8_t n;
+  volatile uint8_t size;
+  volatile char base[];
 } cycbuf_t;
 
 static volatile cycbuf_t read = {0, 0, 0, 25, {[0 ... 24] = 0}};
@@ -107,20 +107,18 @@ castfn uint8_of_char(c:char) : natLt(256)
 implement 
 USART_TX_vect (locked | (* *) ) = let
   val (gpf, pf | p) = get_write_buffer()
- in 
+ in
   if cycbuf_is_empty<char>(pf | p) then {
-     prval () = return_global(gpf, pf)
+    prval () = return_global(gpf, pf)
   } else {
-   var tmp : char
-   val () = cycbuf_remove<char>(locked, pf | p , tmp)
-   val () = setval(UDR0, uint8_of_char(tmp))
-   prval () = return_global(gpf, pf)
+    var tmp : char
+    val () = cycbuf_remove<char>(locked, pf | p , tmp)
+    val () = setval(UDR0, uint8_of_char(tmp))
+    prval () = return_global(gpf, pf)
   }
- end
-
-//extern
-//castfn _8(c:char): [n:nat | n < 256] int n
-
+end
+ 
+ 
 extern
 castfn _8(i:int) : [n:nat | n < 256] int n
 
@@ -168,7 +166,7 @@ atmega328p_async_init (locked | baud) = {
   //Set mode to asynchronous, no parity bit, 8 bit frame, and 1 stop bit
   val () = setbits(UCSR0C, UCSZ01, UCSZ00)
   //Enable TX and RX and interrupts
-  val () = setbits(UCSR0B, RXEN0, TXEN0, RXCIE0)
+  val () = setbits(UCSR0B, RXEN0, TXEN0, RXCIE0, TXCIE0)
   //Enable the standard library
   val () = redirect_stdio()
 }
@@ -177,9 +175,13 @@ atmega328p_async_init (locked | baud) = {
 implement
 atmega328p_async_tx (pf0 | c, f) = 0 where {
    val (gpf, pf | p) = get_write_buffer()
-   fun loop {l:agz} {n:nat} ( 
+   fun loop {l:agz} {n:nat} (
       pf0: !INT_SET, g: global(l), pf: cycbuf(char, n) @ l | p: ptr l, c: char
    ) : void = let
+      val () = 
+        if c = '\n' then {
+            val _ = atmega328p_async_tx(pf0 | '\r', stdout_ref)
+        }
       val (locked | () ) = cli(pf0 | (* *))
    in
       if cycbuf_is_full (pf | p) then let
@@ -189,7 +191,7 @@ atmega328p_async_tx (pf0 | c, f) = 0 where {
       else let
           val () = cycbuf_insert<char>(locked, pf | p, c)
        in
-        if bit_is_clear(UCSR0A, UDRE0) then {
+        if bit_is_set(UCSR0A, UDRE0) then {
           var tmp : char
 	  val () = cycbuf_remove<char>(locked, pf | p, tmp)
           val (enabled | () ) = sei(locked | (* *))
@@ -210,12 +212,11 @@ implement
 atmega328p_async_rx (pf0 | f) = let
   val (gpf, pf | p) = get_read_buffer()
   fun loop {l:agz} {n:nat} (
-    pf0: !INT_SET, g: global(l), pf: cycbuf(char,n) @ l | p: ptr l
+    pf0: !INT_SET, g: global(l), pf: cycbuf(char, n) @ l | p: ptr l
   ) : char = let
     val (locked | () ) = cli(pf0 | (* *))
   in 
     if cycbuf_is_empty<char>(pf | p) then let
-      val () = setval(UDR0, _8(p->n + 0x30))
       val (enabled | () ) = sei_and_sleep_cpu(locked | (* *) )
       prval () = pf0 := enabled
      in loop(pf0, g, pf | p) end

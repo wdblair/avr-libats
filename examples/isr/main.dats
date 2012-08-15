@@ -1,6 +1,5 @@
 (*
-    An example of replacing stdio routines with an
-    interrupt based solution for tx and rx.
+    An example of using the asynchronous UART routines.
 *)
 
 staload "SATS/io.sats"
@@ -11,18 +10,17 @@ staload "SATS/delay.sats"
 
 (* ****** ****** *)
 
-extern
-castfn _8(c:char) : [n:nat | n < 256] int n
-
 implement main (locked | (* *) ) = {
   val () = atmega328p_async_init(locked | uint16_of_int(9600))
   val (enabled | () ) = sei(locked | (* *) )
-  val () = setbits(DDRB, DDB3)
   fun loop (pf: INT_SET | (* *)) : (INT_CLEAR | void) = let
       val c = char_of_int(getchar())
-      val () = flipbits(PORTB, PORTB3)
-//      val () = loop_until_bit_is_set(UCSR0A, UDRE0)
-//      val () = setval(UDR0, _8(c))
+      val () = 
+        case+ c of 
+          | 't' => println! "Temperature"
+          | 's' => println! "Speed"
+          | 'd' => println! "Depth"
+          | _ => println! "Error"
       in
 	loop(pf | (* *))
       end
