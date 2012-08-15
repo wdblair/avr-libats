@@ -20,6 +20,8 @@ implement main (locked | (* *) ) = {
           | 't' => println! "Temperature"
           | 's' => println! "Speed"
           | 'd' => println! "Depth"
+          | 'i' => println! 
+            "hipsteripsumantebellumtightjeans8bitfrapacinooldcamera"
           | _ => println! "Error"
       in
 	loop(pf | (* *))
