@@ -52,48 +52,50 @@
 #define status_reg_set_all(reg, char) reg.all = char
 #define status_reg_get_all(reg) reg.all
 
-#define status_reg_set_last_trans_ok(reg, char)  reg.last_trans_ok = char
-#define status_reg_get_last_trans_ok(reg) reg.last_trans_ok
+#define status_reg_set_last_trans_ok(reg, char)  reg.bits.last_trans_ok = char
+#define status_reg_get_last_trans_ok(reg) reg.bits.last_trans_ok
 
-#define status_reg_set_rx_data_in_buf(reg, char)  reg.rx_data_in_buf = char
-#define status_reg_get_rx_data_in_buf(reg) reg.rx_data_in_buf
+#define status_reg_set_rx_data_in_buf(reg, char)  reg.bits.rx_data_in_buf = char
+#define status_reg_get_rx_data_in_buf(reg) reg.bits.rx_data_in_buf
 
-#define status_reg_set_gen_address_call(reg, char)  reg.rx_data_in_buf = char
-#define status_reg_get_gen_address_call(reg) reg.rx_data_in_buf
+#define status_reg_set_gen_address_call(reg, char)  reg.bits.rx_data_in_buf = char
+#define status_reg_get_gen_address_call(reg) reg.bits.rx_data_in_buf
 
-#define status_reg_set_all_bytes_sent(reg, bool)  reg.all_bytes_sent = bool
-#define status_reg_get_all_bytes_sent(reg) reg.all_bytes_sent
+#define status_reg_set_all_bytes_sent(reg, bool)  reg.bits.all_bytes_sent = bool
+#define status_reg_get_all_bytes_sent(reg) reg.bits.all_bytes_sent
 
 #define set_address(address, general_enabled) TWAR = (address << TWI_ADR_BITS) | (general_enabled << TWI_GEN_BIT)
 
 union status_reg_t
 {
-  unsigned char all;
-  struct
+  volatile unsigned char all;
+  volatile struct
   {
-    unsigned char last_trans_ok:1;
-    unsigned char rx_data_in_buf:1;
-    unsigned char gen_address_call:1;
-    unsigned char all_bytes_sent:1;
-    unsigned char unused_bits:4;
-  };
+    volatile unsigned char last_trans_ok:1;
+    volatile unsigned char rx_data_in_buf:1;
+    volatile unsigned char gen_address_call:1;
+    volatile unsigned char all_bytes_sent:1;
+    volatile unsigned char unused_bits:4;
+  } bits;
 };
 
 // ATS doesn't have a union type
 typedef union status_reg_t status_reg_t;
 
 typedef struct {
-  unsigned char data[BUFF_SIZE];
-  uint8_t msg_size;
-  uint8_t recvd_size;
+  volatile unsigned char data[BUFF_SIZE];
+  volatile uint8_t msg_size;
+  volatile uint8_t recvd_size;
 } buffer_t;
 
 typedef struct {
-  buffer_t buffer;
-  status_reg_t status_reg;
-  unsigned char state;
-  uint8_t next_byte;
+  volatile buffer_t buffer;
+  volatile status_reg_t status_reg;
+  volatile unsigned char state;
+  volatile uint8_t next_byte;
+  volatile ats_ptr_type enable
 } twi_state_t;
 
 #define get_twi_state() (twi_state_t * volatile)&twi_state
+
 #endif

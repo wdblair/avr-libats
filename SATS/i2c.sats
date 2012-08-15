@@ -54,10 +54,10 @@ staload "SATS/global.sats"
 #define TWI_SRX_STOP_RESTART       0xA0  // A STOP condition or repeated START condition has been received while still addressed as Slave
 
 // TWI Miscellaneous status codes
-//#define TWI_NO_STATE               0xF8  // No relevant state information available; 
+#define TWI_NO_STATE               0xF8  // No relevant state information available; 
 #define TWI_BUS_ERROR              0x00  // Bus error due to an illegal START or STOP condition
 
-macdef TWI_NO_STATE = $extval(uint8, "TWI_NO_STATE")
+//macdef TWI_NO_STATE = $extval(uint8, "TWI_NO_STATE")
 
 (* ****** ****** *)
 
@@ -79,7 +79,8 @@ viewtypedef twi_state_t
     buffer=  buffer_t,
     status_reg= status_reg_t,
     state=uchar,
-    next_byte= [m:nat | m < buff_size] int m
+    next_byte= [m:nat | m < buff_size] int m,
+    enable= () -<fun1> void
 }
 
 (* ****** ****** *)
@@ -134,9 +135,16 @@ fun twi_slave_init (
   pf: !INT_CLEAR | addr: twi_address, gen_addr: bool
 ) : void
 
+//0xB8 for 40khz, should do this dynamically.
+fun twi_master_init (
+  pf: !INT_CLEAR  | baud: uint8
+) : void
+
 fun twi_transceiver_busy () : bool
 
-fun twi_get_state_info (pf: !INT_SET | (* *) ) : uchar
+fun twi_get_state_info (
+  pf: !INT_SET | (* *)
+) : uchar
 
 fun twi_last_trans_ok () : bool
 
@@ -150,4 +158,6 @@ fun twi_get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
   pf: !INT_SET | msg: &(@[uchar][n]), sz: int p
 ) : bool
 
-fun twi_start (pf: !INT_SET | (* *)) : void
+fun twi_start (
+  pf: !INT_SET | (* *)
+) : void

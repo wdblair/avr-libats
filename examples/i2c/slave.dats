@@ -34,7 +34,7 @@ implement main (pf0 | (* *) ) = let
       if twi_last_trans_ok() then let
             val rx = twi_rx_data_in_buf()
           in
-            if rx > 0 && rx < 4 then let
+            if rx > 0 then let
                 val _ = twi_get_data(enabled | !buf, rx)
                 val () = twi_start_with_data(enabled | !buf, rx)
               in loop(enabled | (* *) ) end

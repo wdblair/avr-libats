@@ -1,16 +1,11 @@
 (*
-  Both the master and slave interface will go here.
-  I think should be alright, the only differences in 
-  their interface are values they set to the TWCR register,
-  and the ISR routine. In any case, the ISR will need to 
-  dispatch to the appropriate routine as we can't have two 
-  routines for one interrupt vector.
+  To Support Both Master and Slave Operation.
 *)
 
 %{^
 declare_isr(TWI_vect);
 
-volatile twi_state_t twi_state;
+static volatile twi_state_t twi_state;
 %}
 
 #define ATS_STALOADFLAG 0
@@ -32,11 +27,42 @@ fun set_address (
   a:twi_address, g:bool
 ) : void = "mac#set_address"
 
+(* ****** ****** *)
+
+local
+fun enable_twi_master () : void = 
+    clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
+
+fun enable_twi_slave () : void = 
+    clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
+    
+in
+
 implement
-twi_slave_init(pf | addr, gen_addr) = begin
-  set_address(addr, gen_addr);
-  clear_and_setbits(TWCR, TWEN);
+twi_slave_init(pf | addr, gen_addr) = {
+  val () = set_address(addr, gen_addr)
+  val () = clear_and_setbits(TWCR, TWEN)
+  val (gpf, pf | p) = get_twi_state()
+  val () = p->enable := enable_twi_slave
+  prval () = return_global(gpf,pf)
+}
+
+extern
+castfn _8(i: uint8) : natLt(256)
+
+implement
+twi_master_init(pf | baud ) = {
+  val () = setval(TWBR, _8(baud))
+  val () = setval(TWDR, 0xFF)
+  val () = clear_and_setbits(TWCR, TWEN)
+  val (gpf, pf | p) = get_twi_state()
+  val () = p->enable := enable_twi_master
+  prval () = return_global(gpf, pf)
+}
+
 end
+
+(* ****** ****** *)
 
 implement
 twi_transceiver_busy () = bit_is_set(TWCR, TWIE)
@@ -50,9 +76,9 @@ local
 
   fun sleep_until_ready
     (pf: !INT_SET | (* *) ) : void = let
-      val (locked | ()) = cli(pf | (* *))
+        val (locked | ()) = cli( pf | (* *) )
       in 
-        if twi_transceiver_busy() then let
+        if twi_transceiver_busy () then let
             val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
             prval () = pf := enabled
           in sleep_until_ready(pf | (* *) ) end
@@ -70,7 +96,7 @@ local
     //Clear the status register
     val () = set_all(p->status_reg, uchar_of_int(0))
     //Clear the state
-    val () = p->state := uchar_of_uint8(TWI_NO_STATE)
+    val () = p->state := uchar_of_int(TWI_NO_STATE)
     prval () = return_global(free, pf)
   }
 
@@ -97,12 +123,12 @@ local
     val () = p->next_byte := p->next_byte + 1
     val () = p->buffer.recvd_size := p->buffer.recvd_size + 1
     val () = set_last_trans_ok(p->status_reg, true)
-    val () = enable_twi()
+    val () = p->enable()
     prval () = return_global(free, pf)
-  }  
+  }
 in
 
-implement 
+implement
 twi_get_state_info (enabled | (* *) ) = let
   val () = sleep_until_ready(enabled | (* *) )
   val (free, pf | p) = get_twi_state()
@@ -125,15 +151,16 @@ twi_rx_data_in_buf () = let
 in x end
 
 implement
-twi_start_with_data {n, p} (enabled | msg, size) = let
+twi_start_with_data {n, p} (enabled | msg, size) = {
   val () = sleep_until_ready(enabled | (* *) )
   val (free, pf | p) = get_twi_state()
   //Set the size of the message and copy the buffer
   val () = p->buffer.msg_size := size
   val () = copy_buffer(p->buffer.data, msg, size)
   val () = clear_state()
+  val () = p->enable()
   prval () = return_global(free, pf)
-in enable_twi() end
+}
 
 implement twi_get_data {n,p} (enabled | msg, size) = let
   val () = sleep_until_ready(enabled | (* *))
@@ -149,10 +176,13 @@ in
     in lastok end
 end
 
-implement twi_start(enabled | (* *)) = let
+implement twi_start(enabled | (* *)) = {
   val () = sleep_until_ready(enabled | (* *))
   val () = clear_state()
-in enable_twi() end
+  val (gpf, pf | p) = get_twi_state()
+  val () = p->enable()
+  prval () = return_global(gpf, pf)
+}
 
 extern
 castfn int_of_reg8 (r: reg(8)) : int
@@ -163,8 +193,6 @@ castfn uint8_of_uchar (c: uchar) : [n: nat | n < 256] int n
 extern
 castfn uchar_of_reg8 (r: reg(8)) : uchar
 
-// An interesting problem could be modeling
-// the states the TWI module may be in using props.
 implement TWI_vect (pf | (* *)) = let
     val twsr = int_of_reg8(TWSR)
   in

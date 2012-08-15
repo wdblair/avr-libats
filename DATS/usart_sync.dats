@@ -15,7 +15,7 @@ extern
 fun atmega328p_tx (c: char, f: FILEref) : int = "atmega328p_tx"
 
 extern
-castfn int2eight(x:int) : [n:nat | n < 256] int n
+castfn int2eight (x:int) : [n:nat | n < 256] int n
 
 val F_CPU = $extval(lint, "F_CPU")
 
@@ -23,7 +23,7 @@ extern
 castfn reg2int(x:reg(8)) : int
 
 extern
-castfn char_to_8(x:char) : [n:nat | n < 256] int n 
+castfn char_to_8 (x:char) : [n:nat | n < 256] int n 
 
 implement atmega328p_init (baud) = {
   val ubrr = ubrr_of_baud(baud)
