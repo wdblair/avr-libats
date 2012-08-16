@@ -29,15 +29,12 @@ fun set_address (
 
 (* ****** ****** *)
 
-local
 fun enable_twi_master () : void = 
     clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
 
 fun enable_twi_slave () : void = 
     clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
     
-in
-
 implement
 twi_slave_init(pf | addr, gen_addr) = {
   val () = set_address(addr, gen_addr)
@@ -60,14 +57,16 @@ twi_master_init(pf | baud ) = {
   prval () = return_global(gpf, pf)
 }
 
-end
-
 (* ****** ****** *)
 
 implement
 twi_transceiver_busy () = bit_is_set(TWCR, TWIE)
 
 local
+
+  extern
+  castfn uint8_of_uchar (c: uchar) : [n: nat | n < 256] int n
+
   extern
   castfn uchar_of_uint8 (i: uint8) : uchar
 
@@ -117,15 +116,49 @@ local
     prval() = return_global(free, pf)
   }
   
-  fun read_next_byte() : void = {
+  fun copy_recvd_byte () : void = {
     val (free, pf | p) = get_twi_state()
     val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
     val () = p->next_byte := p->next_byte + 1
+    prval () = return_global(free, pf)    
+  }
+  
+  fun read_next_byte() : void = {
+    val () = copy_recvd_byte()
+    val (free, pf | p) = get_twi_state()
     val () = p->buffer.recvd_size := p->buffer.recvd_size + 1
     val () = set_last_trans_ok(p->status_reg, true)
     val () = p->enable()
     prval () = return_global(free, pf)
   }
+  
+  fun transmit_next_byte () : void = let
+      val (free, pf | p) = get_twi_state()
+  in
+      if p->next_byte < p->buffer.msg_size then { //more to send
+        val () = setval(TWDR, uint8_of_uchar(p->buffer.data.[p->next_byte]))
+        val () = p->next_byte := p->next_byte + 1
+        val () = setbits(TWCR, TWEN, TWIE, TWINT)
+        prval () = return_global (free, pf)
+      } else { //finished
+        val () = set_last_trans_ok(p->status_reg, true)
+        val () = setbits(TWCR, TWEN, TWINT, TWSTO)
+        prval () = return_global (free, pf)        
+      }
+  end
+
+  fun detect_last_byte () : void = let
+      val (free, pf | p) = get_twi_state()
+  in
+      if p->next_byte < (p->buffer.msg_size - 1) then {
+        val () = setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
+        prval () = return_global (free, pf)
+      } else {
+        val () = setbits(TWCR, TWEN, TWIE, TWINT)
+        prval () = return_global (free, pf)
+      }
+  end
+
 in
 
 implement
@@ -188,19 +221,35 @@ extern
 castfn int_of_reg8 (r: reg(8)) : int
 
 extern
-castfn uint8_of_uchar (c: uchar) : [n: nat | n < 256] int n
-
-extern
 castfn uchar_of_reg8 (r: reg(8)) : uchar
 
 implement TWI_vect (pf | (* *)) = let
     val twsr = int_of_reg8(TWSR)
   in
     case+ twsr of
+// Master    
+    | TWI_START => reset_next_byte()
+    | TWI_REP_START => reset_next_byte()
+    | TWI_MTX_ADR_ACK => transmit_next_byte()
+    | TWI_MTX_DATA_ACK => transmit_next_byte()
+    | TWI_MRX_DATA_ACK => {
+      val () = copy_recvd_byte()
+      val () = detect_last_byte()
+    }
+    | TWI_MRX_ADR_ACK => detect_last_byte()
+    | TWI_MRX_DATA_NACK=> {
+      val (free, pf | p) = get_twi_state()
+      val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
+      val () = set_last_trans_ok(p->status_reg, true)
+      val () = setbits(TWCR, TWEN, TWINT, TWSTO)
+      prval () = return_global (free, pf)
+    }
+    | TWI_ARB_LOST => setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
+// Slave
     | TWI_STX_ADR_ACK  => reset_next_byte()
     | TWI_STX_ADR_ACK_M_ARB_LOST => reset_next_byte()
     | TWI_STX_DATA_ACK => let
-        val (free,pf | p) = get_twi_state()
+        val (free, pf | p) = get_twi_state()
         //Send the next byte out for delivery
         val x = p->buffer.data.[p->next_byte]
         val () = setval(TWDR, uint8_of_uchar(x))
@@ -208,11 +257,11 @@ implement TWI_vect (pf | (* *)) = let
           if p->next_byte < p->buffer.msg_size - 1 then {
             val () = p->next_byte := p->next_byte + 1
             prval () = return_global(free, pf)
-            val () = enable_twi()
+            val () = enable_twi_slave()
           } else {
             val () = set_all_bytes_sent(p->status_reg, true)
             prval () = return_global(free, pf)
-            val () = enable_twi()
+            val () = enable_twi_slave()
           }
       end
     | TWI_STX_DATA_NACK => let
@@ -238,13 +287,18 @@ implement TWI_vect (pf | (* *)) = let
         val () = set_rx_data_in_buf(p->status_reg, true)
         val () = p->next_byte := 0
         prval () = return_global(free, pf)
-        val () = enable_twi()
+        val () = enable_twi_slave()
       }
     | TWI_SRX_ADR_DATA_ACK => read_next_byte()
     | TWI_SRX_GEN_DATA_ACK => read_next_byte()
       //TWI_SRX_STOP_RESTART , for some reason using the macro causes an error
       //using its value works though...
     | 0xA0 => setbits(TWCR, TWEN)
-    | _ => enable_twi()
+    | _ => {
+        val (gpf, pf | p) = get_twi_state()
+        val () = p->state := uchar_of_reg8(TWSR)
+        val () = p->enable()
+        prval () = return_global(gpf, pf)
+    }
   end
 end

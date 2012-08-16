@@ -93,7 +93,7 @@ typedef struct {
   volatile status_reg_t status_reg;
   volatile unsigned char state;
   volatile uint8_t next_byte;
-  volatile ats_ptr_type enable
+  volatile ats_ptr_type enable;
 } twi_state_t;
 
 #define get_twi_state() (twi_state_t * volatile)&twi_state
