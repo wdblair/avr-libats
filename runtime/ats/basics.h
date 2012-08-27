@@ -75,7 +75,6 @@
 
 #define ats_selptrset_mac(ty, x, lab, v) (((ty*)x)->lab = (v))
 
-#define ats_caselptr_mac(ty, x, lab) (((ty*)(x))->lab)
 #define ats_caselind_mac(ty, x, ind) (((ty*)(&(x)))ind)
  
 #define ats_caselptrind_mac(ty, x, ind) (((ty*)(x))ind)
