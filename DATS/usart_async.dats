@@ -1,18 +1,9 @@
-
 #define ATS_STALOADFLAG 0
 #define ATS_DYNLOADFLAG 0
 
 %{^
 declare_isr(USART_RX_vect);
 declare_isr(USART_TX_vect);
-
-typedef struct {
-  volatile uint8_t w;
-  volatile uint8_t r;
-  volatile uint8_t n;
-  volatile uint8_t size;
-  volatile char base[];
-} cycbuf_t;
 
 static volatile cycbuf_t read = {0, 0, 0, 25, {[0 ... 24] = 0}};
 static volatile cycbuf_t write = {0, 0, 0, 25, {[0 ... 24] = 0}};
@@ -36,63 +27,25 @@ staload "SATS/global.sats"
 staload "SATS/usart.sats"
 staload "SATS/stdio.sats"
 staload "SATS/delay.sats"
+staload "SATS/queue.sats"
 
-viewtypedef cycbuf_array (a:t@ype, n:int, s: int, w: int, r: int)
-  = $extype_struct "cycbuf_t" of {
-      w = int w,
-      r = int r,
-      n = int n,
-      size = int s,
-      base = @[a][s]
-}
+(* ****** ****** *)
 
-viewtypedef cycbuf (a:t@ype, n:int) =
-  [s,w,r:nat | n <= s; w < s; r < s] cycbuf_array(a,n,s,w,r)
+staload "DATS/cycbuf.dats"
+
+(* ****** ****** *)
 
 extern
 fun get_read_buffer 
-  () : [s:pos; n:nat; l:agz] (
-  global(l), cycbuf(char, n) @ l | ptr l
+  () : [n,s:nat; l:agz | n < s] (
+  global(l), queue(char, n, s) @ l | ptr l
 ) = "mac#get_read_buffer"
-        
+
 extern
 fun get_write_buffer
-  () : [s:pos; n:nat; l:agz] (
-  global(l), cycbuf(char,n) @ l | ptr l
+  () : [n,s:nat; l:agz| n < s] (
+  global(l), queue(char, n, s) @ l | ptr l
 ) = "mac#get_write_buffer"
-
-fun {a:t@ype} cycbuf_insert {l:agz} {s:pos} {n:nat | n < s} 
-    {w, r: nat | n < s; w < s; r < s} (
-    lpf: !INT_CLEAR,
-    pf: !cycbuf_array(a, n, s, w, r) @ l >> cycbuf_array(a, n+1, s, w', r) @ l | 
-    p: ptr l, x: a
-) : #[w':nat | w' < s] void = let 
-    val () = p->n := p->n + 1
-    val () = p->base.[p->w] := x
-  in
-    p->w := (p->w + 1) nmod1 p->size
-  end
-  
-fun {a:t@ype} cycbuf_remove {l:agz} {s,n:pos}
-    {w,r:nat | n <= s; w < s; r < s} (
-    lpf: !INT_CLEAR,
-    pf: !cycbuf_array(a, n, s, w, r) @ l >> cycbuf_array(a, n-1, s, w, r') @ l | 
-    p: ptr l, x: &a? >> a
-) : #[r':nat | r' < s] void = let
-    val () = p->n := p->n - 1
-    val () = x := p->base.[p->r]
-  in
-    p->r := (p->r + 1) nmod1 p->size
-  end
-
-fun {a:t@ype} cycbuf_is_empty {l:addr} {n:nat} (
-    pf: !cycbuf(a,n) @ l | p: ptr l
-) : bool(n == 0) = p->n = 0
-
-fun {a:t@ype} cycbuf_is_full {l:agz} {s:pos}
-      {n,w,r:nat | n <= s; w < s; r < s} (
-    pf: !cycbuf_array(a,n,s,w,r) @ l | p: ptr l
-) : bool(n == s) = p->size = p->n
 
 (* ****** ****** *)
 
@@ -108,11 +61,11 @@ implement
 USART_TX_vect (locked | (* *) ) = let
   val (gpf, pf | p) = get_write_buffer()
  in
-  if cycbuf_is_empty<char>(pf | p) then {
+  if empty(pf | p) then {
     prval () = return_global(gpf, pf)
   } else {
     var tmp : char
-    val () = cycbuf_remove<char>(locked, pf | p , tmp)
+    val () = remove<char>(locked, pf | p , tmp)
     val () = setval(UDR0, uint8_of_char(tmp))
     prval () = return_global(gpf, pf)
   }
@@ -125,13 +78,13 @@ castfn _8(i:int) : [n:nat | n < 256] int n
 implement
 USART_RX_vect (locked | (* *)) = let
   val (gpf, pf | p) = get_read_buffer()
-  val full = cycbuf_is_full<char>(pf | p)
+  val full = full(pf | p)
   var contents : char = char_of_reg(UDR0)
  in
    if full then {
       prval () = return_global(gpf, pf)
    } else {
-      	val () = cycbuf_insert<char>(locked, pf | p, contents)
+      	val () = insert<char>(locked, pf | p, contents)
 	prval () = return_global(gpf, pf)
    }
  end
@@ -171,12 +124,12 @@ atmega328p_async_init (locked | baud) = {
   val () = redirect_stdio()
 }
 
- 
+
 implement
 atmega328p_async_tx (pf0 | c, f) = 0 where {
    val (gpf, pf | p) = get_write_buffer()
-   fun loop {l:agz} {n:nat} (
-      pf0: !INT_SET, g: global(l), pf: cycbuf(char, n) @ l | p: ptr l, c: char
+   fun loop {l:agz} {n, s:nat | n < s} (
+      pf0: !INT_SET, g: global(l), pf: queue(char, n, s) @ l | p: ptr l, c: char
    ) : void = let
       val () = 
         if c = '\n' then {
@@ -184,16 +137,16 @@ atmega328p_async_tx (pf0 | c, f) = 0 where {
         }
       val (locked | () ) = cli(pf0 | (* *))
    in
-      if cycbuf_is_full (pf | p) then let
+      if full (pf | p) then let
           val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
           prval () = pf0 := enabled
         in loop(pf0, g, pf | p, c) end
       else let
-          val () = cycbuf_insert<char>(locked, pf | p, c)
+          val () = insert<char>(locked, pf | p, c)
        in
         if bit_is_set(UCSR0A, UDRE0) then {
           var tmp : char
-	  val () = cycbuf_remove<char>(locked, pf | p, tmp)
+	  val () = remove<char>(locked, pf | p, tmp)
           val (enabled | () ) = sei(locked | (* *))
 	  val () = setval(UDR0, uint8_of_char(tmp))
           prval () = return_global(g, pf)
@@ -211,18 +164,18 @@ atmega328p_async_tx (pf0 | c, f) = 0 where {
 implement
 atmega328p_async_rx (pf0 | f) = let
   val (gpf, pf | p) = get_read_buffer()
-  fun loop {l:agz} {n:nat} (
-    pf0: !INT_SET, g: global(l), pf: cycbuf(char, n) @ l | p: ptr l
+  fun loop {l:agz} {n,s:nat | n < s} (
+    pf0: !INT_SET, g: global(l), pf: queue(char, n, s) @ l | p: ptr l
   ) : char = let
     val (locked | () ) = cli(pf0 | (* *))
   in 
-    if cycbuf_is_empty<char>(pf | p) then let
+    if empty<char>(pf | p) then let
       val (enabled | () ) = sei_and_sleep_cpu(locked | (* *) )
       prval () = pf0 := enabled
      in loop(pf0, g, pf | p) end
     else let
       var tmp : char
-      val () = cycbuf_remove<char>(locked, pf | p, tmp)
+      val () = remove<char>(locked, pf | p, tmp)
       val (enabled | () ) = sei(locked | (* *))
       prval () = return_global(g, pf)
       prval () = pf0 := enabled
@@ -233,14 +186,14 @@ in int_of_char( loop(pf0, gpf, pf | p) ) end
 implement
 atmega328p_async_flush (pf0 | (* *)) = let
   val (gpf, pf | p) = get_read_buffer()
-  fun loop {l:agz} {n:nat} (
-    pf0: !INT_SET, g: global(l), pf: cycbuf(char, n) @ l | p: ptr l
+  fun loop {l:agz} {n, s:nat | n < s} (
+    pf0: !INT_SET, g: global(l), pf: queue(char, n, s) @ l | p: ptr l
   ) : void = let
     //empty stdout first
     val _ = fflush(stdout_ref)
     val (locked | () ) = cli(pf0 | (* *) )
   in 
-    if cycbuf_is_empty<char>(pf | p) then let
+    if empty<char>(pf | p) then let
         val (enabled | () ) = sei(locked | (* *))
         prval () = return_global(g, pf)
         prval () = pf0 := enabled
