@@ -106,13 +106,7 @@ if($read_stdin) {
     @opts = @atsopt_flags;
 
     push(@opts, "--dynamic");
-    push(@opts, "/dev/stdin");
-    
-    if(!$typecheck) {
-        push(@opts, "--output");
-        push(@opts, "/dev/stdout");
-    }
-    
+
     print join(" ", @opts)."\n";
     
     $pid = fork();
