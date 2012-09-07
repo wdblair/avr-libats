@@ -105,7 +105,6 @@ if (!@files && !$read_stdin) {
 
 #Pipes for compiling from stdin.
 pipe ATSRD, ATSWR;
-pipe ERRD, ERWR;
 pipe GCCRD, GCCWR;
 
 if($read_stdin) {
