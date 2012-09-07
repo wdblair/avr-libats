@@ -111,10 +111,6 @@ pipe GCCRD, GCCWR;
 if($read_stdin) {
     @opts = @atsopt_flags;
     
-    if($save) {
-        push(@opts, ("--output", $output_filename.".c"));
-    }
-    
     push(@opts, "--dynamic");
     
     print join(" ", @opts)."\n";
@@ -123,13 +119,10 @@ if($read_stdin) {
     die "Couldn't fork" unless defined $pid;
     
     if( $pid > 0 ) {
-        close(ERWR);
         close(ATSRD);
         wait();
     } else {
         close(ATSWR);
-        close(ERRD);
-        open(STDERR, ">&ERWR");
         open(STDOUT, ">&GCCWR");
         exec {$opts[0] } @opts or die "Couldn't run atsopt.";
     }
@@ -137,10 +130,6 @@ if($read_stdin) {
     $success = !$?;
     
     if(!$success) {
-        print "ATS Error:\n";
-        while($line = <ERRD>) {
-            print $line;
-        }
         exit(1);
     }
 }
@@ -167,7 +156,7 @@ foreach $file (@files) {
         die "Compilations failed for [$file]...\n";
 }
 
-if($typecheck || $save) {
+if($typecheck) {
     exit(0);
 }
 
@@ -185,39 +174,42 @@ unshift(@cflags, "/usr/local/avr/bin/avr-gcc");
 
 if($read_stdin) {
     @opts = @cflags;
-   
+    
     push(@opts, ("-x","c","-") );
-
+    
     push(@opts, @extras);
-
+    
     print join(" ", @opts)."\n";
-
+    
     $pid = fork();
     die "Couldn't fork" unless defined $pid;
-
-    pipe ERRD, ERWR;
     
     if( $pid > 0 ) {
         close(GCCWR);
         close(GCCRD);
-        close(ERWR);
         wait();
     } else {
         close(GCCWR);
-        close(ERRD);
-        open(STDIN,  "<&GCCRD");
-        open(STDERR, ">&STDOUT");
-        open(STDOUT, ">/dev/null");
-        exec {$opts[0] } @opts or die "Couldn't run atsopt.";
+        
+        if($save) {
+            open(CFILE, ">", $output_filename."_dats.c")
+            or die ("Couldn't open output C file.");
+            while($line = <GCCRD>) {
+                print CFILE $line;
+            }
+            close(CFILE);
+            open(STDIN, "<", $output_filename."_dats.c")
+                or die ("Couldn't set stdin to the C file.");
+        } else {
+            open(STDIN,  "<&GCCRD");
+        }
+
+        exec {$opts[0]} @opts or die "Couldn't run atsopt.";
     }
-    
+
     $success = !$?;
     
     if (!$success) {
-        print "GCC Error:\n";
-        while($line = <ERRD>) {
-            print $line;
-        }
         exit(1);
     }
 }
