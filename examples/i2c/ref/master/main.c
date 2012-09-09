@@ -51,7 +51,7 @@ unsigned char TWI_Act_On_Failure_In_Last_Transmission ( unsigned char TWIerrorMs
   if ( (TWIerrorMsg == TWI_MTX_ADR_NACK) | (TWIerrorMsg == TWI_MRX_ADR_NACK) )
     TWI_Start_Transceiver();
     
-  return TWIerrorMsg; 
+  return TWIerrorMsg;
 }
 
 

@@ -1,8 +1,8 @@
 (*
   An example of an interrupt driven
   i2c master device.
-    
-  Adapted from Atmel Application Note AVR315.
+  
+  Constantly sends a byte, then requests a byte.
 *)
 
 (* ****** ****** *)
@@ -15,6 +15,5 @@ staload "SATS/i2c.sats"
 
 (* ****** ****** *)
 
-implement main (pf0 | (* *) ) = let
-    
-  in end
+implement main (pf0 | (* *) ) = 
+

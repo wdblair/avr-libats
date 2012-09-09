@@ -1,5 +1,7 @@
 (*
-  To Support Both Master and Slave Operation.
+  TWI Driver To Support Both Master and Slave Operation.
+
+  Taken from Atmel Application Note AVR315 and AVR311
 *)
 
 %{^
@@ -34,9 +36,15 @@ fun enable_twi_master () : void =
 
 fun enable_twi_slave () : void = 
     clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
-    
+
+fun enable_pullups () : void = begin
+  setbits(DDRD, DDD6, DDD7);
+  setbits(PORTD, PORTD6, PORTD7);
+end
+
 implement
 twi_slave_init(pf | addr, gen_addr) = {
+  val () = enable_pullups()
   val () = set_address(addr, gen_addr)
   val () = clear_and_setbits(TWCR, TWEN)
   val (gpf, pf | p) = get_twi_state()
@@ -49,6 +57,7 @@ castfn _8(i: uint8) : natLt(256)
 
 implement
 twi_master_init(pf | baud ) = {
+  val () = enable_pullups()
   val () = setval(TWBR, _8(baud))
   val () = setval(TWDR, 0xFF)
   val () = clear_and_setbits(TWCR, TWEN)
@@ -292,7 +301,7 @@ implement TWI_vect (pf | (* *)) = let
     | TWI_SRX_ADR_DATA_ACK => read_next_byte()
     | TWI_SRX_GEN_DATA_ACK => read_next_byte()
       //TWI_SRX_STOP_RESTART , for some reason using the macro causes an error
-      //using its value works though...
+      //using just its value works though...
     | 0xA0 => setbits(TWCR, TWEN)
     | _ => {
         val (gpf, pf | p) = get_twi_state()

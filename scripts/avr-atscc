@@ -160,7 +160,7 @@ if($typecheck) {
 }
 
 #Compile the C Files.
-unshift(@cflags, "/usr/local/avr/bin/avr-gcc");
+unshift(@cflags, "avr-gcc");
 
 @extras = (
            "-O2",

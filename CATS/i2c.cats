@@ -66,6 +66,8 @@
 
 #define set_address(address, general_enabled) TWAR = (address << TWI_ADR_BITS) | (general_enabled << TWI_GEN_BIT)
 
+
+
 union status_reg_t
 {
   volatile unsigned char all;

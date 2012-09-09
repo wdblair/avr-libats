@@ -26,7 +26,7 @@ implement main (pf0 | (* *) ) = let
     val (locked | ()) = cli (enabled | (* *))
   in
     if twi_transceiver_busy () then let
-        val (enabled | () ) = sei_and_sleep_cpu(locked | (* *) )
+        val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
       in loop(enabled | (* *)) end
     else let
       val (enabled | () ) = sei(locked | (* *))
