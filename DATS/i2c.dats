@@ -60,7 +60,7 @@ twi_master_init(pf | baud ) = {
   val () = enable_pullups()
   val () = setval(TWBR, _8(baud))
   val () = setval(TWDR, 0xFF)
-  val () = clear_and_setbits(TWCR, TWEN)
+  val () = clear_and_setbits(TWCR, TWEN, TWIE)
   val (gpf, pf | p) = get_twi_state()
   val () = p->enable := enable_twi_master
   prval () = return_global(gpf, pf)

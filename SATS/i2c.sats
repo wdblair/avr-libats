@@ -140,6 +140,10 @@ fun twi_master_init (
   pf: !INT_CLEAR  | baud: uint8
 ) : void
 
+fun setup_addr_byte {n:pos} {p:pos | p < 128} (
+  buf: &(@[uchar][n]), addr: int p,  read: bool
+) : void = "mac#avr_libats_setup_addr_byte"
+
 fun twi_transceiver_busy () : bool
 
 fun twi_get_state_info (

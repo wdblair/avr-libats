@@ -66,7 +66,8 @@
 
 #define set_address(address, general_enabled) TWAR = (address << TWI_ADR_BITS) | (general_enabled << TWI_GEN_BIT)
 
-
+#define avr_libats_setup_addr_byte(buffer, addr, read)  \
+  ((unsigned char *)buffer)[0] = (addr << 1) | read
 
 union status_reg_t
 {
@@ -99,5 +100,6 @@ typedef struct {
 } twi_state_t;
 
 #define get_twi_state() (twi_state_t * volatile)&twi_state
+
 
 #endif
