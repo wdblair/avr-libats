@@ -39,7 +39,6 @@ implement main (pf0 | (* *) ) = let
           in
             if rx > 0 then let
                 val () = setbits(PORTB, PORTB3)
-                val () = println! rx
                 val _ = twi_get_data(enabled | !buf, rx)
 //                val () =
 //                  if (char_of_uchar(!buf.[0]) = 'h') then
@@ -47,10 +46,10 @@ implement main (pf0 | (* *) ) = let
 //                val () = !buf.[0] := uchar_of_int(int_of_uchar(!buf.[0]) + 0x1)
                 val () = twi_start(enabled | (* *))
 //                val () = twi_start_with_data(enabled | !buf, rx)
-              in loop(enabled | (* *) ) end
+              in loop(enabled | (* *)) end
             else let
               val () = twi_start(enabled | (* *))
-            in loop(enabled | (* *) ) end
+            in loop(enabled | (* *)) end
           end
       else let
         in loop(enabled | (* *)) end

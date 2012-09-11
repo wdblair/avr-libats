@@ -151,6 +151,7 @@ local
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT)
         prval () = return_global (free, pf)
       } else { //finished
+        val () = println! "f"
         val () = set_last_trans_ok(p->status_reg, true)
         val () = clear_and_setbits(TWCR, TWEN, TWINT, TWSTO)
         prval () = return_global (free, pf)
@@ -331,6 +332,10 @@ implement TWI_vect (pf | (* *)) = let
     | 0xA0 => {
       val () = clear_and_setbits(TWCR, TWEN)
      }
+    | TWI_BUS_ERROR => {
+        val () = println! ('e')
+        val () = clear_and_setbits(TWCR, TWSTO, TWINT)
+      }
     | _ => {
         val (gpf, pf | p) = get_twi_state()
         val () = p->state := uchar_of_reg8(TWSR)
