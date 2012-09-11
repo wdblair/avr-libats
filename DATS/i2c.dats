@@ -20,6 +20,7 @@ staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
 staload "SATS/global.sats"
 staload "SATS/i2c.sats"
+staload "SATS/stdlib.sats"
 
 (* ****** ****** *)
 
@@ -147,11 +148,11 @@ local
       if p->next_byte < p->buffer.msg_size then { //more to send
         val () = setval(TWDR, uint8_of_uchar(p->buffer.data.[p->next_byte]))
         val () = p->next_byte := p->next_byte + 1
-        val () = setbits(TWCR, TWEN, TWIE, TWINT)
+        val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT)
         prval () = return_global (free, pf)
       } else { //finished
         val () = set_last_trans_ok(p->status_reg, true)
-        val () = setbits(TWCR, TWEN, TWINT, TWSTO)
+        val () = clear_and_setbits(TWCR, TWEN, TWINT, TWSTO)
         prval () = return_global (free, pf)
       }
   end
@@ -160,10 +161,10 @@ local
       val (free, pf | p) = get_twi_state()
   in
       if p->next_byte < (p->buffer.msg_size - 1) then {
-        val () = setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
+        val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
         prval () = return_global (free, pf)
       } else {
-        val () = setbits(TWCR, TWEN, TWIE, TWINT)
+        val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT)
         prval () = return_global (free, pf)
       }
   end
@@ -234,37 +235,49 @@ castfn uchar_of_reg8 (r: reg(8)) : uchar
 
 implement TWI_vect (pf | (* *)) = let
     val twsr = int_of_reg8(TWSR)
-    val () = setval(UDR0, twsr)
+    val c =  char_of_uchar(uchar_of_reg8(TWSR))
   in
     case+ twsr of
-// Master    
+// Master
     | TWI_START => {
+        val () = println! "st"
         val () = reset_next_byte()
         val () = transmit_next_byte()
       }
     | TWI_REP_START => {
+        val () = println! "rp"
         val () = reset_next_byte()
         val () = transmit_next_byte()
       }
     | TWI_MTX_ADR_ACK => {
+        val () = println! "tack"
         val () = transmit_next_byte()
       }
     | TWI_MTX_DATA_ACK => {
+        val () = println! "tdat"
         val () = transmit_next_byte()
       }
     | TWI_MRX_DATA_ACK => {
-       val () = copy_recvd_byte()
-       val () = detect_last_byte()
+        val () = println! "rdat"
+        val () = copy_recvd_byte()
+        val () = detect_last_byte()
       }
-    | TWI_MRX_ADR_ACK => detect_last_byte()
-    | TWI_MRX_DATA_NACK=> {
-      val (free, pf | p) = get_twi_state()
-      val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
-      val () = set_last_trans_ok(p->status_reg, true)
-      val () = setbits(TWCR, TWEN, TWINT, TWSTO)
-      prval () = return_global (free, pf)
-    }
-    | TWI_ARB_LOST => setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
+    | TWI_MRX_ADR_ACK => {
+        val () = println! "rack"
+        val () = detect_last_byte()
+      }
+    | TWI_MRX_DATA_NACK => {
+        val () = println! "rnack"
+        val (free, pf | p) = get_twi_state()
+        val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
+        val () = set_last_trans_ok(p->status_reg, true)
+        val () = clear_and_setbits(TWCR, TWEN, TWINT, TWSTO)
+        prval () = return_global (free, pf)
+      }
+    | TWI_ARB_LOST => {
+        val () = println! "arb"
+        val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
+      }
 // Slave
     | TWI_STX_ADR_ACK  => reset_next_byte()
     | TWI_STX_ADR_ACK_M_ARB_LOST => reset_next_byte()
@@ -295,14 +308,14 @@ implement TWI_vect (pf | (* *)) = let
           prval () = return_global(free, pf)
         }
      in
-      setbits(TWCR, TWEN)
+      clear_and_setbits(TWCR, TWEN)
      end
     | TWI_SRX_GEN_ACK => {
         val (free, pf | p) = get_twi_state()
         val () = set_gen_address_call(p->status_reg, true)
         prval () = return_global(free, pf)
       }
-    | TWI_SRX_ADR_ACK => {  
+    | TWI_SRX_ADR_ACK => {
         val (free, pf | p) = get_twi_state()
         val () = set_rx_data_in_buf(p->status_reg, true)
         val () = p->next_byte := 0
@@ -315,7 +328,9 @@ implement TWI_vect (pf | (* *)) = let
     | TWI_SRX_GEN_DATA_ACK => read_next_byte()
       //TWI_SRX_STOP_RESTART , for some reason using the macro causes an error
       //using just its value works though...
-    | 0xA0 => setbits(TWCR, TWEN)
+    | 0xA0 => {
+      val () = clear_and_setbits(TWCR, TWEN)
+     }
     | _ => {
         val (gpf, pf | p) = get_twi_state()
         val () = p->state := uchar_of_reg8(TWSR)

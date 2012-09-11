@@ -514,6 +514,26 @@ atspre_print_int8 (ats_int8_type i) {
 
 ATSinline()
 ats_void_type
+atspre_fprint_int (ats_ptr_type out, ats_int_type i) {
+  int n = fprintf ((FILE*)out, "%d", i) ;
+  if (n < 0) {
+    ats_exit_errmsg (n);
+  }
+  return ;
+}
+
+ATSinline()
+ats_void_type
+atspre_print_int (ats_int_type i) {
+//  atspre_stdout_view_get () ;
+  atspre_fprint_int ((ats_ptr_type)stdout, i) ;
+//  atspre_stdout_view_set () ;
+  return ;
+}
+
+
+ATSinline()
+ats_void_type
 atspre_prerr_int8 (ats_int8_type i) {
   atspre_stderr_view_get () ;
   atspre_fprint_int8 ((ats_ptr_type)stderr, i) ;
