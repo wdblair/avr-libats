@@ -146,6 +146,10 @@ ats_uchar_type
 atspre_uchar_of_int (ats_int_type c) { return c ; }
 
 ATSinline()
+ats_int_type
+atspre_int_of_uchar (ats_uchar_type c) { return c ; }
+
+ATSinline()
 ats_bool_type
 atspre_eq_char_char
 (ats_char_type c1, ats_char_type c2) {

@@ -18,6 +18,7 @@ castfn _c(i:int) : uchar
 
 implement main (pf0 | (* *) ) = let
   val address = 0x2
+  val () = setbits(DDRB, DDB3)
   val () = twi_slave_init(pf0 | address, true)
   val (pf1 | () ) = sei(pf0 | (* *) )
   val () = twi_start(pf1 | (* *) )
@@ -29,14 +30,16 @@ implement main (pf0 | (* *) ) = let
         val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
       in loop(enabled | (* *)) end
     else let
-      val (enabled | () ) = sei(locked | (* *))
+      val (enabled | ()) = sei(locked | (* *))
      in
       if twi_last_trans_ok() then let
             val rx = twi_rx_data_in_buf()
           in
             if rx > 0 then let
                 val _ = twi_get_data(enabled | !buf, rx)
-                val () = twi_start_with_data(enabled | !buf, rx)
+                val () = !buf.[0] := uchar_of_int(int_of_uchar(!buf.[0]) + 0x1)
+                val () = twi_start(enabled | (* *))
+//                val () = twi_start_with_data(enabled | !buf, rx)
               in loop(enabled | (* *) ) end
             else let
               val () = twi_start(enabled | (* *))

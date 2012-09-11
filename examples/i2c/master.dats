@@ -14,6 +14,7 @@ staload "SATS/global.sats"
 staload "SATS/i2c.sats"
 staload "SATS/char.sats"
 staload "SATS/usart.sats"
+staload "SATS/stdio.sats"
 
 (* ****** ****** *)
 
@@ -32,8 +33,9 @@ extern
 castfn uint8_of_int(i:int) : uint8
   
 implement main (pf0 | (* *) ) = {
-  var operation : int = REQUEST
+  var operation : int = SEND
   val () = atmega328p_async_init(pf0 | uint16_of_int(9600))
+  val () = setbits(DDRB, DDB3)
   //TODO: Generate TWBR from a frequency, maybe offer a couple of options.
   val () = twi_master_init(pf0 |  uint8_of_int(0x5C))
   val (set | ()) = sei(pf0 | (* *))
@@ -46,13 +48,17 @@ implement main (pf0 | (* *) ) = {
     | REQUEST => let
         val () = setup_addr_byte(!buf, 0x2, true)
         val () = twi_start_with_data(pf | !buf, 2)
+        val () = println! 'r'
         val () = s := READ
       in loop(pf | s) end
-    | SEND => let 
+    | SEND => let
+        //Wait for a command
+        val _ = getchar()
         val () = setup_addr_byte(!buf, 0x2, false)
-        val () = !buf.[0] := uchar_of_char('i')
+        val () = !buf.[1] := uchar_of_char('i')
         val () = twi_start_with_data(pf | !buf, 2)
-        val () = s := REQUEST
+        val () = println! 's'
+        val () = s := SEND
       in loop(pf | s) end
     | READ => let
         val ok = twi_get_data(pf | !buf, 2)
@@ -64,6 +70,7 @@ implement main (pf0 | (* *) ) = {
             end
           else
             println! "Error"
+        val () = s := SEND
       in loop(pf | s) end
   end
   val (locked | ()) = loop(set | operation)

@@ -237,8 +237,8 @@ foreach $file (@files) {
 }
 
 if($hex) {
-
-    @objcopy = ("/usr/local/avr/bin/avr-objcopy", 
+    
+    @objcopy = ("avr-objcopy",
                 split(" ","-O ihex $output_filename $output_filename.hex")
         );
     
