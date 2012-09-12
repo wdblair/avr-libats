@@ -29,7 +29,6 @@ fun {a:t@ype} cycbuf_remove {l:agz} {s,n:pos}
     p->r := (p->r + 1) nmod1 p->size
   end
 
-
 implement {a} insert (lpf, pf | p , x) =
   cycbuf_insert(pf | p, x)
 

@@ -32,11 +32,23 @@ fun set_address (
 
 (* ****** ****** *)
 
-fun enable_twi_master () : void = 
+fun enable_twi_master () : void =
     clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
 
-fun enable_twi_slave () : void = 
-    clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
+fun enable_twi_slave () : void = {
+    val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
+    val (gpf, pf | p) = get_twi_state()
+    val () = set_busy(p->status_reg, true)
+    prval () = return_global(gpf, pf)
+}
+
+fun slave_busy () : bool = busy where {
+    val (gpf, pf | p) = get_twi_state()
+    val busy = get_busy(p->status_reg)
+    prval () = return_global(gpf, pf)
+  }
+
+fun master_busy () : bool = bit_is_set(TWCR, TWIE)
 
 fun enable_pullups () : void = begin
   setbits(DDRC, DDC4, DDC5);
@@ -50,7 +62,8 @@ twi_slave_init(pf | addr, gen_addr) = {
   val () = clear_and_setbits(TWCR, TWEN)
   val (gpf, pf | p) = get_twi_state()
   val () = p->enable := enable_twi_slave
-  prval () = return_global(gpf,pf)
+  val () = p->busy := slave_busy
+  prval () = return_global(gpf, pf)
 }
 
 extern
@@ -64,13 +77,18 @@ twi_master_init(pf | baud ) = {
   val () = clear_and_setbits(TWCR, TWEN)
   val (gpf, pf | p) = get_twi_state()
   val () = p->enable := enable_twi_master
+  val () = p->busy := master_busy
   prval () = return_global(gpf, pf)
 }
 
 (* ****** ****** *)
 
 implement
-twi_transceiver_busy () = bit_is_set(TWCR, TWIE)
+twi_transceiver_busy () = busy where {
+  val (gpf, pf | p) = get_twi_state()
+  val busy = p->busy()
+  prval () = return_global(gpf, pf)
+}
 
 local
 
@@ -130,10 +148,10 @@ local
     val (free, pf | p) = get_twi_state()
     val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
     val () = p->next_byte := p->next_byte + 1
-    prval () = return_global(free, pf)    
+    prval () = return_global(free, pf)
   }
   
-  fun read_next_byte() : void = {
+  fun read_next_byte () : void = {
     val () = copy_recvd_byte()
     val (free, pf | p) = get_twi_state()
     val () = p->buffer.recvd_size := p->buffer.recvd_size + 1
@@ -280,7 +298,9 @@ implement TWI_vect (pf | (* *)) = let
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
       }
 // Slave
-    | TWI_STX_ADR_ACK  => reset_next_byte()
+    | TWI_STX_ADR_ACK  => {
+        val () = reset_next_byte()
+      }
     | TWI_STX_ADR_ACK_M_ARB_LOST => reset_next_byte()
     | TWI_STX_DATA_ACK => let
         val (free, pf | p) = get_twi_state()
@@ -330,10 +350,12 @@ implement TWI_vect (pf | (* *)) = let
       //TWI_SRX_STOP_RESTART , for some reason using the macro causes an error
       //using just its value works though...
     | 0xA0 => {
-      val () = clear_and_setbits(TWCR, TWEN)
+        val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
+        val (gpf, pf | p) = get_twi_state()
+        val () = set_busy(p->status_reg, false)
+        prval () = return_global(gpf, pf)
      }
     | TWI_BUS_ERROR => {
-        val () = println! ('e')
         val () = clear_and_setbits(TWCR, TWSTO, TWINT)
       }
     | _ => {

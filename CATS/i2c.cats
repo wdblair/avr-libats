@@ -49,20 +49,23 @@
 #define TWI_NO_STATE               0xF8  // No relevant state information available; 
 #define TWI_BUS_ERROR              0x00  // Bus error due to an illegal START or STOP condition
 
-#define status_reg_set_all(reg, char) reg.all = char
-#define status_reg_get_all(reg) reg.all
+#define status_reg_set_all(reg, char) (reg)->all = char
+#define status_reg_get_all(reg) (reg)->all
 
-#define status_reg_set_last_trans_ok(reg, char)  reg.bits.last_trans_ok = char
-#define status_reg_get_last_trans_ok(reg) reg.bits.last_trans_ok
+#define status_reg_set_last_trans_ok(reg, char)  (reg)->bits.last_trans_ok = char
+#define status_reg_get_last_trans_ok(reg) (reg)->bits.last_trans_ok
 
-#define status_reg_set_rx_data_in_buf(reg, char)  reg.bits.rx_data_in_buf = char
-#define status_reg_get_rx_data_in_buf(reg) reg.bits.rx_data_in_buf
+#define status_reg_set_rx_data_in_buf(reg, char)  (reg)->bits.rx_data_in_buf = char
+#define status_reg_get_rx_data_in_buf(reg) (reg)->bits.rx_data_in_buf
 
-#define status_reg_set_gen_address_call(reg, char)  reg.bits.rx_data_in_buf = char
-#define status_reg_get_gen_address_call(reg) reg.bits.rx_data_in_buf
+#define status_reg_set_gen_address_call(reg, char)  (reg)->bits.rx_data_in_buf = char
+#define status_reg_get_gen_address_call(reg) (reg)->bits.rx_data_in_buf
 
-#define status_reg_set_all_bytes_sent(reg, bool)  reg.bits.all_bytes_sent = bool
-#define status_reg_get_all_bytes_sent(reg) reg.bits.all_bytes_sent
+#define status_reg_set_all_bytes_sent(reg, bool)  (reg)->bits.all_bytes_sent = bool
+#define status_reg_get_all_bytes_sent(reg) (reg)->bits.all_bytes_sent
+
+#define status_reg_set_busy(reg, bool) (reg)->bits.busy = bool
+#define status_reg_get_busy(reg) (reg)->bits.busy
 
 #define set_address(address, general_enabled) TWAR = (address << TWI_ADR_BITS) | (general_enabled << TWI_GEN_BIT)
 
@@ -78,7 +81,8 @@ union status_reg_t
     volatile unsigned char rx_data_in_buf:1;
     volatile unsigned char gen_address_call:1;
     volatile unsigned char all_bytes_sent:1;
-    volatile unsigned char unused_bits:4;
+    volatile unsigned char busy:1;
+    volatile unsigned char unused_bits:3;
   } bits;
 };
 
@@ -97,6 +101,7 @@ typedef struct {
   volatile unsigned char state;
   volatile uint8_t next_byte;
   volatile ats_ptr_type enable;
+  volatile ats_ptr_type busy;
 } twi_state_t;
 
 #define get_twi_state() (twi_state_t * volatile)&twi_state

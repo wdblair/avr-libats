@@ -24,13 +24,13 @@ implement main (pf0 | (* *) ) = let
   val () = twi_slave_init(pf0 | address, true)
   val (pf1 | () ) = sei(pf0 | (* *) )
   val () = twi_start(pf1 | (* *) )
-  fun loop (enabled: INT_SET | (* *) ) : (INT_CLEAR | void) = let
-    var !buf with pfbuf =  @[uchar][4](_c(0))
+  var !buf with pfbuf =  @[uchar][4](_c(0))
+  fun loop (enabled: INT_SET | buf: &(@[uchar][4]) ) : (INT_CLEAR | void) = let
 //    val (locked | ()) = cli (enabled | (* *))
   in
     if twi_transceiver_busy () then let
         //val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
-      in loop(enabled | (* *)) end
+      in loop(enabled | buf) end
     else let
       //val (enabled | ()) = sei(locked | (* *))
      in
@@ -38,23 +38,23 @@ implement main (pf0 | (* *) ) = let
             val rx = twi_rx_data_in_buf()
           in
             if rx > 0 then let
-                val () = setbits(PORTB, PORTB3)
-                val _ = twi_get_data(enabled | !buf, rx)
-//                val () =
-//                  if (char_of_uchar(!buf.[0]) = 'h') then
-//                    setbits(PORTB, PORTB3)
+                val _ = twi_get_data(enabled | buf, rx)
+                val c = char_of_uchar(buf.[0])
+                val () =
+                  if (char_of_uchar(buf.[0]) = 'h') then
+                    setbits(PORTB, PORTB3)
 //                val () = !buf.[0] := uchar_of_int(int_of_uchar(!buf.[0]) + 0x1)
                 val () = twi_start(enabled | (* *))
 //                val () = twi_start_with_data(enabled | !buf, rx)
-              in loop(enabled | (* *)) end
+              in loop(enabled | buf) end
             else let
               val () = twi_start(enabled | (* *))
-            in loop(enabled | (* *)) end
+            in loop(enabled | buf) end
           end
       else let
-        in loop(enabled | (* *)) end
+        in loop(enabled | buf) end
      end
   end
   //loop never completes, but preserve pf0
-  val (pf1 | () ) = loop(pf1 | (* *))
+  val (pf1 | () ) = loop(pf1 | !buf)
 in pf0 := pf1 end

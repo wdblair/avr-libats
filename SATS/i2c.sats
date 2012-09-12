@@ -80,50 +80,59 @@ viewtypedef twi_state_t
     status_reg= status_reg_t,
     state=uchar,
     next_byte= [m:nat | m < buff_size] int m,
-    enable= () -<fun1> void
+    enable= () -<fun1> void,
+    busy= () -<fun1> bool
 }
 
 (* ****** ****** *)
 
 fun set_all (
-  r: !status_reg_t, c: uchar
+  r: &status_reg_t, c: uchar
 ) : void = "mac#status_reg_set_all"
 
 fun get_all (
-  r: !status_reg_t
+  r: &status_reg_t
 ) : uchar = "mac#status_reg_get_all"
 
 fun set_last_trans_ok (
-  r: !status_reg_t, c: bool
+  r: &status_reg_t, c: bool
 ) : void = "mac#status_reg_set_last_trans_ok"
 
 fun get_last_trans_ok (
-  r: !status_reg_t
+  r: &status_reg_t
 ) : bool = "mac#status_reg_get_last_trans_ok"
 
 fun set_rx_data_in_buf (
-  r: !status_reg_t, c: bool
+  r: &status_reg_t, c: bool
 ) : void = "mac#status_reg_set_rx_data_in_buf"
 
 fun get_rx_data_in_buf (
-  r: !status_reg_t
+  r: &status_reg_t
 ) : bool = "mac#status_reg_get_rx_data_in_buf"
 
 fun set_gen_address_call (
-  r: !status_reg_t, c: bool
+  r: &status_reg_t, c: bool
 ) : void = "mac#status_reg_set_gen_address_call"
 
 fun get_gen_address_call (
-  r: !status_reg_t
+  r: &status_reg_t
 ) : bool = "mac#status_reg_get_gen_address_call"
 
 fun set_all_bytes_sent (
-  r: !status_reg_t, b: bool
+  r: &status_reg_t, b: bool
 ) : void = "mac#status_reg_set_all_bytes_sent"
 
 fun get_all_bytes_sent (
-  r: !status_reg_t
+  r: &status_reg_t
 ) : bool = "mac#status_reg_get_all_bytes_sent"
+
+fun set_busy (
+  r: &status_reg_t, b: bool
+) : void = "mac#status_reg_set_busy"
+
+fun get_busy (
+  r: &status_reg_t
+) : bool = "mac#status_reg_get_busy"
 
 (* ****** ****** *)
 
@@ -135,7 +144,6 @@ fun twi_slave_init (
   pf: !INT_CLEAR | addr: twi_address, gen_addr: bool
 ) : void
 
-//0xB8 for 40khz, should do this dynamically.
 fun twi_master_init (
   pf: !INT_CLEAR  | baud: uint8
 ) : void
