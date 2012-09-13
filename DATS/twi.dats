@@ -19,7 +19,7 @@ staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
 staload "SATS/global.sats"
-staload "SATS/i2c.sats"
+staload "SATS/twi.sats"
 staload "SATS/stdlib.sats"
 
 (* ****** ****** *)
@@ -56,7 +56,7 @@ fun enable_pullups () : void = begin
 end
 
 implement
-twi_slave_init(pf | addr, gen_addr) = {
+slave_init(pf | addr, gen_addr) = {
   val () = enable_pullups()
   val () = set_address(addr, gen_addr)
   val () = clear_and_setbits(TWCR, TWEN)
@@ -70,7 +70,7 @@ extern
 castfn _8(i: uint8) : natLt(256)
 
 implement
-twi_master_init(pf | baud ) = {
+master_init(pf | baud ) = {
   val () = enable_pullups()
   val () = setval(TWBR, _8(baud))
   val () = setval(TWDR, 0xFF)
@@ -84,7 +84,7 @@ twi_master_init(pf | baud ) = {
 (* ****** ****** *)
 
 implement
-twi_transceiver_busy () = busy where {
+transceiver_busy () = busy where {
   val (gpf, pf | p) = get_twi_state()
   val busy = p->busy()
   prval () = return_global(gpf, pf)
@@ -105,7 +105,7 @@ local
     (pf: !INT_SET | (* *) ) : void = let
 //        val (locked | ()) = cli( pf | (* *) )
       in 
-        if twi_transceiver_busy () then let
+        if transceiver_busy () then let
 //            val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
 //            prval () = pf := enabled
           in sleep_until_ready(pf | (* *) ) end
@@ -115,7 +115,7 @@ local
         in end
       end
 
-  fun enable_twi() : void =
+  fun enable_twi () : void =
     clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
 
   fun clear_state () : void = {
@@ -206,7 +206,7 @@ local
 in
 
 implement
-twi_get_state_info (enabled | (* *) ) = let
+get_state_info (enabled | (* *) ) = let
   val () = sleep_until_ready(enabled | (* *) )
   val (free, pf | p) = get_twi_state()
   val x = p->state
@@ -214,21 +214,21 @@ twi_get_state_info (enabled | (* *) ) = let
 in x end
 
 implement
-twi_last_trans_ok () = let
+last_trans_ok () = let
   val (free, pf | p) = get_twi_state()
   val x = get_last_trans_ok(p->status_reg)
   prval () = return_global(free, pf)
 in x end
 
 implement
-twi_rx_data_in_buf () = let
+rx_data_in_buf () = let
   val (free, pf | p) = get_twi_state()
   val x = p->buffer.recvd_size
   prval () = return_global(free, pf)
 in x end
 
 implement
-twi_start_with_data {n, p} (enabled | msg, size) = {
+start_with_data {n, p} (enabled | msg, size) = {
   val () = sleep_until_ready(enabled | (* *) )
   val (free, pf | p) = get_twi_state()
   //Set the size of the message and copy the buffer
@@ -239,7 +239,7 @@ twi_start_with_data {n, p} (enabled | msg, size) = {
   prval () = return_global(free, pf)
 }
 
-implement twi_get_data {n,p} (enabled | msg, size) = let
+implement get_data {n,p} (enabled | msg, size) = let
   val () = sleep_until_ready(enabled | (* *))
   val (free, pf | p) = get_twi_state()
   val lastok = get_last_trans_ok(p->status_reg)
@@ -253,7 +253,7 @@ in
     in lastok end
 end
 
-implement twi_start(enabled | (* *)) = {
+implement start(enabled | (* *)) = {
   val () = sleep_until_ready(enabled | (* *))
   val () = clear_state()
   val (gpf, pf | p) = get_twi_state()

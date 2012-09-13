@@ -1,5 +1,5 @@
 %{#
-#include "CATS/i2c.cats"
+#include "CATS/twi.cats"
 %}
 
 #define ATS_STALOADFLAG 0
@@ -140,11 +140,11 @@ fun get_twi_state () : [l:agz] (
   global(l), twi_state_t @ l | ptr l
 ) = "mac#get_twi_state"
 
-fun twi_slave_init (
+fun slave_init (
   pf: !INT_CLEAR | addr: twi_address, gen_addr: bool
 ) : void
 
-fun twi_master_init (
+fun master_init (
   pf: !INT_CLEAR  | baud: uint8
 ) : void
 
@@ -152,24 +152,24 @@ fun setup_addr_byte {n:pos} {p:pos | p < 128} (
   buf: &(@[uchar][n]), addr: int p,  read: bool
 ) : void = "mac#avr_libats_setup_addr_byte"
 
-fun twi_transceiver_busy () : bool
+fun transceiver_busy () : bool
 
-fun twi_get_state_info (
+fun get_state_info (
   pf: !INT_SET | (* *)
 ) : uchar
 
-fun twi_last_trans_ok () : bool
+fun last_trans_ok () : bool
 
-fun twi_rx_data_in_buf () : [n:nat | n <= buff_size] int n
+fun rx_data_in_buf () : [n:nat | n <= buff_size] int n
 
-fun twi_start_with_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
+fun start_with_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
   pf: !INT_SET | msg: &(@[uchar][n]), sz: int p
 ) : void
 
-fun twi_get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
+fun get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
   pf: !INT_SET | msg: &(@[uchar][n]), sz: int p
 ) : bool
 
-fun twi_start (
+fun start (
   pf: !INT_SET | (* *)
 ) : void
