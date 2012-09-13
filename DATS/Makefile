@@ -14,7 +14,7 @@ library: $(objects)
 	ar rcs libats.a $^
 	mv libats.a ../lib/
 
-.phony: cleanall
+.phony: clean
 
-cleanall:
+clean:
 	rm *_dats.c *_dats.o

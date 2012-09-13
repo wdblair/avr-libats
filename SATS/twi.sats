@@ -145,7 +145,7 @@ fun slave_init (
 ) : void
 
 fun master_init (
-  pf: !INT_CLEAR  | baud: uint8
+  pf: !INT_CLEAR  | baud: int
 ) : void
 
 fun setup_addr_byte {n:pos} {p:pos | p < 128} (

@@ -27,8 +27,8 @@ castfn uint8_of_int(i:int) : uint8
 implement main (pf0 | (* *) ) = {
   val () = $USART.atmega328p_init(uint16_of_int(9600))
   val () = setbits(DDRB, DDB3)
-  //TODO: Generate TWBR from a frequency, maybe offer a couple of options.
-  val () = $TWI.master_init(pf0 |  uint8_of_int(0x5C))
+  //Set SCL to 80khz
+  val () = $TWI.master_init(pf0 |  80)
   val (set | ()) = sei(pf0 | (* *))
   var !buf = @[uchar][4](_c(0))
   val () = while (true) {

@@ -1,6 +1,8 @@
 #ifndef _AVR_LIBATS_I2C_HEADER
 #define _AVR_LIBATS_I2C_HEADER
 
+#include <stdlib.h>
+
 #define BUFF_SIZE 4
 
 //Bit and byte definitions
@@ -71,6 +73,24 @@
 
 #define avr_libats_setup_addr_byte(buffer, addr, read)  \
   ((unsigned char *)buffer)[0] = (addr << 1) | read
+
+
+ATSinline()
+ats_int_type
+avr_libats_twi_twbr_of_scl (ats_int_type scl) {
+  //SCL = CLOCK / ((16 + 2(TWBR))* PRESCALER)
+  //TWBR = (CLOCK/SCL - 16) / 2
+  uint8_t twbr;
+  ldiv_t div;
+
+  div = ldiv(F_CPU/1000, scl);
+  
+  twbr = (uint8_t)div.quot;
+
+  twbr = (twbr - 16) / 2;
+  
+  return twbr;
+}
 
 union status_reg_t
 {

@@ -30,6 +30,9 @@ fun set_address (
   a:twi_address, g:bool
 ) : void = "mac#set_address"
 
+extern
+fun twbr_of_scl (a: int) : uint8 = "mac#avr_libats_twi_twbr_of_scl"
+
 (* ****** ****** *)
 
 fun enable_twi_master () : void =
@@ -71,8 +74,9 @@ castfn _8(i: uint8) : natLt(256)
 
 implement
 master_init(pf | baud ) = {
+  val twbr = twbr_of_scl(baud)
   val () = enable_pullups()
-  val () = setval(TWBR, _8(baud))
+  val () = setval(TWBR, _8(twbr))
   val () = setval(TWDR, 0xFF)
   val () = clear_and_setbits(TWCR, TWEN)
   val (gpf, pf | p) = get_twi_state()
