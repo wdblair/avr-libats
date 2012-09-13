@@ -83,6 +83,11 @@ implement main (pf0 | (* *) ) = {
   val () = setup_addr_byte(!buf, 0x2, false)
   val () = !buf.[1] := uchar_of_char('h')
   val () = twi_start_with_data(set | !buf, 2)
+  val () = setup_addr_byte(!buf, 0x2, true)
+  val () = twi_start_with_data(set | !buf, 2)
+  val _ = twi_get_data(set | !buf, 2)
+  val c = char_of_uchar(!buf.[1])
+  val () = println! ("resp: ", c)
   val () = loop() where {
     fun loop () : void = loop()
   }

@@ -160,7 +160,7 @@ local
     prval () = return_global(free, pf)
   }
   
-  fun transmit_next_byte () : void = let
+  fun master_transmit_next_byte () : void = let
       val (free, pf | p) = get_twi_state()
   in
       if p->next_byte < p->buffer.msg_size then { //more to send
@@ -176,6 +176,21 @@ local
       }
   end
 
+  fun slave_transmit_next_byte () : void = let
+      val (free, pf | p) = get_twi_state()
+      //Send the next byte out for delivery
+      val x = p->buffer.data.[p->next_byte]
+      val () = setval(TWDR, uint8_of_uchar(x))
+      val () = enable_twi_slave()
+  in
+    if p->next_byte < (p->buffer.msg_size - 1) then {
+      val () = p->next_byte := p->next_byte + 1
+      prval () = return_global(free, pf)
+    } else {
+      prval () = return_global(free, pf)
+    }
+  end
+  
   fun detect_last_byte () : void = let
       val (free, pf | p) = get_twi_state()
   in
@@ -261,20 +276,20 @@ implement TWI_vect (pf | (* *)) = let
     | TWI_START => {
         val () = println! "st"
         val () = reset_next_byte()
-        val () = transmit_next_byte()
+        val () = master_transmit_next_byte()
       }
     | TWI_REP_START => {
         val () = println! "rp"
         val () = reset_next_byte()
-        val () = transmit_next_byte()
+        val () = master_transmit_next_byte()
       }
     | TWI_MTX_ADR_ACK => {
         val () = println! "tack"
-        val () = transmit_next_byte()
+        val () = master_transmit_next_byte()
       }
     | TWI_MTX_DATA_ACK => {
         val () = println! "tdat"
-        val () = transmit_next_byte()
+        val () = master_transmit_next_byte()
       }
     | TWI_MRX_DATA_ACK => {
         val () = println! "rdat"
@@ -300,36 +315,25 @@ implement TWI_vect (pf | (* *)) = let
 // Slave
     | TWI_STX_ADR_ACK  => {
         val () = reset_next_byte()
+        val () = slave_transmit_next_byte()
       }
-    | TWI_STX_ADR_ACK_M_ARB_LOST => reset_next_byte()
-    | TWI_STX_DATA_ACK => let
-        val (free, pf | p) = get_twi_state()
-        //Send the next byte out for delivery
-        val x = p->buffer.data.[p->next_byte]
-        val () = setval(TWDR, uint8_of_uchar(x))
-      in 
-          if p->next_byte < p->buffer.msg_size - 1 then {
-            val () = p->next_byte := p->next_byte + 1
-            prval () = return_global(free, pf)
-            val () = enable_twi_slave()
-          } else {
-            val () = set_all_bytes_sent(p->status_reg, true)
-            prval () = return_global(free, pf)
-            val () = enable_twi_slave()
-          }
-      end
+    | TWI_STX_ADR_ACK_M_ARB_LOST => {
+        val () = reset_next_byte()
+        val () = slave_transmit_next_byte()
+      }
+    | TWI_STX_DATA_ACK => slave_transmit_next_byte()
     | TWI_STX_DATA_NACK => let
       val (free, pf | p) = get_twi_state()
       val () =
         if get_all_bytes_sent(p->status_reg) then {
           val () = set_last_trans_ok(p->status_reg, true)
-          prval () = return_global(free, pf)
         } else {
           val () = p->state := uchar_of_reg8(TWSR)
-          prval () = return_global(free, pf)
         }
+      val () = set_busy(p->status_reg, false)
+      prval () = return_global(free, pf)
      in
-      clear_and_setbits(TWCR, TWEN)
+      clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
      end
     | TWI_SRX_GEN_ACK => {
         val (free, pf | p) = get_twi_state()
