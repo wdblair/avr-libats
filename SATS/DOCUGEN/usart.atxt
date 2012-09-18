@@ -1,0 +1,73 @@
+#decltitle("\
+ATSCONTRIB/avr/usart
+")
+
+(* ****** ****** *)
+
+#declpreamble('\
+
+#para("\
+This package provides two interfaces for the AVR Serial Communication interface. Both implementations
+replace stdio and stdin with the serial module, so standard I/O routines will go to and come from the TX
+and RX pins. Right now this interface is closely tied to the atmega328p, but more implementations will 
+follow.
+")
+')
+
+(* ****** ****** *)
+
+#declnamesynop("atmega328p_init")
+#decldescrpt("\
+Sets the USART module to asynchronous operation with an 8 bit frame size with no parity bit. The speed
+of the connection is given by baud in bits per second. When printing or receiving characters, transmission
+will happen in a synchronous fashion. That is, the MCU will busy wait on each character to be sent over the 
+line. If you prefer interrupt driven operation, use #dyncode("atmega328p_async_init").
+")
+
+#declexample("\
+#pats2xhtmld_tryit('\
+staload USART = \"usart.sats\"
+
+implement main (pf | (* *) ) = {
+  val () = $USART.atmega328p_init(uint16_of_int(9600))
+  val () = println! \"Hello World!\"
+}
+')
+")
+
+(* ****** ****** *)
+
+#declnamesynop("atmega328p_async_init")
+#decldescrpt("\
+Sets the USART module to asynchronous operation with an 8 bit frame size with no parity bit. The speed
+of the connection is given by baud in bits per second. This will make transmission of messages through
+the standard I/O routines interrupt driven. In the case of the MCU waits for data, the MCU will be put
+to sleep and will be awoken when data is available to read. Nothing changes with respect to how you
+use the standard IO routines using this interrupt driven approach.
+
+Note that if the buffer fills up and another character is received, it will be dropped. You can tweak
+the size of the internal buffer inside DATS/usart_async.dats.
+")
+
+#declexample("\
+#pats2xhtmld_tryit('\
+staload USART = \"usart.sats\"
+
+implement main (pf | (* *) ) = {
+  val () = $USART.atmega328p_async_init(pf | uint16_of_int(9600))
+  fun loop ( pf: INT_SET | (* *) ) : INT_CLEAR = let
+    val c = char_of_int(getchar())
+    val _ = putchar(c)
+  in loop(pf | (* *)) end
+  val (set | ()) = sei(pf | (* *))
+  val (clear | () ) = loop(set | (* *))
+  prval () = pf := clear
+}
+')")
+
+(* ****** ****** *)
+
+#declnamesynop("atmega328p_async_flush")
+#decldescrpt("\
+Flushes the stdout buffer and then sleeps until the entire USART buffer has been transmitted.
+")

@@ -1,0 +1,80 @@
+#decltitle("\
+ATSCONTRIB/avr/twi
+")
+
+#declpreamble('\
+#para("\
+  This package provides an interrupt driven interface for the TWI module. Both Master and Slave
+  mode are supported through a single interface. After setup, both modes query messages to be
+  sent out or read from other devices. Support is planned to enable a more transaction based
+  approach beyond the current primitive interface.
+")
+')#comment("declpreamble")
+
+(* ****** ****** *)
+
+#declnamesynop("buff_size")
+#decldescrpt("\
+  A static constant used to ensure a program doesn't try to query more data than can fit in
+  the internal buffer. If you wish to change the default buffer size, you must change this value
+  in HATS/twi.hats and in CATS/twi.cats.
+")
+
+#declnamesynop("twi_address")
+#decldescrpt("\
+  The TWI Protocol supports up to 128 devices, but address 0 is reserved as a general
+  call to all slaves on the bus.
+")
+
+#declnamesynop("slave_init")
+#decldescrpt("\
+  Initializes the TWI driver to work in slave mode with address \"addr\". If gen_addr is true,
+  then the TWI module will respond to the general address call.
+")
+
+#declnamesynop("master_init")
+#decldescrpt("\
+  Initializes the device to act as master and sets the SCL frequency to be baud, where baud is in kHz.
+")
+
+#declnamesynop("setup_addr_byte")
+#decldescrpt("\
+  A convenience function that simplifies setting up the SLA+W/R byte for messages from the master. Given
+  a buffer, the 0th byte is set up properly with the given address and mode. If read is true, a read will
+  command will be generated, and a write command otherwise.
+")
+
+#declnamesynop("transceiver_busy")
+#decldescrpt("\
+  Check if the TWI transceiver is busy. Returns true if it is and false otherwise.
+")
+
+#declnamesynop("last_trans_ok")
+#decldescrpt("\
+  Queries the driver to see if the latest transaction occurred succesfully.
+")
+
+#declnamesynop("rx_data_in_buf")
+#decldescrpt("\
+  Returns the amount of bytes currently read into the TWI buffer. Note that for slaves, the SLA+W/R byte
+  will not be stored in the buffer.
+")
+
+#declnamesynop("start_with_data")
+#decldescrpt("\
+  Start the TWI tranceiver with a prepared message. For masters this will issue a START and then the 
+  driver will handle sending out the contents of the buffer which frees the MCU to work on something else. 
+  If it cannot send, REPEATED STARTs will be generated until the message can be sent. For slaves, the 
+  TWI driver will become busy and use the data if it receives a command from a master at any point in the future.
+")
+
+#declnamesynop("get_data")
+#decldescrpt("\
+  Fetch \"sz\" elements from the TWI buffer and store them in the array \"msg\".
+")
+
+#declnamesynop("start")
+#decldescrpt("\
+  Start the transceiver with the last message that was sent. This is useful for Slave Devices where a problem
+  occurs in a transmission and they can easily restart without copying the same message.
+")

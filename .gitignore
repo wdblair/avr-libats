@@ -8,3 +8,6 @@ scripts/*.sats
 scripts/*.cats
 scripts/*.dats
 DATS/libats.a
+*.html
+SATS/DOCUGEN/Makefile
+SATS/DOCUGEN/Makefile.exe

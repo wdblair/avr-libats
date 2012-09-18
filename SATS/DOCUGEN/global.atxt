@@ -1,0 +1,43 @@
+#decltitle("\
+ATSCONTRIB/avr/global
+")
+
+(* ****** ****** *)
+
+#declpreamble('\
+#para("\
+These functions provide a simple way to get views of global
+variables. Frequently you need to store variables in a static
+way, and these proof functions allow you to gain pointers to
+them.
+")
+')#comment("declpreamble")
+
+#declnamesynop("global")
+#decldescrpt("\
+  An abstract view of some pointer in memory. The easiest way
+  to use this is by defining wrappers to C functions and have
+  them return the reference along with this type.
+")
+
+#declnamesynop("return_global")
+#decldescrpt("\
+  This function allows you to \"free\" static variables
+  from the context of the type system. Of course, freeing
+  statically allocated memory is ridiculous so we use global
+  types with pointers to consume the linear proofs of types
+  residing at a pointer. This 'frees' the proof and the program
+  typechecks. This is a simple axiom; any pointer designated as
+  a static global may simply be consumed.
+")
+#declexample("\
+#pats2xhtmld_tryit('\
+extern
+fun get_state () : [l:agz] (global(l), int @ l | ptr l)
+
+fun increment_state () : void = {
+  val (free, pf | p) = get_state()
+  val () = !p := !p + 1
+  prval () = return_global(free, pf)
+}
+')

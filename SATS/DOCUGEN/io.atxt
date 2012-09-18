@@ -1,0 +1,187 @@
+#decltitle("\
+ATSCONTRIB/avr/io
+")
+
+(* ****** ****** *)
+
+#declpreamble('\
+#para("\
+This package provides generic utility functions to allow simply manipulation of memory mapped
+registers. Also, the constants representing register addresses and pin values are defined
+as well.
+")
+')#comment("declpreamble")
+
+(* ****** ****** *)
+
+#declnamesynop("reg")
+#decldescrpt("\
+This represents the memory mapped registers available to AVR programmers in C. The registers available
+for a specific device are defined by loading io.sats, and then may be used and modified in any context.
+Most registers are limited in size to 8-bits, but this invariant is not enforced in the type's definition.
+")
+
+(* ****** ****** *)
+
+#declnamesynop("setbits")
+#declsynop2("\
+#pats2xhtmls('\
+fun setbits {n:nat} (
+  r: !reg(n) >> reg(n\'), b0: natLt(8)
+) : #[n\':nat; n\' < 256] void
+')
+")
+#decldescrpt("\
+Set bit b0 in the register r. This function may accept up to 8 arguments in addition to the register
+to modify and allows a programmer to set arbitrary bits in r.
+
+Keep in mind that setbits merely sets all specified bits to 1, and leaves all others unmodified.
+")
+#declexample("\
+The simplest example people usually start out with on AVRs is turning on an LED. Assuming we have 
+one connected to PORTB3, the following will turn it on.
+#pats2xhtmld_tryit('\
+implement main () = begin
+    //Set the Data Direction on DDB3 to output
+    setbits(DDRB, DDB3);
+    //Set PORTB3 to Logic High
+    setbits(PORTB, PORTB3);
+end
+')
+")
+
+#declnamesynop("clearbits")
+#declsynop2("\
+#pats2xhtmls('\
+fun clearbits {n:nat} (
+  r: !reg(n) >> reg(n\'), b0: natLt(8)
+) : #[n\':nat; n\' < 256] void
+')
+")
+#decldescrpt("\
+Clear bit b0 in the register r. This function may accept up to 8 arguments in addition to the register
+to modify and allows a programmer to clear arbitrary bits in r.
+
+Keep in mind that setbits merely sets all specified bits to 0, and leaves all others unmodified.
+")
+
+#declnamesynop("maskbits")
+#declsynop2("\
+#pats2xhtmls('\
+fun maskbits {n:nat} (
+  r: !reg(n) >> reg(n\'), b0: natLt(8)
+) : #[n\':nat; n\' < 256] void
+')
+")
+#decldescrpt("\
+Applies a bitmask to register r. This function may accept up to 8 arguments in addition to the register
+to modify and allows a programmer to mask arbitrary bits in r. 
+
+This function will clear all bits that are not given as arguments.
+")
+
+#declnamesynop("flipbits")
+#declsynop2("\
+#pats2xhtmls('\
+fun flipbits {n:nat} (
+  r: !reg(n) >> reg(n\'), b0: natLt(8)
+) : #[n\':nat; n\' < 256] void
+')
+")
+#decldescrpt("\
+Flips bit b0 in the register r. This function may accept up to 8 arguments in addition to the register
+to modify and allows a programmer to flip arbitrary bits in r.
+
+Keep in mind that setbits merely flips only the specified bits, and leaves all others unmodified.
+")
+
+#declnamesynop("clear_and_setbits")
+#declsynop2("\
+#pats2xhtmls('\
+fun clear_and_setbits {n:nat} (
+  r: !reg(n) >> reg(n\'), b0: natLt(8)
+) : #[n\':nat; n\' < 256] void
+')
+")
+#decldescrpt("\
+Clears all bits of r and sets b0. This function may accept up to 8 arguments in addition to the register
+to modify and allows a programmer set the value of r to be only the bits given.
+
+Keep in mind this function will set any bit not given to 0.
+")
+
+#declnamesynop("setval")
+#decldescrpt('\
+Set register r to some value n where n is a natural number less than 256.
+')
+#declexample("\
+This is useful for setting registers that represent 8-bit integers, such as the UBRR register for the TWI module.
+#pats2xhtmld_tryit('
+
+fun master_init(pf: !INT_CLEAR | baud: int) = {
+  val twbr = twbr_of_scl(baud)
+  val () = enable_pullups()
+  val () = setval(TWBR, twbr)
+  val () = setval(TWDR, 0xFF)
+  val () = clear_and_setbits(TWCR, TWEN)
+}
+')
+")
+
+#declnamesynop("loop_until_bit_is_set")
+#decldescrpt('\
+Busy wait until bit b is set in register r.
+')
+
+#declnamesynop("loop_until_bit_is_clear")
+#decldescrpt('\
+Busy wait until bit b is cleared to 0 in register r.
+')
+
+#declnamesynop("bit_is_set")
+#decldescrpt('\
+Check whether bit b is set to 1 in register r.
+')
+
+#declnamesynop("bit_is_clear")
+#decldescrpt('\
+Check whether bit b is cleared to 0 in register r.
+')
+
+#declnamesynop("int_of_regs")
+#decldescrpt('\
+Take two 8-bit registers and return their combined 16-bit value. Low is read first, and high is read second. 
+High contains the high 8 bits of the result, and low contains the lower bits.
+')
+#declexample("\
+When reading back the 10-bit sample from an ADC, the hardware requires us to read the low 8-bits before the high
+bits. The below is a sample routine that reads from the Atmega328p's internal Temperature Sensor.
+
+#pats2xhtmld_tryit('\
+fun sample () : int = let
+  val () = setbits(ADMUX, REFS1, REFS0, MUX3)
+  val () = setbits(ADCSRA, ADEN, ADSC)
+  val () = loop_until_bit_is_clear(ADCSRA, ADSC)
+in int_of_regs(ADCH, ADCL) end
+')
+")
+
+#declnamesynop("set_regs_to_int")
+#decldescrpt('\
+Split a 16 bit integer accross two registers. High contains the high 8 bits of value and low the lower 8 bits.
+')
+#declexample("\
+The following can be used to set up the baud rate of the USART interface.
+
+#pats2xhtmld_tryit('\
+fun usart_init (ubbr: uint16) : void = {
+  val () = set_regs_to_int(UBRR0H, UBRR0L, ubrr)
+  val () = setbits(UCSR0C, UCSZ01, UCSZ00)
+  val () = setbits(UCSR0B, RXEN0, TXEN0)
+}
+')
+")
+
+(* ****** ****** *)
+
+(* end of [io.atxt] *)

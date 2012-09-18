@@ -1,0 +1,14 @@
+#decltitle("\
+ATSCONTRIB/avr/delay
+")
+
+#declpreamble('\
+#para("\
+This package enables the delay functionality provided by the avr-libc library.
+")
+')#comment("declpreamble")
+
+#declnamesynop("delay_ms")
+#decldescrpt("\
+  Block execution of the MCU for t milliseconds. The MCU will busy wait during this time.
+")

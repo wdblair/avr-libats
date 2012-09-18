@@ -1,0 +1,81 @@
+%{
+//
+dynload "libatsdoc/dynloadall.dats"
+//
+dynload "libatsyntax/dynloadall.dats"
+staload "libatsyntax/SATS/libatsyntax.sats"
+//
+#include "utils/atsdoc/HATS/pats2xhtmlatxt.hats"
+//
+dynload "declatext.dats"
+staload "declatext.sats"
+dynload "htmlgendecl.dats"
+staload "htmlgendecl.sats"
+//
+local
+//
+staload _(*anon*) = "prelude/DATS/list.dats"
+staload _(*anon*) = "prelude/DATS/list_vt.dats"
+staload _(*anon*) = "prelude/DATS/reference.dats"
+//
+in
+//
+val () = let
+  val cs =
+    char_list_vt_make_file (stdin_ref)
+  val declreplst = charlst_declitemize (0(*sta*), cs)
+  val declreplst = list_vt_reverse (declreplst)
+  val declreplst = list_of_list_vt (declreplst)
+in
+  theDeclrepLst_set (declreplst)
+end // end of [theDeclrepLst]
+//
+end // end of [local]
+//
+#include "htmlgendecl_data_atxt.dats"
+//
+val theDecltitle = theDecltitle_get ()
+val theDeclpreamble = theDeclpreamble_get ()
+val theDeclpostamble = theDeclpostamble_get ()
+//
+val theDeclnameLst_menu = theDeclnameLst_make_menu ()
+val theDeclitemLst_content = theDeclitemLst_make_content ()
+//
+val () = theAtextMap_insert_str ("theDeclnameLst_menu", theDeclnameLst_menu)
+val () = theAtextMap_insert_str ("theDeclitemLst_content", theDeclitemLst_content)
+//
+%}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+#title(theDecltitle)
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+#patsyntax_style()
+#patscode_jquery_min_js()
+#patscode_tryit_bind_all_js()
+</head>
+<body>
+
+#H1(theDecltitle)
+
+#atext_strsub(theDeclpreamble)
+
+#HR(2)
+
+#atext_strsub("\#theDeclnameLst_menu$")
+
+#HR(2)
+
+#atext_strsub("\#theDeclitemLst_content$")
+
+#HR(2)
+
+#atext_filepath("theDeclpostamble.html")
+
+</body>
+</html>
+
+%{
+implement main () = fprint_filsub (stdout_ref, "htmlgendecl_atxt.txt")
+%}\

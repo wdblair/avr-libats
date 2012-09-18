@@ -61,7 +61,7 @@ staload "SATS/global.sats"
 
 (* ****** ****** *)
 
-typedef twi_address = [n:int | n >= 0 | n < 128] int n
+typedef twi_address = [n:int | n > 0 | n < 128] int n
 
 (* ****** ****** *)
 

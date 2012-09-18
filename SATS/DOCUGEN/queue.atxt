@@ -1,0 +1,71 @@
+#decltitle("\
+ATSCONTRIB/avr/queue
+")
+
+(* ****** ****** *)
+
+#declpreamble('\
+#para("\
+The interface for a finite queue. Applications would use this typically for a FIFO buffer. By default, the
+queue interface assumes interrupts have been cleared in order to prevent race conditions with Interrupt 
+Service Routines. In practice, however, this only makes it slightly more difficult to do things incorrectly, and
+race conditions could still arise.
+")
+#para("\
+Currently, a ring buffer implements this interface in DATS/cycbuf.dats.
+")
+')
+
+(* ****** ****** *)
+
+#declnamesynop("queue")
+#decldescrpt("\
+The abstract type for a queue. The first static is the type of element stored in the queue, the second
+the current number of elements in the queue, and the third the queue's maximum size.
+")
+
+(* ****** ****** *)
+
+#declnamesynop("insert")
+#decldescrpt("\
+Insert an element x into the back of the queue.
+")
+
+(* ****** ****** *)
+
+#declnamesynop("remove")
+#decldescrpt("\
+Remove the element at the head of the queue, and assign x its value.
+")
+
+(* ****** ****** *)
+
+#declnamesynop("empty")
+#decldescrpt("\
+Tests whether or not a queue is empty
+")
+#declexample("\
+
+The following function repeatedly polls a buffer for data.
+
+#pats2xhtmld_tryit('\
+fun get_char {l:agz}{s:pos} {n:nat | n <= s} (
+  lpf: !INT_CLEAR,
+  buffer: !queue(char, n, s) @ l >> queue(char, np, s) @ l |
+  p: ptr l
+) : #[np: nat | np <= s] char =
+  if empty(buffer | p) then let
+      val () = delay_ms(50.0)
+    in get_char(lpf, buffer | p) end
+  else let
+    var x: char
+    val () = remove(lpf, buffer | p, x)
+  in x end
+')
+
+")
+
+#declnamesynop("full")
+#decldescrpt("\
+Tests whether or not a queue is full
+")

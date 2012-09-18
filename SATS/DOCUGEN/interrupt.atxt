@@ -1,0 +1,70 @@
+#decltitle("\
+ATSCONTRIB/avr/interrupt
+")
+
+(* ****** ****** *)
+
+#declpreamble('\
+#para("\
+This package enables a user to modify the global interrupt mask.
+")
+')#comment("declpreamble")
+
+(* ****** ****** *)
+
+#declnamesynop("INT_SET")
+#declsynop2("\
+#pats2xhtmls('\
+absview INT_SET
+')
+")
+#decldescrpt("\
+An abstract linear view whose presence implies that the global interrupt mask is currently enabled.
+")
+
+#declnamesynop("INT_CLEAR")
+#declsynop2("\
+#pats2xhtmls('\
+absview INT_CLEAR
+')
+")
+#decldescrpt("\
+An abstract linear view whose presence implies that the global interrupt mask is currently disabled.
+")
+
+(* ****** ****** *)
+
+#declnamesynop("cli")
+#decldescrpt("\
+Disables interrupts and returns a linear prop to verify this.
+")
+
+#declnamesynop("sei")
+#decldescrpt("\
+Enables interrupts and returns a linear prop to verify this.
+")
+#declexample("\
+
+If both of these functions require a linear prop the natural question is where can we get one 
+to begin with? The avr-libc library calls the programmer's main function with interrupts disabled,
+so this is the value we start with. No matter what we do with interrupts, the interrupt
+flag must be preserved, which means by the end of our main function we must return an INT_CLEAR
+to show we have not incorrectly used the interrupt flag.
+
+#pats2xhtmld_tryit('\
+extern
+fun process () : void
+
+implement main (cleared | (* *)) = {
+  fun loop(pf: INT_SET | (* *) ) : (INT_CLEAR | void ) = let
+    val (locked | ()) = cli()
+    val () = process()
+    val (set | ()) = sei(locked | (* *))
+  in loop(set | (* *)) end
+  val (set | () ) = sei(cleared | (* *))
+  val (pf | () )  = loop()
+  //overall clear has been preserved
+  prval () = cleared := pf
+}
+')
+")

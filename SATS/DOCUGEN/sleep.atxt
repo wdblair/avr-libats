@@ -1,0 +1,22 @@
+#decltitle("\
+ATSCONTRIB/avr/sleep
+")
+
+(* ****** ****** *)
+
+#declpreamble('\
+
+#para('\
+This package provides wrappers around avr-libc\'s sleep 
+functions, as well as a few higher level routines.
+')
+')#comment("declpreamble")
+
+(* ****** ****** *)
+
+#declnamesynop("sei_and_sleep_cpu")
+#decldescrpt("\
+Enables interrupts and puts the CPU to sleep. This avoids the scenario where you enable
+interrupts, the expected interrupt occurs, then the CPU is put to sleep and the CPU never 
+wakes up.
+")
