@@ -107,15 +107,15 @@ local
 
   fun sleep_until_ready
     (pf: !INT_SET | (* *) ) : void = let
-//        val (locked | ()) = cli( pf | (* *) )
+        val (locked | ()) = cli( pf | (* *) )
       in 
         if transceiver_busy () then let
-//            val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
-//            prval () = pf := enabled
+            val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
+            prval () = pf := enabled
           in sleep_until_ready(pf | (* *) ) end
         else let
-//          val (enabled | () ) = sei(locked | (* *))
-//          prval () = pf := enabled
+          val (enabled | () ) = sei(locked | (* *))
+          prval () = pf := enabled
         in end
       end
 
@@ -173,7 +173,7 @@ local
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT)
         prval () = return_global (free, pf)
       } else { //finished
-        val () = println! "f"
+//        val () = println! "f"
         val () = set_last_trans_ok(p->status_reg, true)
         val () = clear_and_setbits(TWCR, TWEN, TWINT, TWSTO)
         prval () = return_global (free, pf)
@@ -355,9 +355,7 @@ implement TWI_vect (pf | (* *)) = let
         val () = read_next_byte()
       }
     | TWI_SRX_GEN_DATA_ACK => read_next_byte()
-      //TWI_SRX_STOP_RESTART , for some reason using the macro causes an error
-      //using just its value works though...
-    | 0xA0 => {
+    | TWI_SRX_STOP_RESTART => {
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
         val (gpf, pf | p) = get_twi_state()
         val () = set_busy(p->status_reg, false)
