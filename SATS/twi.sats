@@ -96,9 +96,9 @@ fun add_msg {s, n, sz, v:nat | s + v <= buff_size; n < sz} (
     f: !transaction(s, n, sz) >> transaction(s+v, n+1, sz), index: int n,  v: int v
 ) : void = "mac#format_add_msg"
 
-fun get_msg {s, n, p, sz :nat | s <= buff_size; n < sz; p < sz} (
-    f: !transaction(s, n, sz) >> transaction(s-n', n-1, sz), index: int p
-) : #[n':nat | s + n' <=  buff_size]  int n'
+fun get_msg {s, n, p, sz :nat | s <= buff_size; n < sz; p < sz; n + p == sz} (
+    f: !transaction(s, n, sz) >> transaction(s-v, n-1, sz), index: int p
+) : #[v:nat | v <=  buff_size]  int v
 
 praxi free_transaction{s,n,sz:nat}(f:transaction(s,n,sz)) : void
 
