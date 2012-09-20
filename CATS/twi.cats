@@ -48,7 +48,7 @@
 #define TWI_SRX_STOP_RESTART       0xA0  // A STOP condition or repeated START condition has been received while still addressed as Slave
 
 // TWI Miscellaneous status codes
-#define TWI_NO_STATE               0xF8  // No relevant state information available; 
+#define TWI_NO_STATE               0xF8  // No relevant state information available;
 #define TWI_BUS_ERROR              0x00  // Bus error due to an illegal START or STOP condition
 
 #define status_reg_set_all(reg, char) (reg)->all = char
@@ -74,6 +74,17 @@
 #define avr_libats_setup_addr_byte(buffer, addr, read)  \
   ((unsigned char *)buffer)[0] = (addr << 1) | read
 
+ATSinline()
+ats_ptr_type 
+format_make_format (ats_int_type size) {
+  char* buf = (char *)ATS_ALLOCA2(size,sizeof(ats_char_type));
+  int i;
+  for(i = 0 ; i < size; i++)
+    buf[0] = 0;
+  return buf;
+}
+
+#define format_add_msg(format, index, v) ((char*)format)[index] = (char)v
 
 ATSinline()
 ats_int_type
@@ -125,6 +136,5 @@ typedef struct {
 } twi_state_t;
 
 #define get_twi_state() (twi_state_t * volatile)&twi_state
-
 
 #endif

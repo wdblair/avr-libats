@@ -121,7 +121,7 @@ local
 
   fun enable_twi () : void =
     clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
-
+    
   fun clear_state () : void = {
     val (free, pf | p) = get_twi_state()
     //Clear the status register
@@ -130,7 +130,7 @@ local
     val () = p->state := uchar_of_int(TWI_NO_STATE)
     prval () = return_global(free, pf)
   }
-
+  
   fun copy_buffer {d,s:int} {sz:pos | sz <= s; sz <= d} (
     dest: &(@[uchar][d]), src: &(@[uchar][s]), num: int sz
   ) : void = {
@@ -243,6 +243,17 @@ start_with_data {n, p} (enabled | msg, size) = {
   prval () = return_global(free, pf)
 }
 
+implement
+start_transaction {sum, n, sz} (enabled | buf, trans, sum ,sz) = {
+  val () = sleep_until_ready(enabled | (* *) )
+  val (free, pf | p) = get_twi_state()
+  val () = p->buffer.msg_size := sum
+  val () = copy_buffer(p->buffer.data, buf, sum)
+  val () = clear_state()
+  val () = p->enable()
+  prval () = return_global(free, pf)
+}
+
 implement get_data {n,p} (enabled | msg, size) = let
   val () = sleep_until_ready(enabled | (* *))
   val (free, pf | p) = get_twi_state()
@@ -278,34 +289,34 @@ implement TWI_vect (pf | (* *)) = let
     case+ twsr of
 // Master
     | TWI_START => {
-        val () = println! "st"
+//        val () = println! "st"
         val () = reset_next_byte()
         val () = master_transmit_next_byte()
       }
     | TWI_REP_START => {
-        val () = println! "rp"
+//        val () = println! "rp"
         val () = reset_next_byte()
         val () = master_transmit_next_byte()
       }
     | TWI_MTX_ADR_ACK => {
-        val () = println! "tack"
+//        val () = println! "tack"
         val () = master_transmit_next_byte()
       }
     | TWI_MTX_DATA_ACK => {
-        val () = println! "tdat"
+//        val () = println! "tdat"
         val () = master_transmit_next_byte()
       }
     | TWI_MRX_DATA_ACK => {
-        val () = println! "rdat"
+//        val () = println! "rdat"
         val () = copy_recvd_byte()
         val () = detect_last_byte()
       }
     | TWI_MRX_ADR_ACK => {
-        val () = println! "rack"
+//        val () = println! "rack"
         val () = detect_last_byte()
       }
     | TWI_MRX_DATA_NACK => {
-        val () = println! "rnack"
+//        val () = println! "rnack"
         val (free, pf | p) = get_twi_state()
         val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
         val () = set_last_trans_ok(p->status_reg, true)
@@ -313,7 +324,7 @@ implement TWI_vect (pf | (* *)) = let
         prval () = return_global (free, pf)
       }
     | TWI_ARB_LOST => {
-        val () = println! "arb"
+//        val () = println! "arb"
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
       }
 // Slave
