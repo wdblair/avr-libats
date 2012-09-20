@@ -244,8 +244,8 @@ start_with_data {n, p} (enabled | msg, size) = {
 }
 
 implement
-start_transaction {sum, n, sz} (enabled | buf, trans, sum ,sz) = {
-  val () = sleep_until_ready(enabled | (* *) )
+start_transaction {sum, n, sz} (enabled | buf, trans, sum , sz) = {
+  val () = sleep_until_ready(enabled | (* *))
   val (free, pf | p) = get_twi_state()
   val () = p->buffer.msg_size := sum
   val () = copy_buffer(p->buffer.data, buf, sum)

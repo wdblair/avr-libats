@@ -86,21 +86,20 @@ viewtypedef twi_state_t
 
 (* ****** ****** *)
 
-absviewtype transaction (s:int (*sum*), c:int (*count*), sz:int (*maxsize*)) = ptr
+absviewt@ype transaction
+  (s:int (*sum*), c:int (*count*), sz:int (*maxsize*)) = ptr
 
 fun make_transaction {n:pos} (
-     n:int n
-) : transaction(0, 0, n) = "mac#format_make_format"
+   size: int n
+) : transaction(0, 0, n)
+  = "mac#transaction_make"
 
-fun add_msg {s, n, sz, v:nat | s + v <= buff_size; n < sz} (
-    f: !transaction(s, n, sz) >> transaction(s+v, n+1, sz), index: int n,  v: int v
-) : void = "mac#format_add_msg"
+fun add_msg {s, n, sz, v:nat | v >= 2; s + v <= buff_size; n <= sz} (
+    trans: !transaction(s, n, sz) >> transaction(s+v, n+1, sz),
+    value: int v
+) : void = "mac#transaction_add_msg"
 
-fun get_msg {s, n, p, sz :nat | s <= buff_size; n < sz; p < sz; n + p == sz} (
-    f: !transaction(s, n, sz) >> transaction(s-v, n-1, sz), index: int p
-) : #[v:nat | v <=  buff_size]  int v
-
-praxi free_transaction{s,n,sz:nat}(f:transaction(s,n,sz)) : void
+praxi free_transaction{s,n,sz:nat} (f:transaction(s,n,sz)) : void
 
 (* ****** ****** *)
 
@@ -185,7 +184,7 @@ fun start_with_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
 ) : void
 
 fun start_transaction {sum,n,sz:pos | n == sz ; sum <= buff_size} (
-  pf: !INT_SET | buf: &(@[uchar][sum]), trans: !transaction(sum, n, sz),
+  pf: !INT_SET | buf: &(@[uchar][sum]), trans: &(transaction(sum, n, sz)),
   sum: int sum, sz: int n
 ) : void
 

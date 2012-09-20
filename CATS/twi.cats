@@ -74,17 +74,24 @@
 #define avr_libats_setup_addr_byte(buffer, addr, read)  \
   ((unsigned char *)buffer)[0] = (addr << 1) | read
 
+typedef struct {
+  volatile unsigned char cnt;
+  volatile unsigned char fmt[];
+} transaction_t;
+
 ATSinline()
-ats_ptr_type 
-format_make_format (ats_int_type size) {
-  char* buf = (char *)ATS_ALLOCA2(size,sizeof(ats_char_type));
+ats_ptr_type
+transaction_make (ats_int_type size) {
   int i;
+  transaction_t* trans = (transaction_t *)ATS_ALLOCA2(size,sizeof(transaction_t));
+  trans->cnt = 0;
   for(i = 0 ; i < size; i++)
-    buf[0] = 0;
-  return buf;
+    trans->fmt[i] = 0;
+  return trans;
 }
 
-#define format_add_msg(format, index, v) ((char*)format)[index] = (char)v
+#define transaction_add_msg(trans, v)                                   \
+  ((transaction_t*)trans)->fmt[((transaction_t*)trans)->cnt++] = (char)v
 
 ATSinline()
 ats_int_type
@@ -122,8 +129,10 @@ typedef union status_reg_t status_reg_t;
 
 typedef struct {
   volatile unsigned char data[BUFF_SIZE];
+  volatile unsigned char trans[BUFF_SIZE/2];
   volatile uint8_t msg_size;
   volatile uint8_t recvd_size;
+  volatile uint8_t trans_size;
 } buffer_t;
 
 typedef struct {
