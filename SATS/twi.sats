@@ -184,8 +184,7 @@ fun start_with_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
 ) : void
 
 fun start_transaction {sum,n,sz:pos | n == sz ; sum <= buff_size} (
-  pf: !INT_SET | buf: &(@[uchar][sum]), trans: &(transaction(sum, n, sz)),
-  sum: int sum, sz: int n
+  pf: !INT_SET | buf: &(@[uchar][sum]), trans: !transaction(sum, n, sz)
 ) : void
 
 fun get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
