@@ -70,8 +70,11 @@ absviewtype status_reg_t = $extype "status_reg_t"
 viewtypedef buffer_t
   = $extype_struct "buffer_t" of {
   data= @[uchar][buff_size],
-  msg_size= [n:nat | n < buff_size] int n,
-  recvd_size= [p:nat | p <= buff_size] int p
+  trans= @[uchar][buff_size/2],
+  msg_size= [n:nat | n <= buff_size] int n,
+  recvd_size= [p:nat | p <= buff_size] int p,
+  trans_size= [t:nat | t <= buff_size/2] int t,
+  curr_trans= [c:nat | c < buff_size/2] int c
 }
 
 viewtypedef twi_state_t
@@ -89,6 +92,9 @@ viewtypedef twi_state_t
 absviewt@ype transaction
   (s:int (*sum*), c:int (*count*), sz:int (*maxsize*)) = ptr
 
+praxi transaction_length_lemma {sum,n,sz:nat | sum <= buff_size;  n <= sz}
+  (t: transaction(sum, n , sz) ) : [sz <= buff_size/2] void
+
 fun make_transaction {n:pos} (
    size: int n
 ) : transaction(0, 0, n)
@@ -99,7 +105,13 @@ fun add_msg {s, n, sz, v:nat | v >= 2; s + v <= buff_size; n <= sz} (
     value: int v
 ) : void = "mac#transaction_add_msg"
 
-praxi free_transaction{s,n,sz:nat} (f:transaction(s,n,sz)) : void
+fun get_msg {s, n, sz:nat} (
+    trans: !transaction(s, n, sz) >> transaction(s-v, n-1, sz)
+) : #[v:nat | v >= 2] int v = "mac#transaction_get_msg"
+
+fun free_transaction {s,n,sz:nat} (
+  t: transaction(s, n, sz)
+) : void = "mac#free"
 
 (* ****** ****** *)
 
@@ -184,7 +196,8 @@ fun start_with_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
 ) : void
 
 fun start_transaction {sum,n,sz:pos | n == sz ; sum <= buff_size} (
-  pf: !INT_SET | buf: &(@[uchar][sum]), trans: !transaction(sum, n, sz)
+  pf: !INT_SET | buf: &(@[uchar][sum]), trans: !transaction(sum, n, sz),
+  sum: int sum, sz: int sz
 ) : void
 
 fun get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (

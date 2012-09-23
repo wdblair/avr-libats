@@ -83,7 +83,11 @@ ATSinline()
 ats_ptr_type
 transaction_make (ats_int_type size) {
   int i;
-  transaction_t* trans = (transaction_t *)ATS_ALLOCA2(size,sizeof(transaction_t));
+  transaction_t* trans = (transaction_t *)ATS_MALLOC(size*sizeof(transaction_t));
+
+  if(!trans)
+    abort();
+
   trans->cnt = 0;
   for(i = 0 ; i < size; i++)
     trans->fmt[i] = 0;

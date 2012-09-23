@@ -244,11 +244,21 @@ start_with_data {n, p} (enabled | msg, size) = {
 }
 
 implement
-start_transaction {sum, n, sz} (enabled | buf, trans, sum , sz) = {
+start_transaction {sum, n, sz} (enabled | buf, trans, sum, sz) = {
   val () = sleep_until_ready(enabled | (* *))
   val (free, pf | p) = get_twi_state()
-  val () = p->buffer.msg_size := sum
   val () = copy_buffer(p->buffer.data, buf, sum)
+  val () = p->buffer.msg_size := sum
+  fun loop  {l1:agz} {s,n1:nat} (
+      pf: twi_state_t @ l |
+      t: !transaction(s,n1,sz) >> transaction(0, 0, sz), i: int n1, p: ptr l
+  ) : void = 
+    if n1 = 0 then
+      ()
+    else let
+      prval () = transaction_length_lemma(t)
+      val nxt = get_msg(t)
+    in loop(pf | t, i-1, p) end
   val () = clear_state()
   val () = p->enable()
   prval () = return_global(free, pf)
