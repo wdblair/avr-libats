@@ -93,7 +93,7 @@ absviewt@ype transaction
   (s:int (*sum*), c:int (*count*), sz:int (*maxsize*)) = ptr
 
 praxi transaction_length_lemma {sum,n,sz:nat | sum <= buff_size;  n <= sz}
-  (t: transaction(sum, n , sz) ) : [sz <= buff_size/2] void
+  (t: !transaction(sum, n , sz) ) : [sz <= buff_size/2] void
 
 fun make_transaction {n:pos} (
    size: int n
@@ -105,11 +105,17 @@ fun add_msg {s, n, sz, v:nat | v >= 2; s + v <= buff_size; n <= sz} (
     value: int v
 ) : void = "mac#transaction_add_msg"
 
-fun get_msg {s, n, sz:nat} (
+fun get_msg {s, n, sz:nat | n <= sz; n > 0} (
     trans: !transaction(s, n, sz) >> transaction(s-v, n-1, sz)
-) : #[v:nat | v >= 2] int v = "mac#transaction_get_msg"
+) : #[v:nat | v >= 2;  s-v >= 0] int v = "mac#transaction_get_msg"
 
-fun free_transaction {s,n,sz:nat} (
+fun reset {sum,n,sz:nat} {sum', n': nat |
+   n <= sz; n' <= sz; sum <= buff_size;
+   sum' <= buff_size } (
+    trans: !transaction(sum, n, sz) >> transaction(sum', n', sz)
+) : void = "mac#transaction_reset"
+
+fun free_transaction {s, n, sz:nat} (
   t: transaction(s, n, sz)
 ) : void = "mac#free"
 
@@ -195,7 +201,7 @@ fun start_with_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
   pf: !INT_SET | msg: &(@[uchar][n]), sz: int p
 ) : void
 
-fun start_transaction {sum,n,sz:pos | n == sz ; sum <= buff_size} (
+fun start_transaction {sum,n,sz:pos | n == sz ; sum <= buff_size; sz <= buff_size/2} (
   pf: !INT_SET | buf: &(@[uchar][sum]), trans: !transaction(sum, n, sz),
   sum: int sum, sz: int sz
 ) : void

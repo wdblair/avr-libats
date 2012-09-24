@@ -75,8 +75,9 @@
   ((unsigned char *)buffer)[0] = (addr << 1) | read
 
 typedef struct {
-  volatile unsigned char cnt;
-  volatile unsigned char fmt[];
+  unsigned char cnt;
+  unsigned char curr;
+  unsigned char fmt[];
 } transaction_t;
 
 ATSinline()
@@ -89,6 +90,7 @@ transaction_make (ats_int_type size) {
     abort();
 
   trans->cnt = 0;
+  trans->curr = 0;
   for(i = 0 ; i < size; i++)
     trans->fmt[i] = 0;
   return trans;
@@ -96,6 +98,12 @@ transaction_make (ats_int_type size) {
 
 #define transaction_add_msg(trans, v)                                   \
   ((transaction_t*)trans)->fmt[((transaction_t*)trans)->cnt++] = (char)v
+
+#define transaction_get_msg(trans)                              \
+  ((transaction_t*)trans)->fmt[((transaction_t*)trans)->curr++]
+
+#define transaction_reset(trans)                \
+  ((transaction_t*)trans)->curr = 0
 
 ATSinline()
 ats_int_type
@@ -137,6 +145,7 @@ typedef struct {
   volatile uint8_t msg_size;
   volatile uint8_t recvd_size;
   volatile uint8_t trans_size;
+  volatile uint8_t curr_trans;
 } buffer_t;
 
 typedef struct {

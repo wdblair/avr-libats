@@ -34,7 +34,7 @@ implement main (pf0 | (* *) ) = {
   val () = $TWI.add_msg(trans, 2)
   val (set | ()) = sei(pf0 | (* *))
   var !buf = @[uchar][4](_c(0))
-  val () = $TWI.start_transaction(set | !buf, trans)
+  val () = $TWI.start_transaction(set | !buf, trans, 4, 2)
   val () = while (true) {
     val c  = char_of_int(getchar())
     val () = println! 's'
@@ -47,7 +47,7 @@ implement main (pf0 | (* *) ) = {
     val c = char_of_uchar(!buf.[1])
     val () = println! ("resp: ", c)
   }
-  prval () = $TWI.free_transaction(trans)
+  val () = $TWI.free_transaction(trans)
   val (locked | () ) = cli(set | (* *))
   prval () = pf0 := locked
 }

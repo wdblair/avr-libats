@@ -232,7 +232,7 @@ rx_data_in_buf () = let
 in x end
 
 implement
-start_with_data {n, p} (enabled | msg, size) = {
+start_with_data {n,p} (enabled | msg, size) = {
   val () = sleep_until_ready(enabled | (* *) )
   val (free, pf | p) = get_twi_state()
   //Set the size of the message and copy the buffer
@@ -249,16 +249,28 @@ start_transaction {sum, n, sz} (enabled | buf, trans, sum, sz) = {
   val (free, pf | p) = get_twi_state()
   val () = copy_buffer(p->buffer.data, buf, sum)
   val () = p->buffer.msg_size := sum
-  fun loop  {l1:agz} {s,n1:nat} (
-      pf: twi_state_t @ l |
-      t: !transaction(s,n1,sz) >> transaction(0, 0, sz), i: int n1, p: ptr l
-  ) : void = 
-    if n1 = 0 then
-      ()
-    else let
-      prval () = transaction_length_lemma(t)
-      val nxt = get_msg(t)
-    in loop(pf | t, i-1, p) end
+  val () = p->buffer.curr_trans := 0
+  val () = p->buffer.trans_size := sz
+  fun loop  {l1:agz} {s:nat} {n1:pos | s <= buff_size; n1 <= sz} (
+      pf: !twi_state_t @ l1 |
+      t: !transaction(s, n1, sz) >> transaction(s', 0, sz), i: int n1, p: ptr l1
+  ) : #[s':nat | s' <= buff_size] void = let
+     val nxt = uchar_of_char(char_of_int(get_msg(t)))
+     val indx = p->buffer.curr_trans
+     val () = p->buffer.trans.[indx] := nxt
+     val () = 
+        if p->buffer.curr_trans < p->buffer.trans_size - 1 then
+          p->buffer.curr_trans := p->buffer.curr_trans + 1
+    in
+      if i - 1 <= 0 then 
+        ()
+      else let
+        in
+          loop(pf | t, i - 1, p)
+        end
+  end
+  val () = loop(pf | trans, sz, p)
+  val () = reset(trans)
   val () = clear_state()
   val () = p->enable()
   prval () = return_global(free, pf)
