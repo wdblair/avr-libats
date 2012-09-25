@@ -258,7 +258,7 @@ start_transaction {sum, n, sz} (enabled | buf, trans, sum, sz) = {
      val nxt = uchar_of_char(char_of_int(get_msg(t)))
      val indx = p->buffer.curr_trans
      val () = p->buffer.trans.[indx] := nxt
-     val () = 
+     val () =
         if p->buffer.curr_trans < p->buffer.trans_size - 1 then
           p->buffer.curr_trans := p->buffer.curr_trans + 1
     in
@@ -270,6 +270,7 @@ start_transaction {sum, n, sz} (enabled | buf, trans, sum, sz) = {
         end
   end
   val () = loop(pf | trans, sz, p)
+  val () = p->buffer.curr_trans := 0
   val () = reset(trans)
   val () = clear_state()
   val () = p->enable()
