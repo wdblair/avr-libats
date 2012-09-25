@@ -136,27 +136,44 @@ local
   ) : void = {
     var i : [n:nat] int n;
     val () =
-      for ( i := 0; i < num ; i := i + 1) {
+      for (i := 0; i < num; i := i + 1) {
         val () = dest.[i] := src.[i]
       }
   }
   
   fun reset_next_byte () : void = {
     val (free, pf | p) = get_twi_state()
-    val () = p->next_byte := 0
+    var sum : [s:nat] int s = 0
+    var i : [n:nat] int n
+    val curr = p->buffer.curr_trans
+    val () = for(i := 0; i < curr; i := i + 1) {
+      val () = sum := sum + int1_of_uchar(p->buffer.trans.[i])
+    }
+    val () = p->next_byte := sum
     val () = set_all_bytes_sent(p->status_reg, false)
     prval() = return_global(free, pf)
   }
   
-  fun copy_recvd_byte () : void = {
+  fun copy_recvd_byte () : bool = let
     val (free, pf | p) = get_twi_state()
     val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
+    var sum : [b:nat] int b = 0
+    var i : [z:nat] int z
+    val () = for(i := 0 ; i < p->buffer.curr_trans; i := i + 1) {
+      val () = sum := sum + int1_of_uchar(p->buffer.trans.[i])
+    }
     val () = p->next_byte := p->next_byte + 1
-    prval () = return_global(free, pf)
-  }
+  in
+    if p->next_byte = sum then true where {
+      val () = p->buffer.curr_trans := p->buffer.curr_trans + 1
+      prval () = return_global(free, pf)
+    } else false where {
+      prval () = return_global(free, pf)
+    }
+  end
   
   fun read_next_byte () : void = {
-    val () = copy_recvd_byte()
+    val restart = copy_recvd_byte()
     val (free, pf | p) = get_twi_state()
     val () = p->buffer.recvd_size := p->buffer.recvd_size + 1
     val () = set_last_trans_ok(p->status_reg, true)
@@ -167,12 +184,26 @@ local
   fun master_transmit_next_byte () : void = let
       val (free, pf | p) = get_twi_state()
   in
-      if p->next_byte < p->buffer.msg_size then { //more to send
-        val () = setval(TWDR, uint8_of_uchar(p->buffer.data.[p->next_byte]))
-        val () = p->next_byte := p->next_byte + 1
-        val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT)
-        prval () = return_global (free, pf)
-      } else { //finished
+      if p->next_byte < p->buffer.msg_size then let //more to send
+        var sum : [n:nat] int n = 0
+        var i : [i:nat] int i
+        val () = for(i := 0 ; i < p->buffer.curr_trans; i := i + 1) {
+          val () = sum := sum + int1_of_uchar(p->buffer.trans.[i])
+        }
+        in
+          if p->next_byte = sum then {
+            val () = p->buffer.curr_trans := p->buffer.curr_trans + 1
+            //Generate a restart
+            val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
+            prval () = return_global(free, pf)
+          } else {
+              val () = setval(TWDR, uint8_of_uchar(p->buffer.data.[p->next_byte]))
+              val () = p->next_byte := p->next_byte + 1
+              val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT)
+              prval () = return_global (free, pf)
+          }
+        end
+      else { //finished
 //        val () = println! "f"
         val () = set_last_trans_ok(p->status_reg, true)
         val () = clear_and_setbits(TWCR, TWEN, TWINT, TWSTO)
@@ -261,13 +292,11 @@ start_transaction {sum, n, sz} (enabled | buf, trans, sum, sz) = {
      val () =
         if p->buffer.curr_trans < p->buffer.trans_size - 1 then
           p->buffer.curr_trans := p->buffer.curr_trans + 1
-    in
-      if i - 1 <= 0 then 
-        ()
-      else let
-        in
-          loop(pf | t, i - 1, p)
-        end
+  in
+    if i - 1 <= 0 then 
+      ()
+    else 
+      loop(pf | t, i - 1, p)
   end
   val () = loop(pf | trans, sz, p)
   val () = p->buffer.curr_trans := 0
@@ -331,7 +360,7 @@ implement TWI_vect (pf | (* *)) = let
       }
     | TWI_MRX_DATA_ACK => {
 //        val () = println! "rdat"
-        val () = copy_recvd_byte()
+        val restart = copy_recvd_byte()
         val () = detect_last_byte()
       }
     | TWI_MRX_ADR_ACK => {
