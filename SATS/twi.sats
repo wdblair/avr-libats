@@ -67,6 +67,9 @@ typedef twi_address = [n:int | n > 0 | n < 128] int n
 
 absviewtype status_reg_t = $extype "status_reg_t"
 
+absview TWI_READY
+absview TWI_BUSY
+
 viewtypedef buffer_t
   = $extype_struct "buffer_t" of {
   data= @[uchar][buff_size],
@@ -83,7 +86,7 @@ viewtypedef twi_state_t
     status_reg= status_reg_t,
     state=uchar,
     next_byte= [m:nat | m < buff_size] int m,
-    enable= () -<fun1> void,
+    enable= () -<fun1> (TWI_BUSY | void ),
     busy= () -<fun1> bool
 }
 
@@ -192,11 +195,11 @@ fun get_twi_state () : [l:agz] (
 
 fun slave_init (
   pf: !INT_CLEAR | addr: twi_address, gen_addr: bool
-) : void
+) : (TWI_READY | void )
 
 fun master_init (
   pf: !INT_CLEAR  | baud: int
-) : void
+) : (TWI_READY | void )
 
 fun setup_addr_byte {n:pos} {p:pos | p < 128} (
   buf: &(@[uchar][n]), addr: int p,  read: bool

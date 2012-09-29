@@ -35,15 +35,26 @@ fun twbr_of_scl (a: int) : uint8 = "mac#avr_libats_twi_twbr_of_scl"
 
 (* ****** ****** *)
 
-fun enable_twi_master () : void =
-    clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
+local 
 
-fun enable_twi_slave () : void = {
-    val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
-    val (gpf, pf | p) = get_twi_state()
-    val () = set_busy(p->status_reg, true)
-    prval () = return_global(gpf, pf)
-}
+extern
+praxi get_busy () : TWI_BUSY
+
+in
+
+  fun enable_twi_master () : (TWI_BUSY | void) = let
+      val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
+      prval pf = get_busy()
+  in (pf | () )  end
+
+  fun enable_twi_slave () : (TWI_BUSY | void) = let
+      val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
+      val (gpf, pf | p) = get_twi_state()
+      val () = set_busy(p->status_reg, true)
+      prval () = return_global(gpf, pf)
+      prval pf = get_busy()
+  in (pf | () ) end
+end
 
 fun slave_busy () : bool = busy where {
     val (gpf, pf | p) = get_twi_state()
@@ -58,8 +69,15 @@ fun enable_pullups () : void = begin
   setbits(PORTC, PORTC4, PORTC5);
 end
 
+local
+
+extern
+praxi get_ready () : TWI_READY
+
+in 
+
 implement
-slave_init(pf | addr, gen_addr) = {
+slave_init(pf | addr, gen_addr) = let
   val () = enable_pullups()
   val () = set_address(addr, gen_addr)
   val () = clear_and_setbits(TWCR, TWEN)
@@ -67,13 +85,14 @@ slave_init(pf | addr, gen_addr) = {
   val () = p->enable := enable_twi_slave
   val () = p->busy := slave_busy
   prval () = return_global(gpf, pf)
-}
+  prval pf = get_ready()
+in (pf | () ) end
 
 extern
 castfn _8(i: uint8) : natLt(256)
 
 implement
-master_init(pf | baud ) = {
+master_init(pf | baud ) = let
   val twbr = twbr_of_scl(baud)
   val () = enable_pullups()
   val () = setval(TWBR, _8(twbr))
@@ -83,7 +102,10 @@ master_init(pf | baud ) = {
   val () = p->enable := enable_twi_master
   val () = p->busy := master_busy
   prval () = return_global(gpf, pf)
-}
+  prval pf = get_ready()
+in (pf | ()) end
+
+end
 
 (* ****** ****** *)
 
@@ -271,12 +293,12 @@ start_with_data {n,p} (enabled | msg, size) = {
   val () = p->buffer.msg_size := size
   val () = copy_buffer(p->buffer.data, msg, size)
   val () = clear_state()
-  val () = p->enable()
+  val _ = p->enable()
   prval () = return_global(free, pf)
 }
 
 implement
-start_transaction {sum, sz} (enabled | buf, trans, sum, sz) = {
+start_transaction {l} {sum, sz} (enabled | buf, trans, sum, sz) = {
   val () = sleep_until_ready(enabled | (* *))
   prval origin = snapshot(trans)
   val (free, pf | p) = get_twi_state()
@@ -285,7 +307,8 @@ start_transaction {sum, sz} (enabled | buf, trans, sum, sz) = {
   val () = p->buffer.curr_trans := 0
   val () = p->buffer.trans_size := sz
   fun loop  {l1:agz} {s:nat} {n1:pos | s <= buff_size; n1 <= sz} (
-      pf: !twi_state_t @ l1 | t: !transaction(s, n1, sz) >> transaction(s', 0, sz), 
+      pf: !twi_state_t @ l1 | t: !transaction(l, s, n1, sz) >> 
+        transaction(l, s', 0, sz), 
       i: int n1, p: ptr l1
   ) : #[s':nat | s' <= buff_size] void = let
      val nxt = uchar_of_char(char_of_int(get_msg(t)))
@@ -304,7 +327,7 @@ start_transaction {sum, sz} (enabled | buf, trans, sum, sz) = {
   val () = p->buffer.curr_trans := 0
   val () = reset(origin | trans)
   val () = clear_state()
-  val () = p->enable()
+  val _ = p->enable()
   prval () = return_global(free, pf)
 }
 
@@ -433,7 +456,7 @@ implement TWI_vect (pf | (* *)) = let
     | _ => {
         val (gpf, pf | p) = get_twi_state()
         val () = p->state := uchar_of_reg8(TWSR)
-        val () = p->enable()
+        val _ = p->enable()
         prval () = return_global(gpf, pf)
     }
   end
