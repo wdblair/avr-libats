@@ -13,6 +13,7 @@ staload "SATS/sleep.sats"
 staload "SATS/global.sats"
 staload "SATS/char.sats"
 staload TWI = "SATS/twi.sats"
+staload "SATS/twi.sats"
 staload USART = "SATS/usart.sats"
 staload "SATS/stdio.sats"
 
@@ -29,7 +30,8 @@ implement main (pf0 | (* *) ) = {
   val () = setbits(DDRB, DDB3)
   //Set SCL to 400khz
   val () = $TWI.master_init(pf0 |  400)
-  val trans = $TWI.make_transaction(2)
+  var tbuff : transaction_t with tpf
+  val trans = $TWI.transaction_init(tpf | &tbuff)
   val () = $TWI.add_msg(trans, 2)
   val () = $TWI.add_msg(trans, 2)
   val (set | ()) = sei(pf0 | (* *))
@@ -47,7 +49,8 @@ implement main (pf0 | (* *) ) = {
     val c = char_of_uchar(!buf.[1])
     val () = println! ("resp: ", c)
   }
-  val () = $TWI.free_transaction(trans)
+  prval tpf' = $TWI.free_transaction(trans)
+  prval () = tpf := tpf'
   val (locked | () ) = cli(set | (* *))
   prval () = pf0 := locked
 }

@@ -77,21 +77,17 @@
 typedef struct {
   unsigned char cnt;
   unsigned char curr;
-  unsigned char fmt[];
+  unsigned char fmt[BUFF_SIZE/2];
 } transaction_t;
 
 ATSinline()
 ats_ptr_type
-transaction_make (ats_int_type size) {
+transaction_init (transaction_t *trans) {
   int i;
-  transaction_t* trans = (transaction_t *)ATS_MALLOC(size*sizeof(transaction_t));
-
-  if(!trans)
-    abort();
 
   trans->cnt = 0;
   trans->curr = 0;
-  for(i = 0 ; i < size; i++)
+  for(i = 0 ; i < BUFF_SIZE/2; i++)
     trans->fmt[i] = 0;
   return trans;
 }

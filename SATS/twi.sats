@@ -89,35 +89,50 @@ viewtypedef twi_state_t
 
 (* ****** ****** *)
 
-absviewt@ype transaction
-  (s:int (*sum*), c:int (*count*), sz:int (*maxsize*)) = ptr
+viewtypedef transaction_t =  $extype_struct "transaction_t" of {
+  cnt= uchar,
+  curr= uchar,
+  fmt= @[uchar][buff_size/2]
+}
 
-praxi transaction_length_lemma {sum,n,sz:nat | sum <= buff_size;  n <= sz}
-  (t: !transaction(sum, n , sz) ) : [sz <= buff_size/2] void
+absviewt@ype transaction_view_ptr
+   (s:int (*sum*), c:int (*count*), sz:int (*maxsize*)) = ptr
 
-fun make_transaction {n:pos} (
-   size: int n
-) : transaction(0, 0, n)
-  = "mac#transaction_make"
+viewtypedef transaction(l:addr, s:int, c:int, sz:int)
+  = transaction_view_ptr(s, c, sz)
 
-fun add_msg {s, n, sz, v:nat | v >= 2; s + v <= buff_size; n <= sz} (
-    trans: !transaction(s, n, sz) >> transaction(s+v, n+1, sz),
+absview transaction_snapshot(s:int, c:int, sz:int)
+
+praxi snapshot {l:addr} {sum, sz:pos | sz <= buff_size/2; sum <= buff_size} (
+  t: !transaction(l, sum, sz, sz)
+) : transaction_snapshot(sum, sz, sz)
+
+praxi transaction_length_lemma {l:addr} {sum, n, sz:nat | sum <= buff_size;  n <= sz}
+  (t: !transaction(l, sum, n , sz) ) : [sz <= buff_size/2] void
+
+fun transaction_init {n:pos | n <= buff_size/2} {l:agz} (
+  pf: transaction_t? @ l | p: ptr l
+) : transaction(l, 0, 0, n) = "mac#transaction_init"
+
+fun add_msg {l:addr} {s, n, sz, v:nat | v >= 2; s + v <= buff_size; n <= sz} (
+    trans: !transaction(l, s, n, sz) >> transaction(l, s+v, n+1, sz),
     value: int v
 ) : void = "mac#transaction_add_msg"
 
-fun get_msg {s, n, sz:nat | n <= sz; n > 0} (
-    trans: !transaction(s, n, sz) >> transaction(s-v, n-1, sz)
+fun get_msg {l:addr} {s, n, sz:nat | n <= sz; n > 0} (
+    trans: !transaction(l, s, n, sz) >> transaction(l, s-v, n-1, sz)
 ) : #[v:nat | v >= 2;  s-v >= 0] int v = "mac#transaction_get_msg"
 
-fun reset {sum,n,sz:nat} {sum', n': nat |
-   n <= sz; n' <= sz; sum <= buff_size;
+fun reset {l:addr} {sum,n,sz:nat} {sum': nat |
+   n <= sz; sum <= buff_size;
    sum' <= buff_size } (
-    trans: !transaction(sum, n, sz) >> transaction(sum', n', sz)
+    pf: transaction_snapshot(sum', sz, sz) |
+    trans: !transaction(l, sum, n, sz) >> transaction(l, sum', sz, sz)
 ) : void = "mac#transaction_reset"
 
-fun free_transaction {s, n, sz:nat} (
-  t: transaction(s, n, sz)
-) : void = "mac#free"
+praxi free_transaction {l:addr} {s, n, sz:nat} (
+  t: transaction(l, s, n, sz)
+) : transaction_t @ l
 
 (* ****** ****** *)
 
@@ -201,8 +216,8 @@ fun start_with_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
   pf: !INT_SET | msg: &(@[uchar][n]), sz: int p
 ) : void
 
-fun start_transaction {sum,n,sz:pos | n == sz ; sum <= buff_size; sz <= buff_size/2} (
-  pf: !INT_SET | buf: &(@[uchar][sum]), trans: !transaction(sum, n, sz),
+fun start_transaction {l:addr} {sum, sz:pos | sum <= buff_size; sz <= buff_size/2} (
+  pf: !INT_SET | buf: &(@[uchar][sum]), trans: !transaction(l, sum, sz, sz),
   sum: int sum, sz: int sz
 ) : void
 

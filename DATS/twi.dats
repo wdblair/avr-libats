@@ -226,6 +226,7 @@ local
     }
   end
   
+  //Not a very useful function.
   fun detect_last_byte () : void = let
       val (free, pf | p) = get_twi_state()
   in
@@ -275,16 +276,17 @@ start_with_data {n,p} (enabled | msg, size) = {
 }
 
 implement
-start_transaction {sum, n, sz} (enabled | buf, trans, sum, sz) = {
+start_transaction {sum, sz} (enabled | buf, trans, sum, sz) = {
   val () = sleep_until_ready(enabled | (* *))
+  prval origin = snapshot(trans)
   val (free, pf | p) = get_twi_state()
   val () = copy_buffer(p->buffer.data, buf, sum)
   val () = p->buffer.msg_size := sum
   val () = p->buffer.curr_trans := 0
   val () = p->buffer.trans_size := sz
   fun loop  {l1:agz} {s:nat} {n1:pos | s <= buff_size; n1 <= sz} (
-      pf: !twi_state_t @ l1 |
-      t: !transaction(s, n1, sz) >> transaction(s', 0, sz), i: int n1, p: ptr l1
+      pf: !twi_state_t @ l1 | t: !transaction(s, n1, sz) >> transaction(s', 0, sz), 
+      i: int n1, p: ptr l1
   ) : #[s':nat | s' <= buff_size] void = let
      val nxt = uchar_of_char(char_of_int(get_msg(t)))
      val indx = p->buffer.curr_trans
@@ -300,7 +302,7 @@ start_transaction {sum, n, sz} (enabled | buf, trans, sum, sz) = {
   end
   val () = loop(pf | trans, sz, p)
   val () = p->buffer.curr_trans := 0
-  val () = reset(trans)
+  val () = reset(origin | trans)
   val () = clear_state()
   val () = p->enable()
   prval () = return_global(free, pf)
@@ -369,6 +371,7 @@ implement TWI_vect (pf | (* *)) = let
       }
     | TWI_MRX_DATA_NACK => {
 //        val () = println! "rnack"
+        val restart = copy_recvd_byte()
         val (free, pf | p) = get_twi_state()
         val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
         val () = set_last_trans_ok(p->status_reg, true)
