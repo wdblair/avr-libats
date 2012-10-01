@@ -67,8 +67,9 @@ typedef twi_address = [n:int | n > 0 | n < 128] int n
 
 absviewtype status_reg_t = $extype "status_reg_t"
 
-absview TWI_READY
-absview TWI_BUSY
+absview TWI_READY //The device is ready for a transaction
+absview TWI_BUSY  //The device is performing a transaction
+absview TWI_DATA  //There is data to be read.
 
 viewtypedef buffer_t
   = $extype_struct "buffer_t" of {
@@ -86,7 +87,7 @@ viewtypedef twi_state_t
     status_reg= status_reg_t,
     state=uchar,
     next_byte= [m:nat | m < buff_size] int m,
-    enable= () -<fun1> (TWI_BUSY | void ),
+    enable= () -<fun1> void,
     busy= () -<fun1> bool
 }
 
@@ -124,7 +125,7 @@ fun add_msg {l:addr} {s, n, sz, v:nat | v >= 2; s + v <= buff_size; n <= sz} (
 
 fun get_msg {l:addr} {s, n, sz:nat | n <= sz; n > 0} (
     trans: !transaction(l, s, n, sz) >> transaction(l, s-v, n-1, sz)
-) : #[v:nat | v >= 2;  s-v >= 0] int v = "mac#transaction_get_msg"
+) : #[v:nat | v >= 2;  s-v >= 0 ; v <= buff_size] int v = "mac#transaction_get_msg"
 
 fun reset {l:addr} {sum,n,sz:nat} {sum': nat |
    n <= sz; sum <= buff_size;
@@ -211,23 +212,34 @@ fun get_state_info (
   pf: !INT_SET | (* *)
 ) : uchar
 
-fun last_trans_ok () : bool
+fun wait(pf: !INT_SET, busy: !TWI_BUSY >> TWI_READY | (* *)) : void
 
-fun rx_data_in_buf () : [n:nat | n <= buff_size] int n
+fun last_trans_ok (pf: !TWI_READY  | (* *)) : bool
 
-fun start_with_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
-  pf: !INT_SET | msg: &(@[uchar][n]), sz: int p
+fun rx_data_in_buf (pf: !TWI_READY | (* *)) : [n:nat | n <= buff_size] int n
+
+fun start_with_data {n, p:pos | n <= buff_size; p <= buff_size; p <= n} (
+  pf: !INT_SET, ready: !TWI_READY >> TWI_BUSY | msg: &(@[uchar][n]), sz: int p
 ) : void
 
 fun start_transaction {l:addr} {sum, sz:pos | sum <= buff_size; sz <= buff_size/2} (
-  pf: !INT_SET | buf: &(@[uchar][sum]), trans: !transaction(l, sum, sz, sz),
+  pf: !INT_SET, ready: !TWI_READY >> TWI_BUSY | buf: &(@[uchar][sum]), trans: !transaction(l, sum, sz, sz),
   sum: int sum, sz: int sz
 ) : void
 
 fun get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
-  pf: !INT_SET | msg: &(@[uchar][n]), sz: int p
+  pf: !INT_SET, ready: !TWI_READY | msg: &(@[uchar][n]), sz: int p
 ) : bool
 
 fun start (
-  pf: !INT_SET | (* *)
+  pf: !INT_SET, pf: !TWI_READY >> TWI_BUSY | (* *)
+) : void
+
+(*
+  Disable the TWI module.
+  Might be useful to have the device still operate in slave mode,
+  but that's probably up to an application.
+*)
+praxi disable (
+  pf: TWI_READY
 ) : void

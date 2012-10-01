@@ -35,32 +35,22 @@ fun twbr_of_scl (a: int) : uint8 = "mac#avr_libats_twi_twbr_of_scl"
 
 (* ****** ****** *)
 
-local 
+fun enable_twi_master () : void = {
+  val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
+}
 
-extern
-praxi get_busy () : TWI_BUSY
-
-in
-
-  fun enable_twi_master () : (TWI_BUSY | void) = let
-      val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
-      prval pf = get_busy()
-  in (pf | () )  end
-
-  fun enable_twi_slave () : (TWI_BUSY | void) = let
-      val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
-      val (gpf, pf | p) = get_twi_state()
-      val () = set_busy(p->status_reg, true)
-      prval () = return_global(gpf, pf)
-      prval pf = get_busy()
-  in (pf | () ) end
-end
+fun enable_twi_slave () : void = {
+  val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
+  val (gpf, pf | p) = get_twi_state()
+  val () = set_busy(p->status_reg, true)
+  prval () = return_global(gpf, pf)
+}
 
 fun slave_busy () : bool = busy where {
     val (gpf, pf | p) = get_twi_state()
     val busy = get_busy(p->status_reg)
     prval () = return_global(gpf, pf)
-  }
+}
 
 fun master_busy () : bool = bit_is_set(TWCR, TWIE)
 
@@ -141,6 +131,16 @@ local
         in end
       end
 
+  local
+    extern
+    praxi get_ready(pf: TWI_BUSY) : TWI_READY
+  in
+    implement wait (pf, busy | (* *)) = {
+      val _ = sleep_until_ready(pf | (* *))
+      prval () = busy := get_ready(busy)
+    }
+  end
+  
   fun enable_twi () : void =
     clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
     
@@ -154,7 +154,7 @@ local
   }
   
   fun copy_buffer {d,s:int} {sz:pos | sz <= s; sz <= d} (
-    dest: &(@[uchar][d]), src: &(@[uchar][s]), num: int sz
+    dest: &(@[uchar][d]), src: &(@[uchar][s]), num: int sz  
   ) : void = {
     var i : [n:nat] int n;
     val () =
@@ -163,14 +163,23 @@ local
       }
   }
   
+  //The last byte of the current message in reference to the 
+  //total buffer.
+  fun current_msg_last_byte () :
+    [n:nat] int n = sum where {
+      val (free, pf | p) = get_twi_state()
+      var sum : [s:nat] int s = 0
+      var i : [n:nat] int n
+      val curr = p->buffer.curr_trans
+      val () = for(i := 0; i < curr; i := i + 1) {
+        val () = sum := sum + int1_of_uchar(p->buffer.trans.[i])
+      }
+      prval () = return_global(free, pf)
+  }
+  
   fun reset_next_byte () : void = {
     val (free, pf | p) = get_twi_state()
-    var sum : [s:nat] int s = 0
-    var i : [n:nat] int n
-    val curr = p->buffer.curr_trans
-    val () = for(i := 0; i < curr; i := i + 1) {
-      val () = sum := sum + int1_of_uchar(p->buffer.trans.[i])
-    }
+    val sum = current_msg_last_byte()
     val () = p->next_byte := sum
     val () = set_all_bytes_sent(p->status_reg, false)
     prval() = return_global(free, pf)
@@ -207,15 +216,11 @@ local
       val (free, pf | p) = get_twi_state()
   in
       if p->next_byte < p->buffer.msg_size then let //more to send
-        var sum : [n:nat] int n = 0
-        var i : [i:nat] int i
-        val () = for(i := 0 ; i < p->buffer.curr_trans; i := i + 1) {
-          val () = sum := sum + int1_of_uchar(p->buffer.trans.[i])
-        }
-        in
+        val sum = current_msg_last_byte()
+      in
+          //Reached the end of a message, restart.
           if p->next_byte = sum then {
             val () = p->buffer.curr_trans := p->buffer.curr_trans + 1
-            //Generate a restart
             val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
             prval () = return_global(free, pf)
           } else {
@@ -224,7 +229,7 @@ local
               val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT)
               prval () = return_global (free, pf)
           }
-        end
+      end
       else { //finished
 //        val () = println! "f"
         val () = set_last_trans_ok(p->status_reg, true)
@@ -248,7 +253,6 @@ local
     }
   end
   
-  //Not a very useful function.
   fun detect_last_byte () : void = let
       val (free, pf | p) = get_twi_state()
   in
@@ -272,21 +276,28 @@ get_state_info (enabled | (* *) ) = let
 in x end
 
 implement
-last_trans_ok () = let
+last_trans_ok (rdy | (* *)) = let
   val (free, pf | p) = get_twi_state()
   val x = get_last_trans_ok(p->status_reg)
   prval () = return_global(free, pf)
 in x end
 
 implement
-rx_data_in_buf () = let
+rx_data_in_buf (rdy | (* *)) = let
   val (free, pf | p) = get_twi_state()
   val x = p->buffer.recvd_size
   prval () = return_global(free, pf)
 in x end
 
+local
+
+  extern
+  praxi get_busy(pf: TWI_READY) : TWI_BUSY
+
+in
+
 implement
-start_with_data {n,p} (enabled | msg, size) = {
+start_with_data {n,p} (enabled, rdy | msg, size) = {
   val () = sleep_until_ready(enabled | (* *) )
   val (free, pf | p) = get_twi_state()
   //Set the size of the message and copy the buffer
@@ -294,11 +305,12 @@ start_with_data {n,p} (enabled | msg, size) = {
   val () = copy_buffer(p->buffer.data, msg, size)
   val () = clear_state()
   val _ = p->enable()
+  prval () = rdy := get_busy(rdy)
   prval () = return_global(free, pf)
 }
 
 implement
-start_transaction {l} {sum, sz} (enabled | buf, trans, sum, sz) = {
+start_transaction {l} {sum, sz} (enabled, rdy | buf, trans, sum, sz) = {
   val () = sleep_until_ready(enabled | (* *))
   prval origin = snapshot(trans)
   val (free, pf | p) = get_twi_state()
@@ -328,10 +340,22 @@ start_transaction {l} {sum, sz} (enabled | buf, trans, sum, sz) = {
   val () = reset(origin | trans)
   val () = clear_state()
   val _ = p->enable()
+  prval () = rdy := get_busy(rdy)
   prval () = return_global(free, pf)
 }
 
-implement get_data {n,p} (enabled | msg, size) = let
+implement start(enabled, rdy | (* *)) = {
+  val () = sleep_until_ready(enabled | (* *))
+  val () = clear_state()
+  val (gpf, pf | p) = get_twi_state()
+  val () = p->enable()
+  prval () = rdy := get_busy(rdy)
+  prval () = return_global(gpf, pf)
+}
+
+end
+
+implement get_data {n, p} (enabled, rdy | msg, size) = let
   val () = sleep_until_ready(enabled | (* *))
   val (free, pf | p) = get_twi_state()
   val lastok = get_last_trans_ok(p->status_reg)
@@ -344,14 +368,6 @@ in
       prval () = return_global(free, pf)
     in lastok end
 end
-
-implement start(enabled | (* *)) = {
-  val () = sleep_until_ready(enabled | (* *))
-  val () = clear_state()
-  val (gpf, pf | p) = get_twi_state()
-  val () = p->enable()
-  prval () = return_global(gpf, pf)
-}
 
 extern
 castfn int_of_reg8 (r: reg(8)) : [n:nat | n < 256] int n
