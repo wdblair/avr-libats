@@ -178,7 +178,7 @@ __interrupt void TWI_ISR(void)
                (1<<TWIE)|(1<<TWINT)|                      // Enable TWI Interupt and clear the flag to read next byte
                (1<<TWEA)|(0<<TWSTA)|(0<<TWSTO)|           // Send ACK after reception
                (0<<TWWC);                                 //  
-      }else                    // Send NACK after next reception
+      } else                    // Send NACK after next reception
       {
         TWCR = (1<<TWEN)|                                 // TWI Interface enabled
                (1<<TWIE)|(1<<TWINT)|                      // Enable TWI Interupt and clear the flag to read next byte

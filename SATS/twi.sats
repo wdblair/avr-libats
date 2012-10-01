@@ -69,7 +69,6 @@ absviewtype status_reg_t = $extype "status_reg_t"
 
 absview TWI_READY //The device is ready for a transaction
 absview TWI_BUSY  //The device is performing a transaction
-absview TWI_DATA  //There is data to be read.
 
 viewtypedef buffer_t
   = $extype_struct "buffer_t" of {

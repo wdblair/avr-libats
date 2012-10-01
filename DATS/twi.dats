@@ -188,12 +188,8 @@ local
   fun copy_recvd_byte () : bool = let
     val (free, pf | p) = get_twi_state()
     val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
-    var sum : [b:nat] int b = 0
-    var i : [z:nat] int z
-    val () = for(i := 0 ; i < p->buffer.curr_trans; i := i + 1) {
-      val () = sum := sum + int1_of_uchar(p->buffer.trans.[i])
-    }
-    val () = p->next_byte := p->next_byte + 1
+    val sum = current_msg_last_byte()
+    val () = p->next_byte := p->next_byte + 1 
   in
     if p->next_byte = sum then true where {
       val () = p->buffer.curr_trans := p->buffer.curr_trans + 1
@@ -255,8 +251,9 @@ local
   
   fun detect_last_byte () : void = let
       val (free, pf | p) = get_twi_state()
+      val sum = current_msg_last_byte()
   in
-      if p->next_byte < (p->buffer.msg_size - 1) then {
+      if p->next_byte < (sum - 1) then {
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
         prval () = return_global (free, pf)
       } else {
@@ -401,22 +398,27 @@ implement TWI_vect (pf | (* *)) = let
       }
     | TWI_MRX_DATA_ACK => {
 //        val () = println! "rdat"
-        val restart = copy_recvd_byte()
+        val _ = copy_recvd_byte()
         val () = detect_last_byte()
       }
     | TWI_MRX_ADR_ACK => {
 //        val () = println! "rack"
         val () = detect_last_byte()
       }
-    | TWI_MRX_DATA_NACK => {
+    | TWI_MRX_DATA_NACK => let
 //        val () = println! "rnack"
-        val restart = copy_recvd_byte()
+        val _ = copy_recvd_byte()
         val (free, pf | p) = get_twi_state()
-        val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
-        val () = set_last_trans_ok(p->status_reg, true)
-        val () = clear_and_setbits(TWCR, TWEN, TWINT, TWSTO)
-        prval () = return_global (free, pf)
-      }
+     in
+        if p->next_byte = p->buffer.msg_size then { //This was the last message.
+          val () = set_last_trans_ok(p->status_reg, true)
+          val () = clear_and_setbits(TWCR, TWEN, TWINT, TWSTO)
+          prval () = return_global(free, pf)
+        } else { //Restart to hold onto the line.
+          val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
+          prval () = return_global(free, pf)
+        }
+     end
     | TWI_ARB_LOST => {
 //        val () = println! "arb"
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
