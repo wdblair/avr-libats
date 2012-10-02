@@ -87,7 +87,8 @@ viewtypedef twi_state_t
     state=uchar,
     next_byte= [m:nat | m < buff_size] int m,
     enable= () -<fun1> void,
-    busy= () -<fun1> bool
+    busy= () -<fun1> bool,
+    process= [n,p:nat] (&(@[uchar][n]), &(@[uchar][p]), int n, int p) -<fun1> void
 }
 
 (* ****** ****** *)
@@ -224,6 +225,16 @@ fun start_with_data {n, p:pos | n <= buff_size; p <= buff_size; p <= n} (
 fun start_transaction {l:addr} {sum, sz:pos | sum <= buff_size; sz <= buff_size/2} (
   pf: !INT_SET, ready: !TWI_READY >> TWI_BUSY | buf: &(@[uchar][sum]), trans: !transaction(l, sum, sz, sz),
   sum: int sum, sz: int sz
+) : void
+
+//Convenience for slaves detecting the current mode.
+typedef mode = bool
+
+#define read   true
+#define write false
+
+fun start_server (
+  pf: !INT_SET, ready: !TWI_READY >> TWI_BUSY | process: {n:nat} (&(@[uchar][buff_size]), int n, mode) -<fun1> bool
 ) : void
 
 fun get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (

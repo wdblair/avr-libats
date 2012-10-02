@@ -290,11 +290,11 @@ local
 
   extern
   praxi get_busy(pf: TWI_READY) : TWI_BUSY
-
+  
 in
 
 implement
-start_with_data {n,p} (enabled, rdy | msg, size) = {
+start_with_data {n, p} (enabled, rdy | msg, size) = {
   val () = sleep_until_ready(enabled | (* *) )
   val (free, pf | p) = get_twi_state()
   //Set the size of the message and copy the buffer
@@ -346,6 +346,15 @@ implement start(enabled, rdy | (* *)) = {
   val () = clear_state()
   val (gpf, pf | p) = get_twi_state()
   val () = p->enable()
+  prval () = rdy := get_busy(rdy)
+  prval () = return_global(gpf, pf)
+}
+
+implement start_server(enabled, rdy | process) = {
+  val () = sleep_until_ready(enabled | (* *))
+  val () = clear_state()
+  val (gpf, pf | p) = get_twi_state()
+  val () = p->process := process
   prval () = rdy := get_busy(rdy)
   prval () = return_global(gpf, pf)
 }
@@ -470,12 +479,12 @@ implement TWI_vect (pf | (* *)) = let
      }
     | TWI_BUS_ERROR => {
         val () = clear_and_setbits(TWCR, TWSTO, TWINT)
-      }
+     }
     | _ => {
         val (gpf, pf | p) = get_twi_state()
         val () = p->state := uchar_of_reg8(TWSR)
         val _ = p->enable()
         prval () = return_global(gpf, pf)
-    }
+     }
   end
 end

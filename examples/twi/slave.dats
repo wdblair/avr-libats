@@ -18,13 +18,17 @@ staload USART = "SATS/usart.sats"
 extern
 castfn _c(i:int) : uchar
 
+fun response {n:nat} (
+  src: &(@[uchar][buff_size]), sz: int n, m: mode
+) : bool = false
+
 implement main (pf0 | (* *) ) = let
   val address = 0x2
   val () = setbits(DDRB, DDB3)
   val () = $USART.atmega328p_init(uint16_of_int(9600))
   val (status | ()) = $TWI.slave_init(pf0 | address, true)
-  val (pf1 | ()) = sei(pf0 | (* *) )
-  val () = $TWI.start(pf1, status | (* *) )
+  val (pf1 | ()) = sei(pf0 | (* *))
+  val () = $TWI.start_server(pf1, status | response)
   var !buf with pfbuf =  @[uchar][4](_c(0))
   fun loop (enabled: INT_SET, status: TWI_BUSY | buf: &(@[uchar][4]) ) : (INT_CLEAR | void) = let
       val () = wait(enabled, status | (* *))

@@ -151,6 +151,7 @@ typedef struct {
   volatile uint8_t next_byte;
   volatile ats_ptr_type enable;
   volatile ats_ptr_type busy;
+  volatile ats_ptr_type process;
 } twi_state_t;
 
 #define get_twi_state() (twi_state_t * volatile)&twi_state
