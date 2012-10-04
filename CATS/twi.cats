@@ -74,8 +74,8 @@
 
 #define set_address(address, general_enabled) TWAR = (address << TWI_ADR_BITS) | (general_enabled << TWI_GEN_BIT)
 
-#define avr_libats_setup_addr_byte(buffer, addr, read)  \
-  ((unsigned char *)buffer)[0] = (addr << 1) | read
+#define avr_libats_setup_addr_byte(buffer, index, addr, read)  \
+  ((unsigned char *)buffer)[index] = (addr << 1) | read
 
 typedef struct {
   unsigned char cnt;

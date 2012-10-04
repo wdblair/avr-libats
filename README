@@ -29,3 +29,7 @@ Which you can then flash to your board.
 
 You can read more about ATS at http://www.ats-lang.org, and try it out online at 
 http://xrats.illtyped.com/code/ats
+
+Bootloader
+
+A Bootloader from Atmel's website is available in the bootloader folder.

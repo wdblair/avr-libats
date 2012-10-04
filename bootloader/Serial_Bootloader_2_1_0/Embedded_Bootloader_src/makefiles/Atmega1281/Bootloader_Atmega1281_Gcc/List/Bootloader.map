@@ -1,0 +1,247 @@
+Archive member included because of file (symbol)
+
+/home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+                              /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/../../../../avr/lib/avr51/crtm1281.o (exit)
+/home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_copy_data.o)
+                              Bootloader_Atmega1281_Gcc/Obj/srecParser.o (__do_copy_data)
+/home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_clear_bss.o)
+                              Bootloader_Atmega1281_Gcc/Obj/srecParser.o (__do_clear_bss)
+
+Allocating common symbols
+Common symbol       size              file
+
+dataBuffer          0x87              Bootloader_Atmega1281_Gcc/Obj/srecParser.o
+
+Discarded input sections
+
+ .text          0x0000000000000000        0x4 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/../../../../avr/lib/avr51/crtm1281.o
+ .data          0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/../../../../avr/lib/avr51/crtm1281.o
+ .bss           0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/../../../../avr/lib/avr51/crtm1281.o
+ .vectors       0x0000000000000000       0xcc /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/../../../../avr/lib/avr51/crtm1281.o
+ .init9         0x0000000000000000        0x8 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/../../../../avr/lib/avr51/crtm1281.o
+ .text          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/bootloader.o
+ .data          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/bootloader.o
+ .bss           0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/bootloader.o
+ .text.startup.main
+                0x0000000000000000       0x12 Bootloader_Atmega1281_Gcc/Obj/bootloader.o
+ .comment       0x0000000000000000       0x28 Bootloader_Atmega1281_Gcc/Obj/bootloader.o
+ .text          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/srecParser.o
+ .data          0x0000000000000000       0x10 Bootloader_Atmega1281_Gcc/Obj/srecParser.o
+ .bss           0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/srecParser.o
+ .text.srecProtocol
+                0x0000000000000000      0x1ea Bootloader_Atmega1281_Gcc/Obj/srecParser.o
+ .text.srecHandshake
+                0x0000000000000000       0x1e Bootloader_Atmega1281_Gcc/Obj/srecParser.o
+ .comment       0x0000000000000000       0x28 Bootloader_Atmega1281_Gcc/Obj/srecParser.o
+ COMMON         0x0000000000000000       0x87 Bootloader_Atmega1281_Gcc/Obj/srecParser.o
+ .text          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/abstractSerializer.o
+ .data          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/abstractSerializer.o
+ .bss           0x0000000000000000        0x1 Bootloader_Atmega1281_Gcc/Obj/abstractSerializer.o
+ .text.bootUnInitSerializer
+                0x0000000000000000       0x1c Bootloader_Atmega1281_Gcc/Obj/abstractSerializer.o
+ .text.bootScanInterfaces
+                0x0000000000000000       0x80 Bootloader_Atmega1281_Gcc/Obj/abstractSerializer.o
+ .text.bootGetChar
+                0x0000000000000000       0x42 Bootloader_Atmega1281_Gcc/Obj/abstractSerializer.o
+ .text.bootSetChar
+                0x0000000000000000        0x4 Bootloader_Atmega1281_Gcc/Obj/abstractSerializer.o
+ .rodata        0x0000000000000000        0x8 Bootloader_Atmega1281_Gcc/Obj/abstractSerializer.o
+ .comment       0x0000000000000000       0x28 Bootloader_Atmega1281_Gcc/Obj/abstractSerializer.o
+ .text          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/eepromLoader.o
+ .data          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/eepromLoader.o
+ .bss           0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/eepromLoader.o
+ .text.eepromPacketToPage
+                0x0000000000000000       0x7c Bootloader_Atmega1281_Gcc/Obj/eepromLoader.o
+ .text.eepromFlushPage
+                0x0000000000000000        0x2 Bootloader_Atmega1281_Gcc/Obj/eepromLoader.o
+ .comment       0x0000000000000000       0x28 Bootloader_Atmega1281_Gcc/Obj/eepromLoader.o
+ .text          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/flashLoader.o
+ .data          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/flashLoader.o
+ .bss           0x0000000000000000        0x4 Bootloader_Atmega1281_Gcc/Obj/flashLoader.o
+ .text.flashWaitForSPM
+                0x0000000000000000        0x8 Bootloader_Atmega1281_Gcc/Obj/flashLoader.o
+ .text.flashEraseWritePage
+                0x0000000000000000       0x3e Bootloader_Atmega1281_Gcc/Obj/flashLoader.o
+ .text.flashPacketToPage
+                0x0000000000000000       0xe8 Bootloader_Atmega1281_Gcc/Obj/flashLoader.o
+ .text.flashFlushPage
+                0x0000000000000000        0xc Bootloader_Atmega1281_Gcc/Obj/flashLoader.o
+ .comment       0x0000000000000000       0x28 Bootloader_Atmega1281_Gcc/Obj/flashLoader.o
+ .text          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/hardwareInit.o
+ .data          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/hardwareInit.o
+ .bss           0x0000000000000000        0x1 Bootloader_Atmega1281_Gcc/Obj/hardwareInit.o
+ .text.lowLevelInit
+                0x0000000000000000      0x126 Bootloader_Atmega1281_Gcc/Obj/hardwareInit.o
+ .text.lowLevelUnInit
+                0x0000000000000000        0xa Bootloader_Atmega1281_Gcc/Obj/hardwareInit.o
+ .comment       0x0000000000000000       0x28 Bootloader_Atmega1281_Gcc/Obj/hardwareInit.o
+ .text          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/uartSerializer.o
+ .data          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/uartSerializer.o
+ .bss           0x0000000000000000        0x1 Bootloader_Atmega1281_Gcc/Obj/uartSerializer.o
+ .text.getByteUsart
+                0x0000000000000000       0x1a Bootloader_Atmega1281_Gcc/Obj/uartSerializer.o
+ .text.setByteUsart
+                0x0000000000000000       0x36 Bootloader_Atmega1281_Gcc/Obj/uartSerializer.o
+ .text.hwInitUsart1
+                0x0000000000000000       0x1e Bootloader_Atmega1281_Gcc/Obj/uartSerializer.o
+ .text.hwUnInitUsart1
+                0x0000000000000000       0x10 Bootloader_Atmega1281_Gcc/Obj/uartSerializer.o
+ .comment       0x0000000000000000       0x28 Bootloader_Atmega1281_Gcc/Obj/uartSerializer.o
+ .text          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/usbFifoSerializer.o
+ .data          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/usbFifoSerializer.o
+ .bss           0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/usbFifoSerializer.o
+ .comment       0x0000000000000000       0x28 Bootloader_Atmega1281_Gcc/Obj/usbFifoSerializer.o
+ .text          0x0000000000000000       0x46 Bootloader_Atmega1281_Gcc/Obj/sp_driver.o
+ .data          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/sp_driver.o
+ .bss           0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/sp_driver.o
+ .text          0x0000000000000000       0x28 Bootloader_Atmega1281_Gcc/Obj/calibMeasurement.o
+ .data          0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/calibMeasurement.o
+ .bss           0x0000000000000000        0x0 Bootloader_Atmega1281_Gcc/Obj/calibMeasurement.o
+ .text          0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+ .data          0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+ .bss           0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+ .stab          0x0000000000000000       0x6c /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+                                         0x78 (size before relaxing)
+ .text.libgcc.mul
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+ .text.libgcc.div
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+ .text.libgcc   0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+ .text.libgcc.prologue
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+ .fini9         0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+ .fini0         0x0000000000000000        0x4 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+ .text.libgcc.builtins
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+ .text.libgcc.fmul
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_exit.o)
+ .text          0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_copy_data.o)
+ .data          0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_copy_data.o)
+ .bss           0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_copy_data.o)
+ .text.libgcc.mul
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_copy_data.o)
+ .text.libgcc.div
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_copy_data.o)
+ .text.libgcc   0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_copy_data.o)
+ .text.libgcc.prologue
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_copy_data.o)
+ .text.libgcc.builtins
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_copy_data.o)
+ .text.libgcc.fmul
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_copy_data.o)
+ .text          0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_clear_bss.o)
+ .data          0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_clear_bss.o)
+ .bss           0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_clear_bss.o)
+ .text.libgcc.mul
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_clear_bss.o)
+ .text.libgcc.div
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_clear_bss.o)
+ .text.libgcc   0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_clear_bss.o)
+ .text.libgcc.prologue
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_clear_bss.o)
+ .text.libgcc.builtins
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_clear_bss.o)
+ .text.libgcc.fmul
+                0x0000000000000000        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_clear_bss.o)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+text             0x000000000001f800 0x0000000000000800 xr
+data             0x0000000000800200 0x0000000000001e0c rw !x
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+Address of section .data set to 0x800200
+LOAD /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/../../../../avr/lib/avr51/crtm1281.o
+
+.text           0x000000000001f800       0x36
+                0x000000000001f800                PROVIDE (__text_start, .)
+ *(.progmem.gcc*)
+ *(.progmem*)
+                0x000000000001f800                . = ALIGN (0x2)
+ *(.trampolines*)
+ .trampolines   0x000000000001f800        0x0 linker stubs
+ *(.jumptables*)
+ *(.lowtext*)
+ *(.init0)
+ .init0         0x000000000001f800        0x0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/../../../../avr/lib/avr51/crtm1281.o
+                0x000000000001f800                __init
+ *(.init0)
+ *(.init1)
+ *(.init1)
+ *(.init2)
+ .init2         0x000000000001f800        0xc /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/../../../../avr/lib/avr51/crtm1281.o
+ *(.init2)
+ *(.init3)
+ *(.init3)
+ *(.init4)
+ .init4         0x000000000001f80c       0x1a /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_copy_data.o)
+                0x000000000001f80c                __do_copy_data
+ .init4         0x000000000001f826       0x10 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_clear_bss.o)
+                0x000000000001f826                __do_clear_bss
+ *(.init4)
+ *(.init5)
+ *(.init5)
+ *(.init6)
+ *(.init6)
+ *(.init7)
+ *(.init7)
+ *(.init8)
+ *(.init8)
+ *(.text.main)
+ *(.text.main)
+ *(.text)
+ *(.text.*)
+                0x000000000001f836                PROVIDE (__text_end, .)
+
+.data           0x0000000000800200        0x0 load address 0x000000000001f836
+                0x0000000000800200                PROVIDE (__data_start, .)
+ *(.data*)
+ *(.rodata*)
+ *(.gnu.linkonce.d*)
+                0x0000000000800200                . = ALIGN (0x2)
+                0x0000000000800200                PROVIDE (__data_end, .)
+
+.bss            0x0000000000800200        0x0
+                0x0000000000800200                PROVIDE (__bss_start, .)
+ *(.bss*)
+ *(COMMON)
+                0x0000000000800200                PROVIDE (__bss_end, .)
+
+.noinit         0x0000000000800200        0x0
+ *(.noinit*)
+                0x0000000000800200                PROVIDE (__heap_start, .)
+                0x000000000001f836                __data_load_start = LOADADDR (.data)
+                0x000000000001f836                __data_load_end = (__data_load_start + SIZEOF (.data))
+
+/DISCARD/
+ *(.init9)
+ *(.fini*)
+LOAD Bootloader_Atmega1281_Gcc/Obj/bootloader.o
+LOAD Bootloader_Atmega1281_Gcc/Obj/srecParser.o
+LOAD Bootloader_Atmega1281_Gcc/Obj/abstractSerializer.o
+LOAD Bootloader_Atmega1281_Gcc/Obj/eepromLoader.o
+LOAD Bootloader_Atmega1281_Gcc/Obj/flashLoader.o
+LOAD Bootloader_Atmega1281_Gcc/Obj/hardwareInit.o
+LOAD Bootloader_Atmega1281_Gcc/Obj/uartSerializer.o
+LOAD Bootloader_Atmega1281_Gcc/Obj/usbFifoSerializer.o
+LOAD Bootloader_Atmega1281_Gcc/Obj/sp_driver.o
+LOAD Bootloader_Atmega1281_Gcc/Obj/calibMeasurement.o
+LOAD /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a
+LOAD /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/../../../../avr/lib/avr51/libc.a
+LOAD /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a
+OUTPUT(Bootloader_Atmega1281_Gcc/Exe/Bootloader.elf elf32-avr)
+LOAD linker stubs
+
+.stab           0x0000000000000000      0x228
+ .stab          0x0000000000000000       0x84 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/../../../../avr/lib/avr51/crtm1281.o
+                                        0x6cc (size before relaxing)
+ .stab          0x0000000000000084       0xf0 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_copy_data.o)
+                                         0xfc (size before relaxing)
+ .stab          0x0000000000000174       0xb4 /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/avr51/libgcc.a(_clear_bss.o)
+                                         0xc0 (size before relaxing)
+
+.stabstr        0x0000000000000000       0xdb
+ .stabstr       0x0000000000000000       0xdb /home/ugrad/wdblair/libs/avr/lib/gcc/avr/4.7.2/../../../../avr/lib/avr51/crtm1281.o

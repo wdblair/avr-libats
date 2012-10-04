@@ -216,8 +216,8 @@ fun master_init (
   pf: !INT_CLEAR  | baud: int
 ) : (TWI_READY | void )
 
-fun setup_addr_byte {n:pos} {p:pos | p < 128} (
-  buf: &(@[uchar][n]), addr: int p,  read: bool
+fun setup_addr_byte {n,p:pos | p < 128} {i:nat | i < n} (
+  buf: &(@[uchar][n]), indx: int i, addr: int p,  read: bool
 ) : void = "mac#avr_libats_setup_addr_byte"
 
 fun transceiver_busy () : bool

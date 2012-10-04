@@ -82,7 +82,7 @@ extern
 castfn _8(i: uint8) : natLt(256)
 
 implement
-master_init(pf | baud ) = let
+master_init(pf | baud) = let
   val twbr = twbr_of_scl(baud)
   val () = enable_pullups()
   val () = setval(TWBR, _8(twbr))

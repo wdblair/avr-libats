@@ -163,12 +163,15 @@ if($typecheck) {
 unshift(@cflags, "avr-gcc");
 
 @extras = (
-           "-O2",
-           "-I",$avrdir,
-           "-I",$avrdir."/runtime",
-           "-L",$avrdir."/lib",
-           "-D_ATS_PRELUDE_NONE","-D_ATS_HEADER_NONE",
-           "-D_ATS_AVR","-lats");
+    "-Os", "-Wall", "-Wundef", 
+    "-Wno-unused", "-Wno-strict-prototypes", 
+    "-Werror-implicit-function-declaration", 
+    "-Wno-pointer-sign", "-Wshadow",
+    "-I",$avrdir,
+    "-I",$avrdir."/runtime",
+    "-L",$avrdir."/lib",
+    "-D_ATS_PRELUDE_NONE","-D_ATS_HEADER_NONE",
+    "-D_ATS_AVR","-lats");
 
 
 if($read_stdin) {
@@ -192,7 +195,7 @@ if($read_stdin) {
         
         if($save) {
             open(CFILE, ">", $output_filename."_dats.c")
-            or die ("Couldn't open output C file.");
+                or die ("Couldn't open output C file.");
             while($line = <GCCRD>) {
                 print CFILE $line;
             }

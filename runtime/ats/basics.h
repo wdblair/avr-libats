@@ -506,9 +506,7 @@ atspre_fprint_int8 (ats_ptr_type out, ats_int8_type i) {
 ATSinline()
 ats_void_type
 atspre_print_int8 (ats_int8_type i) {
-//  atspre_stdout_view_get () ;
   atspre_fprint_int8 ((ats_ptr_type)stdout, i) ;
-//  atspre_stdout_view_set () ;
   return ;
 }
 
@@ -535,9 +533,7 @@ atspre_print_int (ats_int_type i) {
 ATSinline()
 ats_void_type
 atspre_prerr_int8 (ats_int8_type i) {
-  atspre_stderr_view_get () ;
   atspre_fprint_int8 ((ats_ptr_type)stderr, i) ;
-  atspre_stderr_view_set () ;
   return ;
 }
 
@@ -678,18 +674,14 @@ atspre_fprint_uint8 (ats_ptr_type out, ats_uint8_type i) {
 ATSinline()
 ats_void_type
 atspre_print_uint8 (ats_uint8_type i) {
-//  atspre_stdout_view_get () ;
   atspre_fprint_uint8 ((ats_ptr_type)stdout, i) ;
-//  atspre_stdout_view_set () ;
   return ;
 }
 
 ATSinline()
 ats_void_type
 atspre_prerr_uint8 (ats_uint8_type i) {
-  atspre_stderr_view_get () ;
   atspre_fprint_uint8 ((ats_ptr_type)stderr, i) ;
-  atspre_stderr_view_set () ;
   return ;
 }
 
@@ -838,18 +830,14 @@ atspre_fprint_int16 (ats_ptr_type out, ats_int16_type i) {
 ATSinline()
 ats_void_type
 atspre_print_int16 (ats_int16_type i) {
-//  atspre_stdout_view_get () ;
   atspre_fprint_int16 ((ats_ptr_type)stdout, i) ;
-//  atspre_stdout_view_set () ;
   return ;
 }
 
 ATSinline()
 ats_void_type
 atspre_prerr_int16 (ats_int16_type i) {
-  atspre_stderr_view_get () ;
   atspre_fprint_int16 ((ats_ptr_type)stderr, i) ;
-  atspre_stderr_view_set () ;
   return ;
 }
 
@@ -1005,9 +993,7 @@ atspre_print_uint16 (ats_uint16_type i) {
 ATSinline()
 ats_void_type
 atspre_prerr_uint16 (ats_uint16_type i) {
-  atspre_stderr_view_get () ;
   atspre_fprint_uint16 ((ats_ptr_type)stderr, i) ;
-  atspre_stderr_view_set () ;
   return ;
 }
 
@@ -1029,8 +1015,10 @@ atspre_gt_int_int (ats_int_type i1, ats_int_type i2) {
   return (i1 > i2) ;
 }
 
-static
-ats_ptr_type atspre_null_ptr = (ats_ptr_type)0 ;
+#define atspre_null_ptr NULL
+
+//static
+//ats_ptr_type atspre_null_ptr = (ats_ptr_type)0 ;
 
 ATSinline()
 ats_bool_type
