@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-#define BUFF_SIZE 4
+#include "HATS/twi.hats"
 
 //Bit and byte definitions
 #define TWI_READ_BIT  0   // Bit position for R/W bit in "address byte".
@@ -69,6 +69,9 @@
 #define status_reg_set_busy(reg, bool) (reg)->bits.busy = bool
 #define status_reg_get_busy(reg) (reg)->bits.busy
 
+#define status_reg_get_mode(reg) (reg)->bits.mode
+#define status_reg_set_mode(reg, mode) (reg)->bits.busy = mode
+
 #define set_address(address, general_enabled) TWAR = (address << TWI_ADR_BITS) | (general_enabled << TWI_GEN_BIT)
 
 #define avr_libats_setup_addr_byte(buffer, addr, read)  \
@@ -128,7 +131,8 @@ union status_reg_t
     volatile unsigned char gen_address_call:1;
     volatile unsigned char all_bytes_sent:1;
     volatile unsigned char busy:1;
-    volatile unsigned char unused_bits:3;
+    volatile unsigned char mode:1;
+    volatile unsigned char unused_bits:2;
   } bits;
 };
 
@@ -147,7 +151,7 @@ typedef struct {
 typedef struct {
   volatile buffer_t buffer;
   volatile status_reg_t status_reg;
-  volatile unsigned char state;
+  volatile uint8_t state;
   volatile uint8_t next_byte;
   volatile ats_ptr_type enable;
   volatile ats_ptr_type busy;

@@ -4,7 +4,7 @@
 
 #define ATS_STALOADFLAG 0
 
-#include "HATS/i2c.hats"
+#include "HATS/twi.hats"
 
 staload "SATS/interrupt.sats"
 staload "SATS/global.sats"
@@ -70,6 +70,12 @@ absviewtype status_reg_t = $extype "status_reg_t"
 absview TWI_READY //The device is ready for a transaction
 absview TWI_BUSY  //The device is performing a transaction
 
+//Convenience for slaves detecting the current mode.
+typedef mode = bool
+
+#define READ   true
+#define WRITE false
+
 viewtypedef buffer_t
   = $extype_struct "buffer_t" of {
   data= @[uchar][buff_size],
@@ -88,7 +94,7 @@ viewtypedef twi_state_t
     next_byte= [m:nat | m < buff_size] int m,
     enable= () -<fun1> void,
     busy= () -<fun1> bool,
-    process= [n,p:nat] (&(@[uchar][n]), &(@[uchar][p]), int n, int p) -<fun1> void
+    process= {n:nat | n <= buff_size} (&(@[uchar][buff_size]), int n, mode) -<fun1> void
 }
 
 (* ****** ****** *)
@@ -188,6 +194,14 @@ fun get_busy (
   r: &status_reg_t
 ) : bool = "mac#status_reg_get_busy"
 
+fun get_mode (
+  r: &status_reg_t
+) : mode = "mac#status_reg_get_mode"
+
+fun set_mode (
+  r: &status_reg_t, m: mode
+) : void = "mac#status_reg_set_mode"
+
 (* ****** ****** *)
 
 fun get_twi_state () : [l:agz] (
@@ -227,14 +241,8 @@ fun start_transaction {l:addr} {sum, sz:pos | sum <= buff_size; sz <= buff_size/
   sum: int sum, sz: int sz
 ) : void
 
-//Convenience for slaves detecting the current mode.
-typedef mode = bool
-
-#define read   true
-#define write false
-
 fun start_server (
-  pf: !INT_SET, ready: !TWI_READY >> TWI_BUSY | process: {n:nat} (&(@[uchar][buff_size]), int n, mode) -<fun1> bool
+  pf: !INT_SET, ready: !TWI_READY >> TWI_BUSY | process: {n:nat | n <= buff_size} (&(@[uchar][buff_size]), int n, mode) -<fun1> bool
 ) : void
 
 fun get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (

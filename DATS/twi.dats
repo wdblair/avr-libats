@@ -177,7 +177,7 @@ local
       prval () = return_global(free, pf)
   }
   
-  fun reset_next_byte () : void = {
+  fun reset_next_byte_trans () : void = {
     val (free, pf | p) = get_twi_state()
     val sum = current_msg_last_byte()
     val () = p->next_byte := sum
@@ -185,7 +185,20 @@ local
     prval() = return_global(free, pf)
   }
   
-  fun copy_recvd_byte () : bool = let
+  (*
+    The mode is with respect to the master.
+    That is, the slave may be reading, but that 
+    means the master is writing. Hence, WRITE
+    would be the appropriate mode in that case.
+  *)
+  fun reset_next_byte(m:mode) : void = {
+    val (free, pf | p) = get_twi_state()
+    val () = p->next_byte := 0
+    val () = set_mode(p->status_reg, m)
+    prval() = return_global(free, pf)
+  }
+  
+  fun copy_recvd_byte_trans () : bool = let
     val (free, pf | p) = get_twi_state()
     val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
     val sum = current_msg_last_byte()
@@ -198,9 +211,17 @@ local
       prval () = return_global(free, pf)
     }
   end
-  
+
+  fun copy_recvd_byte () : void = {
+    val (free, pf | p) = get_twi_state()
+    val () = p->buffer.data.[p->next_byte] := uchar_of_reg8(TWDR)
+    val sum = current_msg_last_byte()
+    val () = p->next_byte := p->next_byte + 1 
+    prval () = return_global(free, pf)
+  }
+
   fun read_next_byte () : void = {
-    val restart = copy_recvd_byte()
+    val () = copy_recvd_byte()
     val (free, pf | p) = get_twi_state()
     val () = p->buffer.recvd_size := p->buffer.recvd_size + 1
     val () = set_last_trans_ok(p->status_reg, true)
@@ -227,7 +248,7 @@ local
           }
       end
       else { //finished
-//        val () = println! "f"
+        val () = println! "f"
         val () = set_last_trans_ok(p->status_reg, true)
         val () = clear_and_setbits(TWCR, TWEN, TWINT, TWSTO)
         prval () = return_global (free, pf)
@@ -261,7 +282,7 @@ local
         prval () = return_global (free, pf)
       }
   end
-
+  
 in
 
 implement
@@ -287,10 +308,8 @@ rx_data_in_buf (rdy | (* *)) = let
 in x end
 
 local
-
   extern
   praxi get_busy(pf: TWI_READY) : TWI_BUSY
-  
 in
 
 implement
@@ -307,7 +326,9 @@ start_with_data {n, p} (enabled, rdy | msg, size) = {
 }
 
 implement
-start_transaction {l} {sum, sz} (enabled, rdy | buf, trans, sum, sz) = {
+start_transaction {l} {sum, sz} (
+  enabled, rdy | buf, trans, sum, sz
+) = {
   val () = sleep_until_ready(enabled | (* *))
   prval origin = snapshot(trans)
   val (free, pf | p) = get_twi_state()
@@ -329,7 +350,7 @@ start_transaction {l} {sum, sz} (enabled, rdy | buf, trans, sum, sz) = {
   in
     if i - 1 <= 0 then 
       ()
-    else 
+    else
       loop(pf | t, i - 1, p)
   end
   val () = loop(pf | trans, sz, p)
@@ -355,6 +376,7 @@ implement start_server(enabled, rdy | process) = {
   val () = clear_state()
   val (gpf, pf | p) = get_twi_state()
   val () = p->process := process
+  val () = p->enable()
   prval () = rdy := get_busy(rdy)
   prval () = return_global(gpf, pf)
 }
@@ -388,35 +410,35 @@ implement TWI_vect (pf | (* *)) = let
     case+ twsr of
 // Master
     | TWI_START => {
-//        val () = println! "st"
-        val () = reset_next_byte()
+        val () = println! "st"
+        val () = reset_next_byte_trans()
         val () = master_transmit_next_byte()
       }
     | TWI_REP_START => {
-//        val () = println! "rp"
-        val () = reset_next_byte()
+        val () = println! "rp"
+        val () = reset_next_byte_trans()
         val () = master_transmit_next_byte()
       }
     | TWI_MTX_ADR_ACK => {
-//        val () = println! "tack"
+        val () = println! "tack"
         val () = master_transmit_next_byte()
       }
     | TWI_MTX_DATA_ACK => {
-//        val () = println! "tdat"
+        val () = println! "tdat"
         val () = master_transmit_next_byte()
       }
     | TWI_MRX_DATA_ACK => {
-//        val () = println! "rdat"
-        val _ = copy_recvd_byte()
+        val () = println! "rdat"
+        val _ = copy_recvd_byte_trans()
         val () = detect_last_byte()
       }
     | TWI_MRX_ADR_ACK => {
-//        val () = println! "rack"
+        val () = println! "rack"
         val () = detect_last_byte()
       }
     | TWI_MRX_DATA_NACK => let
-//        val () = println! "rnack"
-        val _ = copy_recvd_byte()
+        val () = println! "rnack"
+        val _ = copy_recvd_byte_trans()
         val (free, pf | p) = get_twi_state()
      in
         if p->next_byte = p->buffer.msg_size then { //This was the last message.
@@ -429,16 +451,16 @@ implement TWI_vect (pf | (* *)) = let
         }
      end
     | TWI_ARB_LOST => {
-//        val () = println! "arb"
+        val () = println! "arb"
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
       }
 // Slave
     | TWI_STX_ADR_ACK  => {
-        val () = reset_next_byte()
+        val () = reset_next_byte(READ)
         val () = slave_transmit_next_byte()
       }
     | TWI_STX_ADR_ACK_M_ARB_LOST => {
-        val () = reset_next_byte()
+        val () = reset_next_byte(READ)
         val () = slave_transmit_next_byte()
       }
     | TWI_STX_DATA_ACK => slave_transmit_next_byte()
@@ -457,12 +479,14 @@ implement TWI_vect (pf | (* *)) = let
      end
     | TWI_SRX_GEN_ACK => {
         val (free, pf | p) = get_twi_state()
+        val () = set_mode(p->status_reg, WRITE)
         val () = set_gen_address_call(p->status_reg, true)
         prval () = return_global(free, pf)
       }
     | TWI_SRX_ADR_ACK => {
         val (free, pf | p) = get_twi_state()
         val () = set_rx_data_in_buf(p->status_reg, true)
+        val () = set_mode(p->status_reg, WRITE)
         val () = p->next_byte := 0
         prval () = return_global(free, pf)
         val () = enable_twi_slave()
@@ -474,6 +498,7 @@ implement TWI_vect (pf | (* *)) = let
     | TWI_SRX_STOP_RESTART => {
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
         val (gpf, pf | p) = get_twi_state()
+        val () = p->process(p->buffer.data, p->buffer.recvd_size, get_mode(p->status_reg))
         val () = set_busy(p->status_reg, false)
         prval () = return_global(gpf, pf)
      }

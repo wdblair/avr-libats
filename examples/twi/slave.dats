@@ -5,22 +5,59 @@
   Adapted from Atmel Application Note AVR311.
 *)
 
+#include "HATS/twi.hats"
+
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
 staload "SATS/global.sats"
 staload TWI = "SATS/twi.sats"
-staload "SATS/twi.sats"
 staload USART = "SATS/usart.sats"
+
+staload UNSAFE = "prelude/SATS/unsafe.sats"
+staload _ = "prelude/DATS/unsafe.dats"
 
 (* ****** ****** *)
 
 extern
 castfn _c(i:int) : uchar
 
-fun response {n:nat} (
-  src: &(@[uchar][buff_size]), sz: int n, m: mode
-) : bool = false
+var previous_write : bool = false
+val prevwrite = &previous_write
+
+fun response {n:nat | n <= buff_size} (
+  src: &(@[uchar][buff_size]), sz: int n, m: $TWI.mode
+) : bool = let
+  val prev = $UNSAFE.ptrget(&previous_write)
+in
+  //A write preceeded this
+  if prev then
+    //Good
+    if m = $TWI.READ then let
+        val () = $UNSAFE.ptrset(prevwrite, false)
+        //Prepare the next message
+        val () =
+          if sz > 0 then {
+            val resp =
+              case+ char_of_uchar(src.[0]) of
+               | '1' => 'a'
+               | '2' => 'b'
+               | '3' =>  'c'
+               | _ => 'e'
+            val () = src.[0] := uchar_of_char(resp)
+          }
+      in true end
+    //Write + Write not allowed
+    else
+      false
+  else
+    //The first 
+    if m = $TWI.WRITE then let
+        val () = $UNSAFE.ptrset(prevwrite, true)
+      in true end
+    else
+      false
+end
 
 implement main (pf0 | (* *) ) = let
   val address = 0x2
@@ -29,27 +66,10 @@ implement main (pf0 | (* *) ) = let
   val (status | ()) = $TWI.slave_init(pf0 | address, true)
   val (pf1 | ()) = sei(pf0 | (* *))
   val () = $TWI.start_server(pf1, status | response)
-  var !buf with pfbuf =  @[uchar][4](_c(0))
-  fun loop (enabled: INT_SET, status: TWI_BUSY | buf: &(@[uchar][4]) ) : (INT_CLEAR | void) = let
-      val () = wait(enabled, status | (* *))
-  in
-      if $TWI.last_trans_ok(status | (* *)) then let
-            val rx = $TWI.rx_data_in_buf(status | (* *))
-          in
-            if rx > 0 then let
-                val _ = $TWI.get_data(enabled, status | buf, rx)
-                val c = char_of_uchar(buf.[0])
-                val () = buf.[0] := uchar_of_int(int_of_uchar(buf.[0]) + 0x1)
-                val () = $TWI.start_with_data(enabled, status | buf, rx)
-              in loop(enabled, status | buf) end
-            else let
-              val () = $TWI.start(enabled, status | (* *))
-            in loop(enabled, status | buf) end
-          end
-      else let
-          val () = $TWI.start(enabled, status | (* *))
-        in loop(enabled, status | buf) end
-  end
-  //loop never completes, but preserve pf0
-  val (pf1 | () ) = loop(pf1, status | !buf)
-in pf0 := pf1 end
+  fun loop (pf: INT_SET, pf1: $TWI.TWI_BUSY | (* *)) : (INT_CLEAR | void) = let
+      val () = sleep_enable()
+      val () = sleep_cpu()
+      val () = sleep_disable()
+  in loop(pf, pf1 | (* *)) end
+  val (pf | () ) = loop(pf1, status | (* *))
+in pf0 := pf end
