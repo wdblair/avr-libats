@@ -226,7 +226,7 @@ fun get_state_info (
   pf: !INT_SET | (* *)
 ) : uchar
 
-fun wait(pf: !INT_SET, busy: !TWI_BUSY >> TWI_READY | (* *)) : void
+fun wait(pf: !INT_SET, busy: TWI_BUSY | (* *)) : (TWI_READY | void)
 
 fun last_trans_ok (pf: !TWI_READY  | (* *)) : bool
 
@@ -237,21 +237,21 @@ fun start_with_data {n, p:pos | n <= buff_size; p <= buff_size; p <= n} (
 ) : void
 
 fun start_transaction {l:addr} {sum, sz:pos | sum <= buff_size; sz <= buff_size/2} (
-  pf: !INT_SET, ready: !TWI_READY >> TWI_BUSY | buf: &(@[uchar][sum]), trans: !transaction(l, sum, sz, sz),
+  pf: !INT_SET, ready: TWI_READY | buf: &(@[uchar][sum]), trans: !transaction(l, sum, sz, sz),
   sum: int sum, sz: int sz
-) : void
+) : (TWI_BUSY | void)
 
 fun start_server (
-  pf: !INT_SET, ready: !TWI_READY >> TWI_BUSY | process: {n:nat | n <= buff_size} (&(@[uchar][buff_size]), int n, mode) -<fun1> bool
-) : void
+  pf: !INT_SET, ready: TWI_READY | process: {n:nat | n <= buff_size} (&(@[uchar][buff_size]), int n, mode) -<fun1> bool
+) : (TWI_BUSY | void)
 
 fun get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
   pf: !INT_SET, ready: !TWI_READY | msg: &(@[uchar][n]), sz: int p
 ) : bool
 
 fun start (
-  pf: !INT_SET, pf: !TWI_READY >> TWI_BUSY | (* *)
-) : void
+  pf: !INT_SET, pf: TWI_READY | (* *)
+) : (TWI_BUSY | void)
 
 (*
   Disable the TWI module.

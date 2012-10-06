@@ -135,9 +135,9 @@ local
     extern
     praxi get_ready(pf: TWI_BUSY) : TWI_READY
   in
-    implement wait (pf, busy | (* *)) = {
+    implement wait (pf, busy | (* *)) = (rdy | () ) where {
       val _ = sleep_until_ready(pf | (* *))
-      prval () = busy := get_ready(busy)
+      prval rdy = get_ready(busy)
     }
   end
   
@@ -328,7 +328,7 @@ start_with_data {n, p} (enabled, rdy | msg, size) = {
 implement
 start_transaction {l} {sum, sz} (
   enabled, rdy | buf, trans, sum, sz
-) = {
+) = (busy | ()) where {
   val () = sleep_until_ready(enabled | (* *))
   prval origin = snapshot(trans)
   val (free, pf | p) = get_twi_state()
@@ -358,26 +358,26 @@ start_transaction {l} {sum, sz} (
   val () = reset(origin | trans)
   val () = clear_state()
   val _ = p->enable()
-  prval () = rdy := get_busy(rdy)
+  prval busy = get_busy(rdy)
   prval () = return_global(free, pf)
 }
 
-implement start(enabled, rdy | (* *)) = {
+implement start(enabled, rdy | (* *)) = (busy | () ) where {
   val () = sleep_until_ready(enabled | (* *))
   val () = clear_state()
   val (gpf, pf | p) = get_twi_state()
   val () = p->enable()
-  prval () = rdy := get_busy(rdy)
+  prval busy = get_busy(rdy)
   prval () = return_global(gpf, pf)
 }
 
-implement start_server(enabled, rdy | process) = {
+implement start_server(enabled, rdy | process) = (busy | ()) where {
   val () = sleep_until_ready(enabled | (* *))
   val () = clear_state()
   val (gpf, pf | p) = get_twi_state()
   val () = p->process := process
   val () = p->enable()
-  prval () = rdy := get_busy(rdy)
+  prval busy = get_busy(rdy)
   prval () = return_global(gpf, pf)
 }
 

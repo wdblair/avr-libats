@@ -45,9 +45,10 @@ implement main (pf0 | (* *) ) = {
     val () = $TWI.setup_addr_byte(!buf, 0, 0x2, false)
     val () = !buf.[1] := uchar_of_char(c)
     val () = $TWI.setup_addr_byte(!buf, 2, 0x2, true)
-    val () = $TWI.start_transaction(set, status | !buf, trans, 4, 2)
-    val () = $TWI.wait(set, status | (* *))
-    val _ = $TWI.get_data(set, status | !buf, 4)
+    val (busy | ()) = $TWI.start_transaction(set, status | !buf, trans, 4, 2)
+    val (rdy | ()) = $TWI.wait(set, busy | (* *))
+    val _ = $TWI.get_data(set, rdy | !buf, 4)
+    prval () = status := rdy
     val c = char_of_uchar(!buf.[3])
     val () = println! ("resp: ", c)
   }
