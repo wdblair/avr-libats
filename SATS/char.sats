@@ -2,7 +2,6 @@
 #include "CATS/char.cats"
 %}
 
-
 fun asl_uchar_int1 
   (c: uchar, n: Nat) : uchar = "mac#avr_libats_asl_uchar_int1"
 

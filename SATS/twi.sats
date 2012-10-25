@@ -140,7 +140,7 @@ fun reset {l:addr} {sum,n,sz:nat} {sum': nat |
     trans: !transaction(l, sum, n, sz) >> transaction(l, sum', sz, sz)
 ) : void = "mac#transaction_reset"
 
-praxi free_transaction {l:addr} {s, n, sz:nat} (
+praxi free_transaction {l:addr} {s, n, sz:int} (
   t: transaction(l, s, n, sz)
 ) : transaction_t @ l
 
@@ -236,9 +236,11 @@ fun start_with_data {n, p:pos | n <= buff_size; p <= buff_size; p <= n} (
   pf: !INT_SET, ready: !TWI_READY >> TWI_BUSY | msg: &(@[uchar][n]), sz: int p
 ) : void
 
-fun start_transaction {l:addr} {sum, sz:pos | sum <= buff_size; sz <= buff_size/2} (
-  pf: !INT_SET, ready: TWI_READY | buf: &(@[uchar][sum]), trans: !transaction(l, sum, sz, sz),
-  sum: int sum, sz: int sz
+fun start_transaction {l:addr} {
+  sum, sz:pos | sum <= buff_size; sz <= buff_size/2
+} (
+  pf: !INT_SET, ready: TWI_READY | buf: &(@[uchar][sum]),
+  trans: !transaction(l, sum, sz, sz), sum: int sum, sz: int sz
 ) : (TWI_BUSY | void)
 
 fun start_server (

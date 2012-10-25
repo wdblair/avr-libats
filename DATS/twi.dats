@@ -455,7 +455,8 @@ implement TWI_vect (pf | (* *)) = let
         val _ = copy_recvd_byte_trans()
         val (free, pf | p) = get_twi_state()
      in
-        if p->next_byte = p->buffer.msg_size then { //This was the last message.
+        if p->next_byte = p->buffer.msg_size then {
+          //This was the last message.
           val () = set_last_trans_ok(p->status_reg, true)
           val () = clear_and_setbits(TWCR, TWEN, TWINT, TWSTO)
           prval () = return_global(free, pf)
@@ -513,7 +514,8 @@ implement TWI_vect (pf | (* *)) = let
         val () = setbits(PORTB, PORTB3)
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
         val (gpf, pf | p) = get_twi_state()
-        val _ = p->process(p->buffer.data, p->buffer.recvd_size, get_mode(p->status_reg))
+        val _ = 
+          p->process(p->buffer.data, p->buffer.recvd_size, get_mode(p->status_reg))
         val () = set_busy(p->status_reg, false)
         prval () = return_global(gpf, pf)
      }
