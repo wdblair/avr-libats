@@ -171,15 +171,27 @@ local
       var sum : [s:nat] int s = 0
       var i : [n:nat] int n
       val curr = p->buffer.curr_trans
-      val () = for(i := 0; i < curr; i := i + 1) {
+      val () = for(i := 0; i <= curr; i := i + 1) {
         val () = sum := sum + int1_of_uchar(p->buffer.trans.[i])
       }
       prval () = return_global(free, pf)
   }
   
+  fun current_msg_first_byte () :
+    [n:nat] int n = sum where {
+    val (free, pf | p) = get_twi_state()
+    var sum : [s:nat] int s = 0
+    var i : [n:nat] int n
+    val curr = p->buffer.curr_trans
+    val () = for(i := 0; i < curr; i := i + 1) {
+      val () = sum := sum + int1_of_uchar(p->buffer.trans.[i])
+    }
+    prval () = return_global(free, pf)
+  }
+  
   fun reset_next_byte_trans () : void = {
     val (free, pf | p) = get_twi_state()
-    val sum = current_msg_last_byte()
+    val sum = current_msg_first_byte()
     val () = p->next_byte := sum
     val () = set_all_bytes_sent(p->status_reg, false)
     prval() = return_global(free, pf)
@@ -242,14 +254,13 @@ local
             prval () = return_global(free, pf)
           } else {
               val () = setval(TWDR, p->buffer.data.[p->next_byte])
-              val () = println!("snd:", char_of_uchar(p->buffer.data.[p->next_byte]))
               val () = p->next_byte := p->next_byte + 1
               val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT)
               prval () = return_global (free, pf)
           }
       end
       else { //finished
-        val () = println! "f"
+//        val () = println! "f"
         val () = set_last_trans_ok(p->status_reg, true)
         val () = clear_and_setbits(TWCR, TWEN, TWINT, TWSTO)
         prval () = return_global (free, pf)
@@ -311,6 +322,9 @@ in x end
 local
   extern
   praxi get_busy(pf: TWI_READY) : TWI_BUSY
+  
+  extern
+  praxi remove_rdy(pf: TWI_READY) : void
 in
 
 implement
@@ -372,13 +386,13 @@ implement start(enabled, rdy | (* *)) = (busy | () ) where {
   prval () = return_global(gpf, pf)
 }
 
-implement start_server(enabled, rdy | process) = (busy | ()) where {
+implement start_server(enabled, rdy | process) = {
   val () = sleep_until_ready(enabled | (* *))
   val () = clear_state()
   val (gpf, pf | p) = get_twi_state()
   val () = p->process := process
   val () = p->enable()
-  prval busy = get_busy(rdy)
+  prval () = remove_rdy(rdy)
   prval () = return_global(gpf, pf)
 }
 
@@ -406,39 +420,38 @@ castfn uchar_of_reg8 (r: reg(8)) : uchar
 
 implement TWI_vect (pf | (* *)) = let
     val twsr = int_of_reg8(TWSR)
-    val c =  char_of_uchar(uchar_of_reg8(TWSR))
   in
     case+ twsr of
 // Master
     | TWI_START => {
-        val () = println! "st"
+//        val () = println! "st"
         val () = reset_next_byte_trans()
         val () = master_transmit_next_byte()
       }
     | TWI_REP_START => {
-        val () = println! "rp"
+//        val () = println! "rp"
         val () = reset_next_byte_trans()
         val () = master_transmit_next_byte()
       }
     | TWI_MTX_ADR_ACK => {
-        val () = println! "tack"
+//        val () = println! "tack"
         val () = master_transmit_next_byte()
       }
     | TWI_MTX_DATA_ACK => {
-        val () = println! "tdat"
+//        val () = println! "tdat"
         val () = master_transmit_next_byte()
       }
     | TWI_MRX_DATA_ACK => {
-        val () = println! "rdat"
+//        val () = println! "rdat"
         val _ = copy_recvd_byte_trans()
         val () = detect_last_byte()
       }
     | TWI_MRX_ADR_ACK => {
-        val () = println! "rack"
+//        val () = println! "rack"
         val () = detect_last_byte()
       }
     | TWI_MRX_DATA_NACK => let
-        val () = println! "rnack"
+//        val () = println! "rnack"
         val _ = copy_recvd_byte_trans()
         val (free, pf | p) = get_twi_state()
      in
@@ -452,7 +465,7 @@ implement TWI_vect (pf | (* *)) = let
         }
      end
     | TWI_ARB_LOST => {
-        val () = println! "arb"
+//        val () = println! "arb"
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
       }
 // Slave
@@ -497,21 +510,22 @@ implement TWI_vect (pf | (* *)) = let
       }
     | TWI_SRX_GEN_DATA_ACK => read_next_byte()
     | TWI_SRX_STOP_RESTART => {
+        val () = setbits(PORTB, PORTB3)
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
         val (gpf, pf | p) = get_twi_state()
-        val () = p->process(p->buffer.data, p->buffer.recvd_size, get_mode(p->status_reg))
+        val _ = p->process(p->buffer.data, p->buffer.recvd_size, get_mode(p->status_reg))
         val () = set_busy(p->status_reg, false)
         prval () = return_global(gpf, pf)
      }
     | TWI_BUS_ERROR => {
-        val () = println! "err"
+//        val () = println! "err"
         val () = clear_and_setbits(TWCR, TWSTO, TWINT)
      }
     | _ => {
         val (gpf, pf | p) = get_twi_state()
         val () = p->state := uchar_of_reg8(TWSR)
         val x = char_of_uchar(p->state)
-        val () = println! x
+//        val () = println! x
         val _ = p->enable()
         prval () = return_global(gpf, pf)
      }

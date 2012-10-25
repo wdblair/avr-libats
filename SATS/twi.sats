@@ -243,7 +243,7 @@ fun start_transaction {l:addr} {sum, sz:pos | sum <= buff_size; sz <= buff_size/
 
 fun start_server (
   pf: !INT_SET, ready: TWI_READY | process: {n:nat | n <= buff_size} (&(@[uchar][buff_size]), int n, mode) -<fun1> bool
-) : (TWI_BUSY | void)
+) : void
 
 fun get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
   pf: !INT_SET, ready: !TWI_READY | msg: &(@[uchar][n]), sz: int p

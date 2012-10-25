@@ -3,12 +3,14 @@ MMCU=atmega328p
 
 all: master slave
 
+library: ../../DATS/twi.dats ../../SATS/twi.sats 
+	cd ../../DATS && make
 
-master: master.dats
+master: master.dats library
 	avr-atscc -mmcu=$(MMCU) -h $< -o $@ -DF_CPU=$(F_CPU)
 	cp $@.hex ~/Dropbox/
 
-slave: slave.dats
+slave: slave.dats library
 	avr-atscc -mmcu=$(MMCU) -h $< -o $@ -DF_CPU=$(F_CPU)
 	cp $@.hex ~/Dropbox/
 
