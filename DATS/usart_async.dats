@@ -43,17 +43,9 @@ fun get_read_buffer
 
 extern
 fun get_write_buffer
-  () : [n,s:nat; l:agz| n < s] (
+  () : [n,s:nat; l:agz | n < s] (
   global(l), queue(char, n, s) @ l | ptr l
 ) = "mac#get_write_buffer"
-
-(* ****** ****** *)
-
-extern
-castfn char_of_reg(r:reg(8)) : char
-
-extern
-castfn uint8_of_char(c:char) : natLt(256)
 
 (* ****** ****** *)
 
@@ -66,7 +58,7 @@ USART_TX_vect (locked | (* *) ) = let
   } else {
     var tmp : char
     val () = remove<char>(locked, pf | p , tmp)
-    val () = setval(UDR0, uint8_of_char(tmp))
+    val () = setval(UDR0, tmp)
     prval () = return_global(gpf, pf)
   }
 end
@@ -148,7 +140,7 @@ atmega328p_async_tx (pf0 | c, f) = 0 where {
           var tmp : char
 	  val () = remove<char>(locked, pf | p, tmp)
           val (enabled | () ) = sei(locked | (* *))
-	  val () = setval(UDR0, uint8_of_char(tmp))
+	  val () = setval(UDR0, tmp)
           prval () = return_global(g, pf)
           prval () = pf0 := enabled
 	} else {

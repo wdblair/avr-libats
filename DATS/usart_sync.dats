@@ -14,16 +14,7 @@ fun atmega328p_rx (f: FILEref) : int = "atmega328p_rx"
 extern
 fun atmega328p_tx (c: char, f: FILEref) : int = "atmega328p_tx"
 
-extern
-castfn int2eight (x:int) : [n:nat | n < 256] int n
-
 val F_CPU = $extval(lint, "F_CPU")
-
-extern
-castfn reg2int(x:reg(8)) : int
-
-extern
-castfn char_to_8 (x:char) : [n:nat | n < 256] int n 
 
 implement atmega328p_init (baud) = {
   val ubrr = ubrr_of_baud(baud)
@@ -38,7 +29,7 @@ implement atmega328p_init (baud) = {
 
 implement atmega328p_rx (f) = c where {
     val () = loop_until_bit_is_set(UCSR0A, RXC0)
-    val c = reg2int(UDR0)
+    val c = int_of_reg(UDR0)
 }
 
 implement atmega328p_tx (c, f) = res where {
@@ -47,7 +38,7 @@ implement atmega328p_tx (c, f) = res where {
         val _ = atmega328p_tx('\r',f)
     }
     val () = loop_until_bit_is_set(UCSR0A, UDRE0)
-    val () = setval(UDR0, char_to_8(c))
+    val () = setval(UDR0, c)
     val res = 0
 }
 

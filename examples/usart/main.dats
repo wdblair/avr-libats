@@ -7,12 +7,6 @@ staload "SATS/stdio.sats"
 %}
 
 extern
-castfn reg2char (x:reg(8)) : char
-
-extern
-castfn char_to_8 (x:char) : [n:nat | n < 256] int n
-
-extern
 fun redirect_stdio () : void = "redirect_stdio"
 
 extern
@@ -20,9 +14,6 @@ fun usart_read_char (f: FILEref) : int = "usart_read_char"
 
 extern 
 fun usart_send_char (c: char, f: FILEref) : int = "usart_send_char"
-
-extern
-castfn char_to_8(x:char) : [n:nat | n < 256] int n 
 
 extern
 fun ubrr_of_baud(baud: uint16) : uint16 = "mac#avr_libats_ubrr_of_baud"
@@ -43,7 +34,7 @@ fun usart_init
 
 implement usart_read_char (f) = int_of_char(c) where {
     val () = loop_until_bit_is_set(UCSR0A, RXC0)
-    val c = reg2char(UDR0)
+    val c = char_of_reg(UDR0)
 }
   
 implement usart_send_char (c: char, f: FILEref) : int = 0 where {
@@ -52,7 +43,7 @@ implement usart_send_char (c: char, f: FILEref) : int = 0 where {
         val _ = usart_send_char('\r',stdout_ref)
     }
     val () = loop_until_bit_is_set(UCSR0A, UDRE0)
-    val () = setval(UDR0, char_to_8(c))
+    val () = setval(UDR0, c)
 }
 
 extern

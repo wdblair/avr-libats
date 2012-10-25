@@ -85,7 +85,7 @@ implement
 master_init(pf | baud) = let
   val twbr = twbr_of_scl(baud)
   val () = enable_pullups()
-  val () = setval(TWBR, _8(twbr))
+  val () = setval(TWBR, twbr)
   val () = setval(TWDR, 0xFF)
   val () = clear_and_setbits(TWCR, TWEN)
   val (gpf, pf | p) = get_twi_state()
@@ -241,7 +241,8 @@ local
             val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
             prval () = return_global(free, pf)
           } else {
-              val () = setval(TWDR, uint8_of_uchar(p->buffer.data.[p->next_byte]))
+              val () = setval(TWDR, p->buffer.data.[p->next_byte])
+              val () = println!("snd:", char_of_uchar(p->buffer.data.[p->next_byte]))
               val () = p->next_byte := p->next_byte + 1
               val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT)
               prval () = return_global (free, pf)
@@ -259,7 +260,7 @@ local
       val (free, pf | p) = get_twi_state()
       //Send the next byte out for delivery
       val x = p->buffer.data.[p->next_byte]
-      val () = setval(TWDR, uint8_of_uchar(x))
+      val () = setval(TWDR, x)
       val () = enable_twi_slave()
   in
     if p->next_byte < (p->buffer.msg_size - 1) then {
@@ -503,11 +504,14 @@ implement TWI_vect (pf | (* *)) = let
         prval () = return_global(gpf, pf)
      }
     | TWI_BUS_ERROR => {
+        val () = println! "err"
         val () = clear_and_setbits(TWCR, TWSTO, TWINT)
      }
     | _ => {
         val (gpf, pf | p) = get_twi_state()
         val () = p->state := uchar_of_reg8(TWSR)
+        val x = char_of_uchar(p->state)
+        val () = println! x
         val _ = p->enable()
         prval () = return_global(gpf, pf)
      }

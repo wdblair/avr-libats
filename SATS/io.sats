@@ -35,6 +35,10 @@ fun set_regs_to_int {n,p:nat} (
   high: reg(n), low: reg(p), value: uint16
 ) : void = "mac#avr_libats_set_regs_to_int"
 
+castfn char_of_reg(r:reg(8)) : char
+
+castfn int_of_reg(r:reg(8)) : [n:nat | n < 256] int n
+
 symintr setbits
 
 fun loop_until_bit_is_clear {n:nat} ( 
@@ -212,12 +216,34 @@ fun clearbits7 {n:nat} (
     r: !reg(n) >> reg(n'), b0: natLt(8), b1: natLt(8), b2: natLt(8), b3: natLt(8), b4: natLt(8), b5: natLt(8), b6: natLt(8), b7: natLt(8)
 ) : #[n':nat; 0 <= n'; n' < 256] void = "mac#avr_libats_clearbits7"
 
-
 overload clearbits with clearbits7
 
-fun setval {n:nat}
-  (r: !reg(n) >> reg(n'), n: natLt(256)) : #[n':nat | 0 <= n; n < 256] void = "mac#avr_libats_setval"
+symintr setval
+
+fun setval_int {n:nat} (
+  r: !reg(n) >> reg(n'), n: natLt(256)
+) : #[n':nat | 0 <= n; n < 256] void = "mac#avr_libats_setval"
   
+overload setval with setval_int
+
+fun setval_char {n:nat} (
+  r: !reg(n) >> reg(n'), c: char
+) : #[n':nat | 0 <= n; n < 256] void = "mac#avr_libats_setval"
+  
+overload setval with setval_char
+
+fun setval_uchar {n:nat} (
+  r: !reg(n) >> reg(n'), c: uchar
+) : #[n':nat | 0 <= n; n < 256] void = "mac#avr_libats_setval"  
+
+overload setval with setval_uchar
+
+fun setval_uint8 {n:nat} (
+  r: !reg(n) >> reg(n'), c: uint8
+) : #[n':nat | 0 <= n; n < 256] void = "mac#avr_libats_setval"
+
+overload setval with setval_uint8
+
 symintr clear_and_setbits
 
 fun clear_and_setbits0 {n:nat} (

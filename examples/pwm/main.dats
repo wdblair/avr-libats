@@ -8,7 +8,7 @@ fun init_pwm () : void = {
 }
 
 fun set_pwm_output(duty: natLt(256)) : void = {
-  val () = setval(OCR2A,duty)
+  val () = setval(OCR2A, duty)
 }
 
 (* Glow the LED on and off indefinitely. *)

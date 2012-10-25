@@ -65,11 +65,11 @@ implement main (pf0 | (* *) ) = let
   val () = $USART.atmega328p_init(uint16_of_int(9600))
   val (status | ()) = $TWI.slave_init(pf0 | address, true)
   val (pf1 | ()) = sei(pf0 | (* *))
-  val () = $TWI.start_server(pf1, status | response)
+  val (busy | ()) = $TWI.start_server(pf1, status | response)
   fun loop (pf: INT_SET, pf1: $TWI.TWI_BUSY | (* *)) : (INT_CLEAR | void) = let
-      val () = sleep_enable()
-      val () = sleep_cpu()
-      val () = sleep_disable()
+//      val () = sleep_enable()
+//      val () = sleep_cpu()
+//      val () = sleep_disable()
   in loop(pf, pf1 | (* *)) end
-  val (pf | () ) = loop(pf1, status | (* *))
+  val (pf | () ) = loop(pf1, busy | (* *))
 in pf0 := pf end
