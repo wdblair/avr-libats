@@ -7,8 +7,6 @@
 
 (* ****** ****** *)
 
-#include "HATS/twi.hats"
-
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
@@ -22,6 +20,17 @@ staload "SATS/stdio.sats"
 extern
 castfn _c(i:int) : uchar
 
+(*
+  Every AVR program has some setup followed by an infinite
+  loop. Why just not make the loop a template?
+  
+  Linear resources would often be used in the template, and
+  this example demonstrates how much syntax is needed to
+  to modify those resources.
+  
+  There's also cleanup needed for a lot of proofs, so a
+  generic loop could be infeasible.
+*)
 implement main (pf0 | (* *) ) = {
   val () = $USART.atmega328p_init(9600)
   val () = setbits(DDRB, DDB3)
@@ -36,7 +45,7 @@ implement main (pf0 | (* *) ) = {
 //A write, followed by a read
   val () = $TWI.setup_addr_byte(!buf, 0, 0x2, false)
   val () = $TWI.setup_addr_byte(!buf, 2, 0x2, true)
-//OUr infinite loop
+//The infinite loop
   fun loop {l:addr} {sz: pos | $TWI.transaction(4, sz, sz)} (
     set: INT_SET, rdy: !($TWI.TWI_READY) 
     | buf: &(@[uchar][4]), trans: $TWI.transaction(l, 4, sz, sz)

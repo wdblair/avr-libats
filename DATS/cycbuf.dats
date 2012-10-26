@@ -40,7 +40,7 @@ fun {a:t@ype} cycbuf_is_empty {l:addr} {s, n:nat | n <= s}
     pf: !cycbuf_array(a,n,s,w,r) @ l | p: ptr l
 ) : bool(n == 0) = p->n = 0
 
-implement {a} empty (pf | p) = 
+implement {a} empty (pf | p) =
   cycbuf_is_empty(pf | p)
 
 fun {a:t@ype} cycbuf_is_full {l:agz} {s:pos}

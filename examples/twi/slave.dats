@@ -5,8 +5,6 @@
   Adapted from Atmel Application Note AVR311.
 *)
 
-#include "HATS/twi.hats"
-
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
@@ -14,9 +12,10 @@ staload TWI = "SATS/twi.sats"
 
 (* ****** ****** *)
 
-fun response {n:nat | n <= buff_size} (
-  src: &(@[uchar][buff_size]), sz: int n, m: $TWI.mode
+fun response {n:nat | n <= $TWI.buff_size} (
+  src: &(@[uchar][$TWI.buff_size]), sz: int n, m: $TWI.mode
 ) : bool = true where {
+  //Increment whatever is stored in the buffer.
   val curr = int_of_uchar(src.[0])
   val () = src.[0] := uchar_of_int(curr + 1)
 }

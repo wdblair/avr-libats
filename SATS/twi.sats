@@ -4,6 +4,8 @@
 
 #define ATS_STALOADFLAG 0
 
+#define ATS_TWI 1
+
 #include "HATS/twi.hats"
 
 staload "SATS/interrupt.sats"
