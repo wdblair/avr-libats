@@ -6,12 +6,11 @@ staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/usart.sats"
 staload "SATS/stdio.sats"
-staload "SATS/delay.sats"
 
 (* ****** ****** *)
 
 implement main (locked | (* *) ) = {
-  val () = atmega328p_async_init(locked | uint16_of_int(9600))
+  val () = atmega328p_async_init(locked | 9600)
   val (enabled | () ) = sei(locked | (* *) )
   fun loop (pf: INT_SET | (* *)) : (INT_CLEAR | void) = let
       val c = char_of_int(getchar())

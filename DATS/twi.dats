@@ -332,11 +332,13 @@ start_with_data {n, p} (enabled, rdy | msg, size) = {
 
 implement
 start_transaction {l} {sum, sz} (
-  enabled, rdy | buf, trans, sum, sz
+  enabled, rdy | buf, trans
 ) = (busy | ()) where {
   val () = sleep_until_ready(enabled | (* *))
   prval origin = snapshot(trans)
   val (free, pf | p) = get_twi_state()
+  val sum = sum(trans)
+  val sz = size(trans)
   val () = copy_buffer(p->buffer.data, buf, sum)
   val () = p->buffer.msg_size := sum
   val () = p->buffer.curr_trans := 0

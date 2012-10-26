@@ -18,7 +18,7 @@ staload "SATS/stdio.sats"
 
 staload USART = "SATS/usart.sats"
 
-val baudrate = uint16_of_int(9600)
+val baudrate = 9600
 
 extern
 fun wdt_enable (mode: int) : void = "mac#wdt_enable"
@@ -63,7 +63,8 @@ implement main () = loop () where {
     val () = $USART.atmega328p_init(baudrate)
     val () = init()
     val adc = average_sample(8, MUX3)
-    // adc = (v_in * 1024) / vref and vref = 1100 so just say adc ~ v_in. 93%
+    // adc = (v_in * 1024) / vref and vref = 1100 
+    //so just say adc ~ v_in. 93%
     // Datesheet: 314mv ~ 25 C  and 1 mV ~ 1 C 
     val () = println! (
         "Temperature is ~ ", adc - uint16_of_int(314), " C\n"

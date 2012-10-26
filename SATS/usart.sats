@@ -13,17 +13,23 @@
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 
-datasort arch = 
+datasort arch =
   | atmega328p
 
-(* baud rate, bits per second *)
-fun atmega328p_init (baud: uint16) : void
+(* baud rate in bits per second *)
+fun atmega328p_init {n:nat | uint16(n)} (
+  baud: int n
+) : void
 
-fun ubrr_of_baud (baud: uint16) : uint16 = "mac#avr_libats_ubrr_of_baud"
+fun ubrr_of_baud {n:nat | uint16(n)} (
+  baud: int n
+) : uint16 = "mac#avr_libats_ubrr_of_baud"
 
 (* ****** ****** *)
 
-fun atmega328p_async_init(pf: !INT_CLEAR | baud: uint16) : void
+fun atmega328p_async_init {n:nat | uint16(n)} (
+  pf: !INT_CLEAR | baud: int n
+) : void
 
 fun atmega328p_async_tx 
   (pf: !INT_SET | c:char, f: FILEref) : int = "atmega328p_async_tx"

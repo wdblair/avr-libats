@@ -16,6 +16,9 @@ praxi lemma_reg_int8 {n:nat} (r: reg(n) ) : [0 <= n; n < 256] void
 
 macdef F_CPU = $extval(ulint, "F_CPU")
 
+stadef uint16(n:int) = n < 65536
+stadef uint8(n:int) = n < 256
+
 fun bit_is_set {n:nat} (
   r: reg(n), b: natLt(8)
 ) : bool = "mac#bit_is_set"

@@ -81,6 +81,7 @@ typedef struct {
   unsigned char cnt;
   unsigned char curr;
   unsigned char fmt[BUFF_SIZE/2];
+  unsigned char size;
 } transaction_t;
 
 ATSinline()
@@ -103,6 +104,22 @@ transaction_init (transaction_t *trans) {
 
 #define transaction_reset(trans)                \
   ((transaction_t*)trans)->curr = 0
+
+#define transaction_size(trans) ((transaction_t*)trans)->size
+
+#define transaction_count(trans) ((transaction_t*)trans)->cnt
+
+ATSinline()
+ats_int_type
+transaction_sum(ats_ptr_type trans) {
+  transaction_t* t = (transaction_t *)trans;
+  int i;
+  int sum = 0;
+  for(i = 0; i < t->cnt; i++)
+    sum += t->fmt[i];
+  
+  return sum;
+}
 
 ATSinline()
 ats_int_type

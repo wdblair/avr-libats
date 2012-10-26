@@ -102,6 +102,7 @@ viewtypedef twi_state_t
 viewtypedef transaction_t =  $extype_struct "transaction_t" of {
   cnt= uchar,
   curr= uchar,
+  sz= int,
   fmt= @[uchar][buff_size/2]
 }
 
@@ -113,29 +114,42 @@ viewtypedef transaction(l:addr, s:int, c:int, sz:int)
 
 absview transaction_snapshot(s:int, c:int, sz:int)
 
-praxi snapshot {l:addr} {sum, sz:pos | sz <= buff_size/2; sum <= buff_size} (
+stadef transaction (
+  sum:int, n:int, sz: int
+) = sz <= buff_size/2 && sum <= buff_size && n <= sz
+
+praxi snapshot {l:addr} {sum, sz:pos | transaction(sum, sz, sz)} (
   t: !transaction(l, sum, sz, sz)
 ) : transaction_snapshot(sum, sz, sz)
 
 praxi transaction_length_lemma {l:addr} {sum, n, sz:nat | sum <= buff_size;  n <= sz}
   (t: !transaction(l, sum, n , sz) ) : [sz <= buff_size/2] void
 
-fun transaction_init {n:pos | n <= buff_size/2} {l:agz} (
+fun transaction_init {n:pos | transaction(0,0,n)} {l:agz} (
   pf: transaction_t? @ l | p: ptr l
 ) : transaction(l, 0, 0, n) = "mac#transaction_init"
 
-fun add_msg {l:addr} {s, n, sz, v:nat | v >= 2; s + v <= buff_size; n <= sz} (
+fun size {l:addr} {sum, n, sz:nat | transaction(sum, n, sz)}
+  (trans: !transaction(l, sum, n ,sz)) : int sz = "mac#transaction_size"
+
+fun count {l:addr} {sum, n, sz:nat | transaction(sum, n, sz)}
+  (trans: !transaction(l, sum, n, sz)) : int n = "mac#transaction_count"
+  
+fun sum {l:addr} {sum, n, sz:nat | transaction(sum, n, sz)} (
+  trans: !transaction(l, sum, n, sz)
+) : int sum = "mac#transaction_sum"
+
+fun add_msg {l:addr} {s, n, sz, v:nat | v >= 2; transaction(s+v, n, sz)} (
     trans: !transaction(l, s, n, sz) >> transaction(l, s+v, n+1, sz),
     value: int v
 ) : void = "mac#transaction_add_msg"
 
-fun get_msg {l:addr} {s, n, sz:nat | n <= sz; n > 0} (
+fun get_msg {l:addr} {s, n, sz:nat | n > 0; transaction(s, n, sz)} (
     trans: !transaction(l, s, n, sz) >> transaction(l, s-v, n-1, sz)
 ) : #[v:nat | v >= 2;  s-v >= 0 ; v <= buff_size] int v = "mac#transaction_get_msg"
 
-fun reset {l:addr} {sum,n,sz:nat} {sum': nat |
-   n <= sz; sum <= buff_size;
-   sum' <= buff_size } (
+fun reset {l:addr} {sum,n,sz:nat} {sum': nat | transaction(sum, n, sz); 
+  transaction(sum', sz, sz) } (
     pf: transaction_snapshot(sum', sz, sz) |
     trans: !transaction(l, sum, n, sz) >> transaction(l, sum', sz, sz)
 ) : void = "mac#transaction_reset"
@@ -237,10 +251,10 @@ fun start_with_data {n, p:pos | n <= buff_size; p <= buff_size; p <= n} (
 ) : void
 
 fun start_transaction {l:addr} {
-  sum, sz:pos | sum <= buff_size; sz <= buff_size/2
+  sum, sz:pos | transaction(sum, sz, sz)
 } (
   pf: !INT_SET, ready: TWI_READY | buf: &(@[uchar][sum]),
-  trans: !transaction(l, sum, sz, sz), sum: int sum, sz: int sz
+  trans: !transaction(l, sum, sz, sz)
 ) : (TWI_BUSY | void)
 
 fun start_server (
