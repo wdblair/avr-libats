@@ -1,7 +1,7 @@
 (*
   TWI Driver To Support Both Master and Slave Operation.
 
-  Taken from Atmel Application Note AVR315 and AVR311
+  Adpated from Atmel Application Notes AVR315 and AVR311
 *)
 
 %{^
@@ -20,7 +20,6 @@ staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
 staload "SATS/global.sats"
 staload "SATS/twi.sats"
-staload "SATS/stdlib.sats"
 
 (* ****** ****** *)
 
@@ -343,7 +342,7 @@ start_transaction {l} {sum, sz} (
   val () = p->buffer.msg_size := sum
   val () = p->buffer.curr_trans := 0
   val () = p->buffer.trans_size := sz
-  fun loop  {l1:agz} {s:nat} {n1:pos | s <= buff_size; n1 <= sz} (
+  fun loop  {l1:agz} {s:nat} {n1:pos | transaction(s,n1,sz)} (
       pf: !twi_state_t @ l1 | t: !transaction(l, s, n1, sz) >> 
         transaction(l, s', 0, sz), 
       i: int n1, p: ptr l1
