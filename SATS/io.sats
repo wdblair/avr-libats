@@ -37,7 +37,10 @@ fun set_regs_to_int {n,p:nat} (
 
 castfn char_of_reg(r:reg(8)) : char
 
+castfn uchar_of_reg(r:reg(8)) : uchar
+
 castfn int_of_reg(r:reg(8)) : [n:nat | n < 256] int n
+
 
 symintr setbits
 

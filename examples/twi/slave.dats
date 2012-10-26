@@ -11,7 +11,6 @@ staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
 staload TWI = "SATS/twi.sats"
-staload USART = "SATS/usart.sats"
 
 (* ****** ****** *)
 
@@ -24,10 +23,10 @@ fun response {n:nat | n <= buff_size} (
 
 implement main (pf0 | (**)) = let
   val address = 0x2
-  val (status | ()) = 
+  val (status | ()) =
     $TWI.slave_init(pf0 | address, true)
   val (set | ()) = sei(pf0 | (**))
-  val () = 
+  val () =
     $TWI.start_server(set, status | response)
   val () = while (true) {
     val () = sleep_enable()
