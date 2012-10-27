@@ -2,7 +2,7 @@
   An example of an interrupt driven
   i2c master device.
   
-  Constantly sends a byte, then requests a byte.
+  Writes a byte (address) and then reads a byte (value).
 *)
 
 (* ****** ****** *)
@@ -47,12 +47,11 @@ implement main (pf0 | (* *) ) = {
     set: INT_SET, rdy: !($TWI.TWI_READY) 
     | buf: &(@[uchar][4]), trans: $TWI.transaction(l, 4, sz, sz)
   ) : ($TWI.transaction_t @ l, INT_CLEAR | void) = let
-//A write, followed by a read
-  val () = $TWI.setup_addr_byte(buf, 0, 0x2, false)
-  val () = $TWI.setup_addr_byte(buf, 2, 0x2, true)
-    val c  = char_of_int(getchar())
+    val () = $TWI.setup_addr_byte(buf, 0, 0x2, $TWI.WRITE)
+    val () = $TWI.setup_addr_byte(buf, 2, 0x2, $TWI.READ)
+    val c  = getchar()
     val () = println! 's'
-    val () = buf.[1] := uchar_of_char(c)
+    val () = buf.[1] := uchar_of_int(c - 0x30)
   //Send the transaction
     val (busy | ()) =
       $TWI.start_transaction(set, rdy | buf, trans)

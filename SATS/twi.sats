@@ -75,8 +75,8 @@ absview TWI_BUSY  //The device is performing a transaction
 //Convenience for slaves detecting the current mode.
 typedef mode = bool
 
-#define READ   true
-#define WRITE false
+macdef READ  = true
+macdef WRITE = false
 
 viewtypedef buffer_t
   = $extype_struct "buffer_t" of {

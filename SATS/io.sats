@@ -44,6 +44,11 @@ castfn uchar_of_reg(r:reg(8)) : uchar
 
 castfn int_of_reg(r:reg(8)) : [n:nat | n < 256] int n
 
+(* Cast Functions *)
+ 
+castfn uchar (c:char) : uchar
+
+castfn int1 (c:uchar) : [n:nat] int n
 
 symintr setbits
 

@@ -8,22 +8,39 @@
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
+staload "SATS/global.sats"
 staload TWI = "SATS/twi.sats"
 staload USART = "SATS/usart.sats"
-(* ****** ****** *)
+
+%{^
+static volatile unsigned char  information[5] = {'a','b','c','d','e'};
+
+#define set_data(n, c) information[n] = c
+#define get_data(n) information[n]
+%}
+
+extern
+fun set_data {n:nat | n < 5} (
+  n:int n, c: uchar
+) : void = "mac#set_data"
+
+extern
+fun get_data {n:nat | n < 5} (n:int n) : uchar = "mac#get_data"
 
 fun response {n:nat | n <= $TWI.buff_size} (
   src: &(@[uchar][$TWI.buff_size]), sz: int n, m: $TWI.mode
 ) : bool = true where {
-  //Increment whatever is stored in the buffer.
-  val curr = int_of_uchar(src.[0])
-  val () = src.[0] := uchar_of_int(curr + 1)
+  val curr = (int1)src.[0]
+  val () =
+    if curr >= 0 && curr < 5 then
+      src.[0] := get_data(curr)
+    else 
+      src.[0] := (uchar) '0'
 }
 
 (* ****** ****** *)
 
 implement main (pf0 | (**)) = let
-  val () = $USART.atmega328p_init(9600)
   val address = 0x2
   val (status | ()) =
     $TWI.slave_init(pf0 | address, true)

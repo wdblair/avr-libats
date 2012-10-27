@@ -502,7 +502,6 @@ implement TWI_vect (pf | (* *)) = let
       }
     | TWI_SRX_GEN_DATA_ACK => read_next_byte()
     | TWI_SRX_STOP_RESTART => {
-        val () = setbits(PORTB, PORTB3)
         val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWEA)
         val (gpf, pf | p) = get_twi_state()
         val _ =

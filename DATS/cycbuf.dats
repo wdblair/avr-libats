@@ -9,7 +9,8 @@ assume queue(a:t@ype, n:int, s:int) =
   
 fun {a:t@ype} cycbuf_insert {l:agz} {s:pos} {n:nat | n < s}
     {w, r: nat | n < s; w < s; r < s} (
-    pf: !cycbuf_array(a, n, s, w, r) @ l >> cycbuf_array(a, n+1, s, w', r) @ l |
+    pf: !cycbuf_array(a, n, s, w, r) @ l 
+        >> cycbuf_array(a, n+1, s, w', r) @ l |
     p: ptr l, x: a
 ) : #[w':nat | w' < s] void = let
     val () = p->n := p->n + 1
@@ -20,7 +21,8 @@ fun {a:t@ype} cycbuf_insert {l:agz} {s:pos} {n:nat | n < s}
 
 fun {a:t@ype} cycbuf_remove {l:agz} {s,n:pos}
     {w,r:nat | n <= s; w < s; r < s} (
-    pf: !cycbuf_array(a, n, s, w, r) @ l >> cycbuf_array(a, n-1, s, w, r') @ l | 
+    pf: !cycbuf_array(a, n, s, w, r) @ l 
+        >> cycbuf_array(a, n-1, s, w, r') @ l | 
     p: ptr l, x: &a? >> a
 ) : #[r':nat | r' < s] void = let
     val () = p->n := p->n - 1
