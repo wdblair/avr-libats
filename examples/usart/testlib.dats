@@ -9,5 +9,6 @@ implement main () = let
   fun loop () : void = let
     val c = getchar()
     val _ = putchar(char_of_int(c))
+    val () = println! "Hello World!"
   in loop() end
 in loop() end

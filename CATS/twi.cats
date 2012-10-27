@@ -91,13 +91,19 @@ transaction_init (transaction_t *trans) {
 
   trans->cnt = 0;
   trans->curr = 0;
+  trans->size = 0;
   for(i = 0 ; i < BUFF_SIZE/2; i++)
     trans->fmt[i] = 0;
   return trans;
 }
 
-#define transaction_add_msg(trans, v)                                   \
-  ((transaction_t*)trans)->fmt[((transaction_t*)trans)->cnt++] = (char)v
+ATSinline()
+ats_void_type
+transaction_add_msg(transaction_t *trans, unsigned char v) {
+  trans->size += v;
+  trans->fmt[trans->cnt++] = v;
+  return;
+}
 
 #define transaction_get_msg(trans)                              \
   ((transaction_t*)trans)->fmt[((transaction_t*)trans)->curr++]

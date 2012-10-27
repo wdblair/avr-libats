@@ -9,7 +9,7 @@ staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
 staload TWI = "SATS/twi.sats"
-
+staload USART = "SATS/usart.sats"
 (* ****** ****** *)
 
 fun response {n:nat | n <= $TWI.buff_size} (
@@ -23,6 +23,7 @@ fun response {n:nat | n <= $TWI.buff_size} (
 (* ****** ****** *)
 
 implement main (pf0 | (**)) = let
+  val () = $USART.atmega328p_init(9600)
   val address = 0x2
   val (status | ()) =
     $TWI.slave_init(pf0 | address, true)

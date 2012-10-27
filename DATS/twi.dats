@@ -518,7 +518,7 @@ implement TWI_vect (pf | (* *)) = let
         val (gpf, pf | p) = get_twi_state()
         val () = p->state := uchar_of_reg(TWSR)
         val x = char_of_uchar(p->state)
-//        val () = println! x
+        val () = println! x
         val _ = p->enable()
         prval () = return_global(gpf, pf)
      }

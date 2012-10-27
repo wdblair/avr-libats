@@ -1,6 +1,6 @@
 (*
   Note, this will only work on atmega328p, when specific template
-  implementation comes to ats, we can define init, tx, and rx 
+  implementation comes to ats, we can define init, tx, and rx
   using the arch sort to clean stuff up.
 *)
 

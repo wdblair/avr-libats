@@ -34,7 +34,7 @@ castfn _c(i:int) : uchar
 implement main (pf0 | (* *) ) = {
   val () = $USART.atmega328p_init(9600)
   val () = setbits(DDRB, DDB3)
-  val (status | ()) = $TWI.master_init(pf0 | 400)
+  val (status | ()) = $TWI.master_init(pf0 | 80)
   var tbuff : $TWI.transaction_t with tpf
   val trans = $TWI.transaction_init(tpf | &tbuff)
   val () = $TWI.add_msg(trans, 2)
@@ -42,16 +42,16 @@ implement main (pf0 | (* *) ) = {
   val (set | ()) = sei(pf0 | (**))
 //Our main buffer.
   var !buf = @[uchar][4](_c(0))
-//A write, followed by a read
-  val () = $TWI.setup_addr_byte(!buf, 0, 0x2, false)
-  val () = $TWI.setup_addr_byte(!buf, 2, 0x2, true)
 //The infinite loop
   fun loop {l:addr} {sz: pos | $TWI.transaction(4, sz, sz)} (
     set: INT_SET, rdy: !($TWI.TWI_READY) 
     | buf: &(@[uchar][4]), trans: $TWI.transaction(l, 4, sz, sz)
   ) : ($TWI.transaction_t @ l, INT_CLEAR | void) = let
-    val () = println! 's'
+//A write, followed by a read
+  val () = $TWI.setup_addr_byte(buf, 0, 0x2, false)
+  val () = $TWI.setup_addr_byte(buf, 2, 0x2, true)
     val c  = char_of_int(getchar())
+    val () = println! 's'
     val () = buf.[1] := uchar_of_char(c)
   //Send the transaction
     val (busy | ()) =
