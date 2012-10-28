@@ -23,7 +23,31 @@ When the elevator switches direction, it switches direction.
 
 Each queue has fixed size, so it is possible that they
 will need to "drop" requests. It should never be the case, however,
-that a target floor is ignored (ignoring people in the elevator 
+that a target floor is ignored (ignoring people inside the elevator 
 would be bad).
 
+An array based heap would be good for keeping track of requests.
+
+Psueudo Code:
+
+Direction = UP
+state = ready
+
+loop ():
+ case state of
+   | ready =>
+        if Queue[Direction].Request?
+          next = Queue[Direction].pop()
+          send command(next)
+          state = moving
+        else if Queue[Direction].Request?
+          Direction.switch()
+          state = ready
+        else
+          sleep()
+     | moving =>
+        if Arrived?
+          state = ready
+        else
+          sleep()
 
