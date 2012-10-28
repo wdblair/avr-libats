@@ -6,9 +6,18 @@ staload "SATS/cycbuf.sats"
 
 assume queue(a:t@ype, n:int, s:int) =
   [w,r:nat | n <= s; w < s; r < s] cycbuf_array(a, n, s, w, r)
-  
-fun {a:t@ype} cycbuf_insert {l:agz} {s:pos} {n:nat | n < s}
-    {w, r: nat | n < s; w < s; r < s} (
+
+stadef cycbuf_read_write(size:int, read:int, write:int) = 
+  (read < size && write < size)
+
+stadef cycbuf_space_available (
+  size:int, count:int, read:int, write:int
+) =
+  cycbuf_read_write(size, read, write) 
+    && count < size
+
+fun {a:t@ype} cycbuf_insert {l:agz} {s:nat}
+    {n, r, w: nat | cycbuf_space_available(s, n, r, w)} (
     pf: !cycbuf_array(a, n, s, w, r) @ l 
         >> cycbuf_array(a, n+1, s, w', r) @ l |
     p: ptr l, x: a
@@ -19,8 +28,14 @@ fun {a:t@ype} cycbuf_insert {l:agz} {s:pos} {n:nat | n < s}
     p->w := (p->w + 1) nmod1 p->size
   end
 
-fun {a:t@ype} cycbuf_remove {l:agz} {s,n:pos}
-    {w,r:nat | n <= s; w < s; r < s} (
+stadef cycbuf_not_empty (
+  size:int, count:int, read:int, write:int
+) = 
+  cycbuf_read_write(size, read, write) 
+    && count <= size && count > 0
+
+fun {a:t@ype} cycbuf_remove {l:agz}
+    {s,n,r,w:nat | cycbuf_not_empty(s,n,r,w) } (
     pf: !cycbuf_array(a, n, s, w, r) @ l 
         >> cycbuf_array(a, n-1, s, w, r') @ l | 
     p: ptr l, x: &a? >> a
