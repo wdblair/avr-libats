@@ -1,10 +1,10 @@
 #define ATS_STALOADFLAG 0
 #define ATS_DYNLOADFLAG 0
 
-staload "SATS/queue.sats"
+staload "SATS/fifo.sats"
 staload "SATS/cycbuf.sats"
 
-assume queue(a:t@ype, n:int, s:int) =
+assume fifo(a:t@ype, n:int, s:int) =
   [w,r:nat | n <= s; w < s; r < s] cycbuf_array(a, n, s, w, r)
 
 stadef cycbuf_read_write(size:int, read:int, write:int) = 

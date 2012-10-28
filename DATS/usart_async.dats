@@ -27,7 +27,7 @@ staload "SATS/global.sats"
 staload "SATS/usart.sats"
 staload "SATS/stdio.sats"
 staload "SATS/delay.sats"
-staload "SATS/queue.sats"
+staload "SATS/fifo.sats"
 
 (* ****** ****** *)
 
@@ -38,13 +38,13 @@ staload "DATS/cycbuf.dats"
 extern
 fun get_read_buffer 
   () : [n,s:nat; l:agz | n < s] (
-  global(l), queue(char, n, s) @ l | ptr l
+  global(l), fifo(char, n, s) @ l | ptr l
 ) = "mac#get_read_buffer"
 
 extern
 fun get_write_buffer
   () : [n,s:nat; l:agz | n < s] (
-  global(l), queue(char, n, s) @ l | ptr l
+  global(l), fifo(char, n, s) @ l | ptr l
 ) = "mac#get_write_buffer"
 
 (* ****** ****** *)
@@ -105,7 +105,7 @@ implement
 atmega328p_async_tx (pf0 | c, f) = 0 where {
    val (gpf, pf | p) = get_write_buffer()
    fun loop {l:agz} {n, s:nat | n < s} (
-      pf0: !INT_SET, g: global(l), pf: queue(char, n, s) @ l 
+      pf0: !INT_SET, g: global(l), pf: fifo(char, n, s) @ l 
         | p: ptr l, c: char
    ) : void = let
       val () = 
@@ -142,7 +142,7 @@ implement
 atmega328p_async_rx (pf0 | f) = let
   val (gpf, pf | p) = get_read_buffer()
   fun loop {l:agz} {n,s:nat | n < s} (
-    pf0: !INT_SET, g: global(l), pf: queue(char, n, s) @ l | p: ptr l
+    pf0: !INT_SET, g: global(l), pf: fifo(char, n, s) @ l | p: ptr l
   ) : char = let
     val (locked | () ) = cli(pf0 | (* *))
   in 
@@ -164,7 +164,7 @@ implement
 atmega328p_async_flush (pf0 | (* *)) = let
   val (gpf, pf | p) = get_read_buffer()
   fun loop {l:agz} {n, s:nat | n < s} (
-    pf0: !INT_SET, g: global(l), pf: queue(char, n, s) @ l | p: ptr l
+    pf0: !INT_SET, g: global(l), pf: fifo(char, n, s) @ l | p: ptr l
   ) : void = let
     //empty stdout first
     val _ = fflush(stdout_ref)
