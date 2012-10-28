@@ -29,7 +29,7 @@ implement atmega328p_init (baud) = {
 
 implement atmega328p_rx (f) = c where {
     val () = loop_until_bit_is_set(UCSR0A, RXC0)
-    val c = int_of_reg(UDR0)
+    val c = (int) UDR0
 }
 
 implement atmega328p_tx (c, f) = res where {

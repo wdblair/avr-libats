@@ -63,15 +63,11 @@ USART_TX_vect (locked | (* *) ) = let
   }
 end
  
- 
-extern
-castfn _8(i:int) : [n:nat | n < 256] int n
-
 implement
 USART_RX_vect (locked | (* *)) = let
   val (gpf, pf | p) = get_read_buffer()
   val full = full(pf | p)
-  var contents : char = char_of_reg(UDR0)
+  var contents : char = (char) UDR0
  in
    if full then {
       prval () = return_global(gpf, pf)
@@ -92,18 +88,6 @@ val F_CPU = $extval(lint, "F_CPU")
 
 (* ****** ****** *)
 
-extern
-castfn uint16_of_long (x: lint) : uint16
-
-extern
-castfn uint8_of_uint16 (x: uint16) : [n: nat | n < 256] int n
-
-extern
-castfn int216 (x:int) : uint16
-
-extern
-castfn int2eight(x:int) : [n:nat | n < 256] int n
-
 implement
 atmega328p_async_init (locked | baud) = {
   val ubrr = ubrr_of_baud(baud)
@@ -121,7 +105,8 @@ implement
 atmega328p_async_tx (pf0 | c, f) = 0 where {
    val (gpf, pf | p) = get_write_buffer()
    fun loop {l:agz} {n, s:nat | n < s} (
-      pf0: !INT_SET, g: global(l), pf: queue(char, n, s) @ l | p: ptr l, c: char
+      pf0: !INT_SET, g: global(l), pf: queue(char, n, s) @ l 
+        | p: ptr l, c: char
    ) : void = let
       val () = 
         if c = '\n' then {
@@ -173,7 +158,7 @@ atmega328p_async_rx (pf0 | f) = let
       prval () = pf0 := enabled
     in tmp end
   end
-in int_of_char( loop(pf0, gpf, pf | p) ) end
+in (int)(loop(pf0, gpf, pf | p)) end
 
 implement
 atmega328p_async_flush (pf0 | (* *)) = let

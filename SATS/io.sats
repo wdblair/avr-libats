@@ -44,11 +44,59 @@ castfn uchar_of_reg(r:reg(8)) : uchar
 
 castfn int_of_reg(r:reg(8)) : [n:nat | n < 256] int n
 
-(* Cast Functions *)
+(* Cast Functions (For char, uchar, register, etc. *)
  
-castfn uchar (c:char) : uchar
+symintr uchar
+ 
+castfn uchar_char (c:char) : uchar
 
-castfn int1 (c:uchar) : [n:nat] int n
+overload uchar with uchar_char
+
+castfn uchar_int (i:int) : uchar
+
+overload uchar with uchar_int
+
+castfn uchar_int1 {n:nat} (i:int n) : uchar
+
+overload uchar with uchar_int1
+
+castfn uchar_reg {n:nat} (r:reg(n)) : uchar
+
+overload uchar with uchar_reg
+
+symintr char
+
+castfn char_uchar (c:uchar) : char
+
+overload char with char_uchar
+
+castfn char_reg (r:reg(8)) : char
+
+overload char with char_reg
+
+symintr int1
+
+castfn int1_uchar (c:uchar) : [n:nat] int n
+
+overload int1 with int1_uchar
+
+castfn int1_char (c:char) : [n:nat] int n
+
+overload int1 with int1_char
+
+castfn int1_reg (r: reg(8)) : [n:nat | uint8(n)] int n
+
+overload int1 with int1_reg
+
+symintr int 
+
+castfn int_char (c:char) : int
+
+overload int with int_char
+
+castfn int_reg (r: reg(8)) : int
+
+overload int with int_reg
 
 symintr setbits
 

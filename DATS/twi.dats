@@ -23,7 +23,6 @@ staload "SATS/twi.sats"
 
 (* ****** ****** *)
 
-// reg = (addr << TWI_ADR_BITS) | (TRUE << TWI_GEN_BIT)
 extern
 fun set_address (
   a:twi_address, g:bool
@@ -136,14 +135,14 @@ local
   fun clear_state () : void = {
     val (free, pf | p) = get_twi_state()
     //Clear the status register
-    val () = set_all(p->status_reg, uchar_of_int(0))
+    val () = set_all(p->status_reg, (uchar) 0)
     //Clear the state
-    val () = p->state := uchar_of_int(TWI_NO_STATE)
+    val () = p->state := (uchar) TWI_NO_STATE
     prval () = return_global(free, pf)
   }
   
   fun copy_buffer {d,s:int} {sz:pos | sz <= s; sz <= d} (
-    dest: &(@[uchar][d]), src: &(@[uchar][s]), num: int sz  
+    dest: &(@[uchar][d]), src: &(@[uchar][s]), num: int sz
   ) : void = {
     var i : [n:nat] int n;
     val () =
@@ -161,7 +160,7 @@ local
       var i : [n:nat] int n
       val curr = p->buffer.curr_trans
       val () = for(i := 0; i <= curr; i := i + 1) {
-        val () = sum := sum + int1_of_uchar(p->buffer.trans.[i])
+        val () = sum := sum + (int1)p->buffer.trans.[i]
       }
       prval () = return_global(free, pf)
   }
@@ -173,7 +172,7 @@ local
     var i : [n:nat] int n
     val curr = p->buffer.curr_trans
     val () = for(i := 0; i < curr; i := i + 1) {
-      val () = sum := sum + int1_of_uchar(p->buffer.trans.[i])
+      val () = sum := sum + (int1) p->buffer.trans.[i]
     }
     prval () = return_global(free, pf)
   }
@@ -201,9 +200,9 @@ local
   
   fun copy_recvd_byte_trans () : bool = let
     val (free, pf | p) = get_twi_state()
-    val () = p->buffer.data.[p->next_byte] := uchar_of_reg(TWDR)
+    val () = p->buffer.data.[p->next_byte] := (uchar) TWDR
     val sum = current_msg_last_byte()
-    val () = p->next_byte := p->next_byte + 1 
+    val () = p->next_byte := p->next_byte + 1
   in
     if p->next_byte = sum then true where {
       val () = p->buffer.curr_trans := p->buffer.curr_trans + 1
@@ -215,7 +214,7 @@ local
 
   fun copy_recvd_byte () : void = {
     val (free, pf | p) = get_twi_state()
-    val () = p->buffer.data.[p->next_byte] := uchar_of_reg(TWDR)
+    val () = p->buffer.data.[p->next_byte] := (uchar)TWDR
     val sum = current_msg_last_byte()
     val () = p->next_byte := p->next_byte + 1 
     prval () = return_global(free, pf)
@@ -288,7 +287,7 @@ in
 
 implement
 get_state_info (enabled | (* *) ) = let
-  val () = sleep_until_ready(enabled | (* *) )
+  val () = sleep_until_ready(enabled | (**))
   val (free, pf | p) = get_twi_state()
   val x = p->state
   prval () = return_global(free, pf)
@@ -343,11 +342,11 @@ start_transaction {l} {sum, sz} (
   val () = p->buffer.curr_trans := 0
   val () = p->buffer.trans_size := sz
   fun loop  {l1:agz} {s:nat} {n1:pos | transaction(s,n1,sz)} (
-      pf: !twi_state_t @ l1 | t: !transaction(l, s, n1, sz) >> 
-        transaction(l, s', 0, sz), 
+      pf: !twi_state_t @ l1 | t: !transaction(l, s, n1, sz) >>
+        transaction(l, s', 0, sz),
       i: int n1, p: ptr l1
   ) : #[s':nat | s' <= buff_size] void = let
-     val nxt = uchar_of_char(char_of_int(get_msg(t)))
+     val nxt = (uchar)(get_msg(t))
      val indx = p->buffer.curr_trans
      val () = p->buffer.trans.[indx] := nxt
      val () =
@@ -403,14 +402,8 @@ in
     in lastok end
 end
 
-extern
-castfn int_of_reg8 (r: reg(8)) : [n:nat | n < 256] int n
-
-extern
-castfn uchar_of_reg (r: reg(8)) : uchar
-
 implement TWI_vect (pf | (* *)) = let
-    val twsr = int_of_reg8(TWSR)
+    val twsr = (int1) TWSR 
   in
     case+ twsr of
 // Master
@@ -476,7 +469,7 @@ implement TWI_vect (pf | (* *)) = let
         if get_all_bytes_sent(p->status_reg) then {
           val () = set_last_trans_ok(p->status_reg, true)
         } else {
-          val () = p->state := uchar_of_reg(TWSR)
+          val () = p->state := (uchar) TWSR
         }
       val () = set_busy(p->status_reg, false)
       prval () = return_global(free, pf)
@@ -515,8 +508,8 @@ implement TWI_vect (pf | (* *)) = let
      }
     | _ => {
         val (gpf, pf | p) = get_twi_state()
-        val () = p->state := uchar_of_reg(TWSR)
-        val x = char_of_uchar(p->state)
+        val () = p->state := (uchar) TWSR
+        val x = (char) p->state
         val () = println! x
         val _ = p->enable()
         prval () = return_global(gpf, pf)
