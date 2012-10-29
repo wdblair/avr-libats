@@ -110,6 +110,10 @@ typedef struct ats_struct_type ats_abs_type ;
 typedef void *ats_ptr_type ;
 typedef void *ats_ref_type ;
 
+typedef
+struct { int tag ; } ats_sum_type ;
+typedef ats_sum_type *ats_sum_ptr_type ;
+
 //
 // from ${ATSHOME}/ccomp/runtime/ats_basic.h
 //
