@@ -1,8 +1,8 @@
 staload "SATS/stdlib.sats"
 
 local
-  extern fun {a:t@ype}
-  default_qsort {n,p:nat | n <= p} (
+  extern fun
+  default_qsort {a:t@ype} {n,p:nat | n <= p} (
     data: &(@[a][p]), n: int n, n: sizeof_t a, cmp: (&a, &a) -<fun1> int
   ) : void = "mac#qsort"
 in

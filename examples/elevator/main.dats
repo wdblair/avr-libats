@@ -25,9 +25,14 @@ stadef schedule_size = 10
 #define neg_direction(a) (a^1)
 
 typedef struct {
-  volatile int cnt;
-  volatile int size;
-  volatile int data[SCHEDULE_SIZE];
+  uint8_t direction;
+  uint8_t floor;
+} request_t;
+
+typedef struct {
+  volatile uint8_t cnt;
+  volatile uint8_t size;
+  int data[SCHEDULE_SIZE];
 } queue_t;
 
 typedef struct {
@@ -101,7 +106,14 @@ castfn reference {a:t@ype} {n,s:nat} (
   x: &queue(a,n,s)
 ) : [l:agz] (global(l), queue(a, n, s) @ l | ptr l)
 
-typedef request = @(direction, int)
+abst@ype foobar = $extype "foo"
+
+typedef foobar = @(int, int)
+
+typedef request = $extype_struct "request_t" of {
+  direction= direction,
+  floor= int
+}
 
 typedef ElevatorQueue = 
   [n:nat | n <= schedule_size] queue(request, n , schedule_size)
@@ -127,8 +139,8 @@ fun has_request(d: queue_id) : bool = ~clr where {
 }
 
 fun add_request(r: request) : void = let
-    fun cmp (a: &request, b: &request) : int =
-      a.1 - b.1
+    fun cmp (a: &request, b: &request) : int = 
+      a.floor - b.floor
     val (free, pf | p) = state()
     val (elimq, pfq | q) = reference(p->fscan.[neg_queue_id(p->id)])
   in
@@ -137,7 +149,7 @@ fun add_request(r: request) : void = let
       prval () = return_global(free, pf)
       prval () = return_global(elimq, pfq)
     } else {
-      val () = enqueue<request>(!q, r, cmp)    
+      val () = enqueue<request>(!q, r, cmp)
       prval () = return_global(free, pf)
       prval () = return_global(elimq, pfq)
     }
@@ -146,16 +158,21 @@ fun add_request(r: request) : void = let
 fun next_request(d: queue_id) : request = let
   val (free, pf | p) = state()
   val (elimq, pfq | q) = reference(p->fscan.[d])
+  var x : request
 in
-  if ~empty(!q) then let
-    var x : request
-    val () = dequeue<request>(!q, x)
-    prval () = return_global(elimq, pfq)
-    prval () = return_global(free, pf)
-  in x end
-  else @(0, ~1) where {
-    prval () = return_global(elimq, pfq)
-    prval () = return_global(free, pf)
+  x where {
+    val () = 
+      if ~empty(!q) then {
+        val () = dequeue<request>(!q, x)
+        prval () = return_global(elimq, pfq)
+        prval () = return_global(free, pf)
+      }
+      else {
+        val () = x.direction := 0
+        val () = x.floor := ~1
+        prval () = return_global(elimq, pfq)
+        prval () = return_global(free, pf)
+      }
   }
 end
 
@@ -204,7 +221,7 @@ implement main (clr | (**)) = {
           if has_request(q) then let
             val next = next_request(q)
             val () =
-              if next.0 != current_direction() then
+              if next.direction != current_direction() then
                 switch_direction()
             val () = send_command(next)
           in loop(set | MOVING) end
