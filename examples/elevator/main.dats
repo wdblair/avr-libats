@@ -7,6 +7,7 @@
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/global.sats"
+staload "SATS/sleep.sats"
 
 (* ****** ****** *)
 
@@ -24,34 +25,42 @@ stadef schedule_size = 10
 #define neg_direction(a) (a^1)
 
 typedef struct {
-  int cnt;
-  int size;
-  int data[SCHEDULE_SIZE];
+  volatile int cnt;
+  volatile int size;
+  volatile int data[SCHEDULE_SIZE];
 } queue_t;
 
 typedef struct {
   volatile queue_t fscan[2];
   volatile uint8_t current;
+  volatile uint8_t arrived;
+  volatile uint8_t id;
 } elevator_state_t;
 
 static volatile elevator_state_t elevator_state;
-
-
 %}
 
-datatype control_state =
-  | ready of ()
-  | moving of ()
+typedef control_state = [n:nat | n < 2] int n
+
+#define READY 0
+#define MOVING 1
   
 typedef direction = [n:nat | n < 2] int n
 
 macdef UP = 0
 macdef DOWN = 1
 
+typedef queue_id = [n:nat | n < 2] int n
+
 extern
 fun neg_direction (d: direction) : direction = "mac#neg_direction"
 
 overload ~ with neg_direction
+
+extern
+fun neg_queue_id (d: queue_id) : queue_id = "mac#neg_direction"
+
+overload ~ with neg_queue_id
 
 viewtypedef queue (a: t@ype, n:int, sz:int) =
   $extype_struct "queue_t" of {
@@ -84,46 +93,120 @@ fun {a:t@ype} full {s,n:nat | n <= s} (
   q: &queue(a, n, s)
 ) : bool (n == s) = q.cnt = q.size
 
+extern
+castfn reference {a:t@ype} {n,s:nat} (
+  x: &queue(a,n,s)
+) : [l:agz] (global(l), queue(a, n, s) @ l | ptr l)
+
+typedef request = @(direction, int)
+
+typedef ElevatorQueue = 
+  [n:nat | n <= schedule_size] queue(request, n , schedule_size)
+
 viewtypedef elevator_state =
   $extype_struct "elevator_state_t" of {
-    fscan= @[ [n:nat | n <= schedule_size]
-      queue(int, n, schedule_size)
-    ][2],
-    current= direction
+    fscan= @[ElevatorQueue][2],
+    id= queue_id,
+    current= direction,
+    arrived= bool
   }
   
 extern
 fun state() : [l:agz] (global(l), elevator_state @ l | ptr l)
   = "mac#elevator_get_state"
 
-fun has_request(d:direction) : bool = ~clr where {
+(*** The interface for the elevator controller. ***)
+
+fun has_request(d: queue_id) : bool = ~clr where {
   val (free, pf | p) = state()
   val clr =  empty(p->fscan.[d])
   prval () = return_global(free, pf)
 }
 
-fun next_request(d:direction) : int = let
+fun next_request(d: queue_id) : request = let
   val (free, pf | p) = state()
-  val q = p->fscan.[d]
+  val (elimq, pfq | q) = reference(p->fscan.[d])
 in
-  if ~empty(q) then let 
-    var x : int
-    val () = dequeue(q, x)
+  if ~empty(!q) then let
+    var x : request
+    val () = dequeue<request>(!q, x)
+    prval () = return_global(elimq, pfq)
     prval () = return_global(free, pf)
   in x end
-  else ~1 where {
+  else @(0, ~1) where {
+    prval () = return_global(elimq, pfq)
     prval () = return_global(free, pf)
   }
 end
+
+fun current_queue () : queue_id = id where {
+  val (free, pf | p) = state()
+  val id = p->id
+  prval () = return_global(free, pf)
+}
+
+fun current_direction () : direction = d where {
+  val (free, pf | p) = state()
+  val d = p->current
+  prval () = return_global(free, pf)
+}
+
+fun switch_direction () : void = {
+  val (free, pf | p) = state()
+  val () =  p->current := neg_direction(p->current)
+  prval () = return_global(free, pf)
+}
+
+fun switch_queues () : void = {
+  val (free, pf | p) = state()
+  val () =  p->id := neg_queue_id(p->id)
+  prval () = return_global(free, pf)
+}
+
+fun send_command(floor: request) : void = 
+  ()
+
+fun arrived () : bool = a where {
+  val (free, pf | p) = state()
+  val a = p->arrived
+  prval () = return_global(free, pf)
+}
+
+(* ****** ****** *)
 
 implement main (clr | (**)) = {
   val (set | ()) = sei(clr | (**))
   fun loop(set:INT_SET | s: control_state) : (INT_CLEAR | void) =
     case+ s of
-      | ready() =>
-            loop(set | s)
-      | moving() => 
-          loop(set | s)
-  val (pf0 | ()) = loop(set | ready())
+      | READY => let
+          val q = current_queue ()
+        in
+          if has_request(q) then let
+            val next = next_request(q)
+            val () =
+              if next.0 != current_direction() then
+                switch_direction()
+            val () = send_command(next)
+          in loop(set | MOVING) end
+          
+          else if has_request(neg_queue_id(q)) then let
+            val () = switch_queues()
+          in loop(set | s) end
+          
+          else let
+            val () = sleep_enable()
+            val () = sleep_cpu()
+            val () = sleep_disable()
+          in loop(set | s) end
+        end
+      | MOVING =>
+        if arrived() then 
+          loop(set | READY)
+        else let
+          val () = sleep_enable()
+          val () = sleep_cpu()
+          val () = sleep_disable()
+        in loop(set | s) end
+  val (pf0 | ()) = loop(set | READY)
   prval () = clr := pf0
 }
