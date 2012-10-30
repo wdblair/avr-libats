@@ -40,7 +40,7 @@ loop ():
           next = Queue[Direction].next()
           send command(next)
           state = moving
-        else if Queue[Direction].Request?
+        else if Queue[~Direction].Request?
           Direction.switch()
         else
           sleep()

@@ -214,12 +214,12 @@ local
 
   fun copy_recvd_byte () : void = {
     val (free, pf | p) = get_twi_state()
-    val () = p->buffer.data.[p->next_byte] := (uchar)TWDR
+    val () = p->buffer.data.[p->next_byte] := (uchar) TWDR
     val sum = current_msg_last_byte()
     val () = p->next_byte := p->next_byte + 1 
     prval () = return_global(free, pf)
   }
-
+  
   fun read_next_byte () : void = {
     val () = copy_recvd_byte()
     val (free, pf | p) = get_twi_state()
