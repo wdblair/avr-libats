@@ -53,12 +53,14 @@ macdef DOWN = 1
 typedef queue_id = [n:nat | n < 2] int n
 
 extern
-fun neg_direction (d: direction) : direction = "mac#neg_direction"
+fun neg_direction (d: direction) : direction = 
+  "mac#neg_direction"
 
 overload ~ with neg_direction
 
 extern
-fun neg_queue_id (d: queue_id) : queue_id = "mac#neg_direction"
+fun neg_queue_id (d: queue_id) : queue_id = 
+  "mac#neg_direction"
 
 overload ~ with neg_queue_id
 
@@ -87,12 +89,13 @@ fun {a:t@ype} dequeue {n, sz:nat | n > 0; n <= sz} (
 
 fun {a:t@ype} empty {s,n:nat | n <= s} (
   q: &queue(a, n, s)
-) : bool (n <= 0) = q.cnt = 0
+) : bool (n == 0) = q.cnt = 0
 
-fun {a:t@ype} full {s,n:nat | n <= s} (
+fun {a:t@ype} full {s,n:nat | n <= s; s > 0} (
   q: &queue(a, n, s)
 ) : bool (n == s) = q.cnt = q.size
 
+(* A bit of a hack... *)
 extern
 castfn reference {a:t@ype} {n,s:nat} (
   x: &queue(a,n,s)
@@ -122,6 +125,23 @@ fun has_request(d: queue_id) : bool = ~clr where {
   val clr =  empty(p->fscan.[d])
   prval () = return_global(free, pf)
 }
+
+fun add_request(r: request) : void = let
+    fun cmp (a: &request, b: &request) : int =
+      a.1 - b.1
+    val (free, pf | p) = state()
+    val (elimq, pfq | q) = reference(p->fscan.[neg_queue_id(p->id)])
+  in
+    if full(!q) then {
+      //drop the request.
+      prval () = return_global(free, pf)
+      prval () = return_global(elimq, pfq)
+    } else {
+      val () = enqueue<request>(!q, r, cmp)    
+      prval () = return_global(free, pf)
+      prval () = return_global(elimq, pfq)
+    }
+  end
 
 fun next_request(d: queue_id) : request = let
   val (free, pf | p) = state()
