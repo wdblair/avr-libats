@@ -23,6 +23,7 @@ stadef schedule_size = 10
 
 #define elevator_get_state() ((elevator_state_t* volatile)&elevator_state)
 #define neg_direction(a) (a^1)
+#define eq_direction(a,b) (a == b)
 
 typedef struct {
   uint8_t direction;
@@ -52,16 +53,22 @@ typedef control_state = [n:nat | n < 2] int n
   
 typedef direction = [n:nat | n < 2] int n
 
-macdef UP = 0
-macdef DOWN = 1
+#define UP  0
+#define DOWN  1
 
 typedef queue_id = [n:nat | n < 2] int n
 
 extern
-fun neg_direction (d: direction) : direction = 
+fun neg_direction (d: direction) : direction =
   "mac#neg_direction"
 
 overload ~ with neg_direction
+
+extern
+fun eq_direction (a: direction, b: direction) : bool = 
+  "mac#eq_direction"
+
+//overload = with eq_direction
 
 extern
 fun neg_queue_id (d: queue_id) : queue_id = 
@@ -106,10 +113,6 @@ castfn reference {a:t@ype} {n,s:nat} (
   x: &queue(a,n,s)
 ) : [l:agz] (global(l), queue(a, n, s) @ l | ptr l)
 
-abst@ype foobar = $extype "foo"
-
-typedef foobar = @(int, int)
-
 typedef request = $extype_struct "request_t" of {
   direction= direction,
   floor= int
@@ -132,6 +135,12 @@ fun state() : [l:agz] (global(l), elevator_state @ l | ptr l)
 
 (*** The interface for the elevator controller. ***)
 
+fun current_direction () : direction = d where {
+  val (free, pf | p) = state()
+  val d = p->current
+  prval () = return_global(free, pf)
+}
+
 fun has_request(d: queue_id) : bool = ~clr where {
   val (free, pf | p) = state()
   val clr =  empty(p->fscan.[d])
@@ -139,8 +148,16 @@ fun has_request(d: queue_id) : bool = ~clr where {
 }
 
 fun add_request(r: request) : void = let
-    fun cmp (a: &request, b: &request) : int = 
-      a.floor - b.floor
+    fun cmp (a: &request, b: &request) : int = let
+      val dir = current_direction()
+    in
+      if a.direction != b.direction then
+        if a.direction = dir then 1 else ~1
+      else 
+        case+ current_direction() of
+          | UP => b.floor - a.floor
+          | DOWN => a.floor - b.floor
+    end
     val (free, pf | p) = state()
     val (elimq, pfq | q) = reference(p->fscan.[neg_queue_id(p->id)])
   in
@@ -161,7 +178,7 @@ fun next_request(d: queue_id) : request = let
   var x : request
 in
   x where {
-    val () = 
+    val () =
       if ~empty(!q) then {
         val () = dequeue<request>(!q, x)
         prval () = return_global(elimq, pfq)
@@ -179,12 +196,6 @@ end
 fun current_queue () : queue_id = id where {
   val (free, pf | p) = state()
   val id = p->id
-  prval () = return_global(free, pf)
-}
-
-fun current_direction () : direction = d where {
-  val (free, pf | p) = state()
-  val d = p->current
   prval () = return_global(free, pf)
 }
 
