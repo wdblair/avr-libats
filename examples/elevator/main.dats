@@ -32,7 +32,7 @@ typedef struct {
 typedef struct {
   volatile uint8_t cnt;
   volatile uint8_t size;
-  int data[SCHEDULE_SIZE];
+  request_t data[SCHEDULE_SIZE];
 } queue_t;
 
 typedef struct {
