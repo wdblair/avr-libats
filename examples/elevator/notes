@@ -19,38 +19,31 @@ FSCAN Scheduling.
 Current Queue
 Future Queue
 
-When the elevator switches direction, it switches direction.
-
 Each queue has fixed size, so it is possible that they
-will need to "drop" requests. It should never be the case, however,
-that a target floor is ignored (ignoring people inside the elevator 
-would be bad).
-
-to start, just use an array and qsort to manage the schedule.
+will need to "drop" requests. It should never be the 
+case, however, that a target floor is ignored (ignoring 
+people inside the elevator would be bad. To start, just 
+use an array and qsort to manage the schedule.
 
 Psueudo Code:
 
-Direction = UP
+id = 0
 state = ready
 
 loop ():
  case state of
    | ready =>
-        if Queue[Direction].Request?
-          next = Queue[Direction].next()
+        if Queue[id].Request?
+          next = Queue[id].next()
           send command(next)
           state = moving
-        else if Queue[~Direction].Request?
+        else if Queue[~id].Request?
           Direction.switch()
         else
           sleep()
      | moving =>
         if Arrived?
           state = ready
-          loop()
-        else if Outgoing?
-          cmd = get_outgoing()
-          send command(cmd)
           loop()
         else
           sleep()
