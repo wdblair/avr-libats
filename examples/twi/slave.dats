@@ -13,7 +13,7 @@ staload TWI = "SATS/twi.sats"
 staload USART = "SATS/usart.sats"
 
 %{^
-static volatile unsigned char  information[5] = {'a','b','c','d','e'};
+static unsigned char information[5] = {'a','b','c','d','e'};
 
 #define set_data(n, c) information[n] = c
 #define get_data(n) information[n]

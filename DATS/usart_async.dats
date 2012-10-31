@@ -5,17 +5,17 @@
 declare_isr(USART_RX_vect);
 declare_isr(USART_TX_vect);
 
-static volatile cycbuf_t read = {0, 0, 0, 25, {[0 ... 24] = 0}};
-static volatile cycbuf_t write = {0, 0, 0, 25, {[0 ... 24] = 0}};
+static cycbuf_t read = {0, 0, 0, 25, {[0 ... 24] = 0}};
+static cycbuf_t write = {0, 0, 0, 25, {[0 ... 24] = 0}};
 
 ATSinline()
 ats_ptr_type get_read_buffer() {
-  return (cycbuf_t * volatile)&read;
+  return (cycbuf_t *)&read;
 }
 
 ATSinline()
 ats_ptr_type get_write_buffer() {
-  return (cycbuf_t * volatile)&write;
+  return (cycbuf_t *)&write;
 }
 
 %}

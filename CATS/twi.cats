@@ -146,16 +146,16 @@ avr_libats_twi_twbr_of_scl (ats_int_type scl) {
 
 union status_reg_t
 {
-  volatile unsigned char all;
-  volatile struct
+  unsigned char all;
+  struct
   {
-    volatile unsigned char last_trans_ok:1;
-    volatile unsigned char rx_data_in_buf:1;
-    volatile unsigned char gen_address_call:1;
-    volatile unsigned char all_bytes_sent:1;
-    volatile unsigned char busy:1;
-    volatile unsigned char mode:1;
-    volatile unsigned char unused_bits:2;
+    unsigned char last_trans_ok:1;
+    unsigned char rx_data_in_buf:1;
+    unsigned char gen_address_call:1;
+    unsigned char all_bytes_sent:1;
+    unsigned char busy:1;
+    unsigned char mode:1;
+    unsigned char unused_bits:2;
   } bits;
 };
 
@@ -163,24 +163,24 @@ union status_reg_t
 typedef union status_reg_t status_reg_t;
 
 typedef struct {
-  volatile unsigned char data[BUFF_SIZE];
-  volatile unsigned char trans[BUFF_SIZE/2];
-  volatile uint8_t msg_size;
-  volatile uint8_t recvd_size;
-  volatile uint8_t trans_size;
-  volatile uint8_t curr_trans;
+  unsigned char data[BUFF_SIZE];
+  unsigned char trans[BUFF_SIZE/2];
+  uint8_t msg_size;
+  uint8_t recvd_size;
+  uint8_t trans_size;
+  uint8_t curr_trans;
 } buffer_t;
 
 typedef struct {
-  volatile buffer_t buffer;
-  volatile status_reg_t status_reg;
-  volatile uint8_t state;
-  volatile uint8_t next_byte;
-  volatile ats_ptr_type enable;
-  volatile ats_ptr_type busy;
-  volatile ats_ptr_type process;
+  buffer_t buffer;
+  status_reg_t status_reg;
+  uint8_t state;
+  uint8_t next_byte;
+  ats_ptr_type enable;
+  ats_ptr_type busy;
+  ats_ptr_type process;
 } twi_state_t;
 
-#define get_twi_state() (twi_state_t * volatile)&twi_state
+#define get_twi_state() (twi_state_t *)&twi_state
 
 #endif

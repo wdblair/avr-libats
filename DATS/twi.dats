@@ -7,7 +7,7 @@
 %{^
 declare_isr(TWI_vect);
 
-static volatile twi_state_t twi_state;
+static twi_state_t twi_state; 
 %}
 
 #define ATS_STALOADFLAG 0
