@@ -1,4 +1,4 @@
-(*  
+(*
    Rough sketch of an elevator simulator.
 *)
 
@@ -21,9 +21,8 @@ stadef schedule_size = 10
 %{^
 #define SCHEDULE_SIZE 10
 
-#define elevator_get_state() ((elevator_state_t* volatile)&elevator_state)
+#define elevator_get_state() ((elevator_state_t*)&elevator_state)
 #define neg_direction(a) (a^1)
-#define eq_direction(a,b) (a == b)
 
 typedef struct {
   uint8_t direction;
@@ -31,19 +30,19 @@ typedef struct {
 } request_t;
 
 typedef struct {
-  volatile uint8_t cnt;
-  volatile uint8_t size;
+  uint8_t cnt;
+  uint8_t size;
   request_t data[SCHEDULE_SIZE];
 } queue_t;
 
 typedef struct {
-  volatile queue_t fscan[2];
-  volatile uint8_t current;
-  volatile uint8_t arrived;
-  volatile uint8_t id;
+  queue_t fscan[2];
+  uint8_t current;
+  uint8_t arrived;
+  uint8_t id;
 } elevator_state_t;
 
-static volatile elevator_state_t elevator_state;
+static elevator_state_t elevator_state;
 %}
 
 typedef control_state = [n:nat | n < 2] int n
@@ -63,12 +62,6 @@ fun neg_direction (d: direction) : direction =
   "mac#neg_direction"
 
 overload ~ with neg_direction
-
-extern
-fun eq_direction (a: direction, b: direction) : bool = 
-  "mac#eq_direction"
-
-//overload = with eq_direction
 
 extern
 fun neg_queue_id (d: queue_id) : queue_id = 
