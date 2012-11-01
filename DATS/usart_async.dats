@@ -100,7 +100,6 @@ atmega328p_async_init (locked | baud) = {
   val () = redirect_stdio()
 }
 
-
 implement
 atmega328p_async_tx (pf0 | c, f) = 0 where {
    val (gpf, pf | p) = get_write_buffer()

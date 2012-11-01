@@ -9,6 +9,8 @@ staload "SATS/interrupt.sats"
 staload "SATS/global.sats"
 staload "SATS/sleep.sats"
 
+staload USART = "SATS/usart.sats"
+
 (* ****** ****** *)
 
 staload "SATS/stdlib.sats"
@@ -115,19 +117,13 @@ fun {a:t@ype} full {s,n:nat | n <= s; s > 0} (
   q: &queue(a, n, s)
 ) : bool (n == s) = q.cnt = q.size
 
-(* A bit of a hack... *)
-extern
-castfn reference {a:t@ype} {n,s:nat} (
-  x: &queue(a, n, s)
-) : [l:agz] (global(l), queue(a, n, s) @ l | ptr l)
-
 typedef request = $extype_struct "request_t" of {
   direction= direction,
   floor= int,
   onboard= bool
 }
 
-typedef ElevatorQueue = 
+typedef ElevatorQueue =
   [n:nat | n <= schedule_size] queue(request, n , schedule_size)
 
 viewtypedef elevator_state =
@@ -163,7 +159,7 @@ fun has_request() : bool = ~clr where {
 }
 
 fun new_direction (r: &request) : bool =
-  if r.onboard then 
+  if r.onboard then
     case+ current_direction() of
       | UP => r.floor < current_floor()
       | DOWN => r.floor > current_floor()
@@ -192,10 +188,7 @@ fun add_request(r: request) : void = let
           case+ dir of
             | UP => b.floor - a.floor
             | DOWN => a.floor - b.floor
-        else if new_direction(a) then
-          ~1
-        else
-          1
+        else if new_direction(a) then ~1 else 1
       else if ~a.onboard && b.onboard then
         if ~new_direction(a) && ~new_direction(b) then
           case+ dir of
@@ -243,8 +236,8 @@ in
   }
 end
 
-fun send_command (floor: request) : void =
-  ()
+fun send_command (r: request) : void =
+  println!("goto: ", r.floor)
   
 fun arrived () : bool = a where {
   val (free, pf | p) = state()
@@ -256,6 +249,19 @@ fun arrived () : bool = a where {
 
 implement main (clr | (**)) = {
   val (set | ()) = sei(clr | (**))
+  var a : request 
+  var b : request
+  var c : request
+  var d : request
+  val () = a.direction := UP
+  val () = a.floor := 1
+  val () = a.onboard := false
+  val () = b.direction := DOWN
+  val () = b.floor := 8
+  val () = b.onboard := false
+  val () = add_request(a)
+  val () = add_request(b)
+  val () = $USART.atmega328p_init(9600)
   fun loop(set:INT_SET | s: control_state) : (INT_CLEAR | void) =
     case+ s of
       | READY => let
