@@ -163,9 +163,10 @@ if($typecheck) {
 unshift(@cflags, "avr-gcc");
 
 @extras = (
-    "-Os", "-Wall", "-Wundef", 
-    "-Wno-unused", "-Wno-strict-prototypes", 
-    "-Werror-implicit-function-declaration", 
+    "-Os", "-Wall", "-Wundef",
+    "-Wno-unused", "-Wno-strict-prototypes",
+    "-Wno-maybe-uninitialized",
+    "-Werror-implicit-function-declaration",
     "-Wno-pointer-sign", "-Wshadow",
     "-I",$avrdir,
     "-I",$avrdir."/runtime",

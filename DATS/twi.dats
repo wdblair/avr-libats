@@ -228,9 +228,10 @@ local
   
   fun copy_recvd_byte_trans () : bool = let
     prval (pf) = global_get(gstate)
-    val () = state->buffer.data.[state->next_byte] := (uchar) TWDR
+    val next_byte = &state->next_byte
+    val () = state->buffer.data.[!next_byte] := (uchar) TWDR
     val sum = current_msg_last_byte()
-    val () = state->next_byte := state->next_byte + 1
+    val () = !next_byte := !next_byte + 1
   in
     if state->next_byte = sum then true where {
       val () = state->buffer.curr_trans := state->buffer.curr_trans + 1

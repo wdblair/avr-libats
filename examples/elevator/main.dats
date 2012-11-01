@@ -27,6 +27,7 @@ stadef schedule_size = 10
 typedef struct {
   uint8_t direction;
   uint8_t floor;
+  uint8_t onboard;
 } request_t;
 
 typedef struct {
@@ -36,10 +37,10 @@ typedef struct {
 } queue_t;
 
 typedef struct {
-  queue_t fscan[2];
+  queue_t queue;
   uint8_t current;
   uint8_t arrived;
-  uint8_t id;
+  uint8_t floor;
 } elevator_state_t;
 
 static elevator_state_t elevator_state;
@@ -92,6 +93,20 @@ fun {a:t@ype} dequeue {n, sz:nat | n > 0; n <= sz} (
   val () = q.cnt := q.cnt - 1
 }
 
+fun {a:t@ype} evict {n:nat | n > 0} (
+  q: &queue(a, n, n), x: a,
+  cmp: (&a, &a) -<fun1> int, remove: (&a) -<fun1> bool
+) : void = let
+  var i : [i:nat] int i
+in
+  for(i := 0; i < q.cnt; i := i + 1)
+    if (remove(q.data.[i])) then {
+      val () = q.data.[i] := x
+      val () = qsort(q.data, q.cnt, cmp)
+      val () = break
+    }
+end
+
 fun {a:t@ype} empty {s,n:nat | n <= s} (
   q: &queue(a, n, s)
 ) : bool (n == 0) = q.cnt = 0
@@ -103,12 +118,13 @@ fun {a:t@ype} full {s,n:nat | n <= s; s > 0} (
 (* A bit of a hack... *)
 extern
 castfn reference {a:t@ype} {n,s:nat} (
-  x: &queue(a,n,s)
+  x: &queue(a, n, s)
 ) : [l:agz] (global(l), queue(a, n, s) @ l | ptr l)
 
 typedef request = $extype_struct "request_t" of {
   direction= direction,
-  floor= int
+  floor= int,
+  onboard= bool
 }
 
 typedef ElevatorQueue = 
@@ -116,9 +132,9 @@ typedef ElevatorQueue =
 
 viewtypedef elevator_state =
   $extype_struct "elevator_state_t" of {
-    fscan= @[ElevatorQueue][2],
-    id= queue_id,
+    queue= ElevatorQueue,
     current= direction,
+    floor= int,
     arrived= bool
   }
   
@@ -134,63 +150,25 @@ fun current_direction () : direction = d where {
   prval () = return_global(free, pf)
 }
 
-fun has_request(d: queue_id) : bool = ~clr where {
+fun current_floor () : int = fl where {
   val (free, pf | p) = state()
-  val clr =  empty(p->fscan.[d])
+  val fl = p->floor
   prval () = return_global(free, pf)
 }
 
-fun add_request(r: request) : void = let
-    fun cmp (a: &request, b: &request) : int = let
-      val dir = current_direction()
-    in
-      if a.direction != b.direction then
-        if a.direction = dir then 1 else ~1
-      else 
-        case+ current_direction() of
-          | UP => b.floor - a.floor
-          | DOWN => a.floor - b.floor
-    end
-    val (free, pf | p) = state()
-    val (elimq, pfq | q) = reference(p->fscan.[neg_queue_id(p->id)])
-  in
-    if full(!q) then {
-      //drop the request.
-      prval () = return_global(free, pf)
-      prval () = return_global(elimq, pfq)
-    } else {
-      val () = enqueue<request>(!q, r, cmp)
-      prval () = return_global(free, pf)
-      prval () = return_global(elimq, pfq)
-    }
-  end
-
-fun next_request(d: queue_id) : request = let
+fun has_request() : bool = ~clr where {
   val (free, pf | p) = state()
-  val (elimq, pfq | q) = reference(p->fscan.[d])
-  var x : request
-in
-  x where {
-    val () =
-      if ~empty(!q) then {
-        val () = dequeue<request>(!q, x)
-        prval () = return_global(elimq, pfq)
-        prval () = return_global(free, pf)
-      }
-      else {
-        val () = x.direction := 0
-        val () = x.floor := ~1
-        prval () = return_global(elimq, pfq)
-        prval () = return_global(free, pf)
-      }
-  }
-end
-
-fun current_queue () : queue_id = id where {
-  val (free, pf | p) = state()
-  val id = p->id
+  val clr =  empty(p->queue)
   prval () = return_global(free, pf)
 }
+
+fun new_direction (r: &request) : bool =
+  if r.onboard then 
+    case+ current_direction() of
+      | UP => r.floor < current_floor()
+      | DOWN => r.floor > current_floor()
+  else
+    r.direction != current_direction()
 
 fun switch_direction () : void = {
   val (free, pf | p) = state()
@@ -198,15 +176,76 @@ fun switch_direction () : void = {
   prval () = return_global(free, pf)
 }
 
-fun switch_queues () : void = {
+fun add_request(r: request) : void = let
+    // Need a better way  to express this...
+    fun cmp (a: &request, b: &request) : int = let
+      val dir = current_direction()
+    in
+      if a.onboard && b.onboard ||
+         (~a.onboard && ~a.onboard &&
+          a.direction = b.direction) then
+        case+ dir of
+        | UP => b.floor - a.floor
+        | DOWN => a.floor - b.floor
+      else if a.onboard && ~b.onboard then
+        if ~new_direction(a) && ~new_direction(b) then
+          case+ dir of
+            | UP => b.floor - a.floor
+            | DOWN => a.floor - b.floor
+        else if new_direction(a) then
+          ~1
+        else
+          1
+      else if ~a.onboard && b.onboard then
+        if ~new_direction(a) && ~new_direction(b) then
+          case+ dir of
+            | UP => b.floor - a.floor
+            | DOWN => a.floor - b.floor
+        else 
+          if new_direction(b) then 1 else ~1
+      else
+        if a.direction = dir then 1 else ~1
+    end
+    val (free, pf | p) = state()
+    val q = &p->queue
+  in
+    if full(!q) then
+        if r.onboard then {
+          fun remove (r: &request) : bool =
+            ~r.onboard
+          val () = evict<request>(!q, r, cmp, remove)
+          prval () = return_global(free, pf)
+        } else {
+          prval () = return_global(free, pf)
+        }
+    else {
+      val () = enqueue<request>(!q, r, cmp)
+      prval () = return_global(free, pf)
+    }
+  end
+  
+fun next_request() : request = let
   val (free, pf | p) = state()
-  val () =  p->id := neg_queue_id(p->id)
-  prval () = return_global(free, pf)
-}
+  val q = &p->queue
+  var x : request
+in
+  x where {
+    val () =
+      if ~empty(!q) then {
+        val () = dequeue<request>(!q, x)
+        prval () = return_global(free, pf)
+      } else {
+        val () = x.direction := 0
+        val () = x.floor := ~1
+        val () = x.onboard := false
+        prval () = return_global(free, pf)
+      }
+  }
+end
 
-fun send_command(floor: request) : void = 
+fun send_command (floor: request) : void =
   ()
-
+  
 fun arrived () : bool = a where {
   val (free, pf | p) = state()
   val a = p->arrived
@@ -220,20 +259,14 @@ implement main (clr | (**)) = {
   fun loop(set:INT_SET | s: control_state) : (INT_CLEAR | void) =
     case+ s of
       | READY => let
-          val q = current_queue ()
         in
-          if has_request(q) then let
-            val next = next_request(q)
+          if has_request() then let
+            val next = next_request()
             val () =
-              if next.direction != current_direction() then
+              if new_direction(next) then
                 switch_direction()
             val () = send_command(next)
           in loop(set | MOVING) end
-          
-          else if has_request(neg_queue_id(q)) then let
-            val () = switch_queues()
-          in loop(set | s) end
-          
           else let
             val () = sleep_enable()
             val () = sleep_cpu()
@@ -241,7 +274,7 @@ implement main (clr | (**)) = {
           in loop(set | s) end
         end
       | MOVING =>
-        if arrived() then 
+        if arrived() then
           loop(set | READY)
         else let
           val () = sleep_enable()

@@ -8,44 +8,21 @@ Output (commands to devices that control motion)
 - Up/Down and a Floor Number (potential passengers)
 - A target floor to go to (actual passengers)
 
-If an elevator is full, potential passengers will 
-be ignored, BUT suppose elevators are greedy and 
+If an elevator is full, potential passengers will
+be ignored, BUT suppose elevators are greedy and
 not cognicent of capacity.
 
-FSCAN Scheduling.
+SCAN Scheduling
 
-2 Queues
+1 Queue
 
-Current Queue
-Future Queue
+The queue has fixed size, so it is possible that they
+will need to "drop" requests. It should never be the
+case, however, that a target floor is ignored. To start,
+just use an array and qsort to manage the schedule.
 
-Each queue has fixed size, so it is possible that they
-will need to "drop" requests. It should never be the 
-case, however, that a target floor is ignored (ignoring 
-people inside the elevator would be bad. To start, just 
-use an array and qsort to manage the schedule.
+dataviewtype Request =
+  | Pickup(direction, floor)
+  | Dropoff(floor)
 
-Psueudo Code:
 
-id = 0
-state = ready
-
-loop ():
- case state of
-   | ready =>
-        if Queue[id].Request?
-          next = Queue[id].next()
-          send command(next)
-          state = moving
-        else if Queue[~id].Request?
-          Direction.switch()
-        else
-          sleep()
-     | moving =>
-        if Arrived?
-          state = ready
-          loop()
-        else
-          sleep()
-          loop()
-      

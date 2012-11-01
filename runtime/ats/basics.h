@@ -160,11 +160,14 @@ atspre_eq_char_char
   return (c1 == c2) ;
 } // end of [atspre_eq_char_char]
 
+#define ptrof_error(x) ((void*)&x)
+
 /* ****** ****** */
 
 #define ATS_MALLOC(x) malloc(x)
 #define ATS_ALLOCA(sz) alloca(sz)
 #define ATS_ALLOCA2(n, sz) alloca((n)*(sz))
+#define ATS_FREE(x) free(x)
 
 ATSinline()
 ats_void_type
