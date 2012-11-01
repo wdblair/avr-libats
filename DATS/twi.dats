@@ -1,13 +1,11 @@
 (*
   TWI Driver To Support Both Master and Slave Operation.
 
-  Adpated from Atmel Application Notes AVR315 and AVR311
+  Adapted from Atmel Application Notes AVR315 and AVR311
 *)
 
 %{^
 declare_isr(TWI_vect);
-
-static twi_state_t twi_state; 
 %}
 
 #define ATS_STALOADFLAG 0
