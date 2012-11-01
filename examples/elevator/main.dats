@@ -9,7 +9,7 @@ staload "SATS/interrupt.sats"
 staload "SATS/global.sats"
 staload "SATS/sleep.sats"
 
-staload USART = "SATS/usart.sats"
+//staload USART = "SATS/usart.sats"
 
 (* ****** ****** *)
 
@@ -102,7 +102,7 @@ fun {a:t@ype} evict {n:nat | n > 0} (
   var i : [i:nat] int i
 in
   for(i := 0; i < q.cnt; i := i + 1)
-    if (remove(q.data.[i])) then {
+    if remove(q.data.[i]) then {
       val () = q.data.[i] := x
       val () = qsort(q.data, q.cnt, cmp)
       val () = break
@@ -173,7 +173,7 @@ fun switch_direction () : void = {
 }
 
 fun add_request(r: request) : void = let
-    // Need a better way  to express this...
+    // Need a better way to express this...
     fun cmp (a: &request, b: &request) : int = let
       val dir = current_direction()
     in
@@ -194,7 +194,7 @@ fun add_request(r: request) : void = let
           case+ dir of
             | UP => b.floor - a.floor
             | DOWN => a.floor - b.floor
-        else 
+        else
           if new_direction(b) then 1 else ~1
       else
         if a.direction = dir then 1 else ~1
@@ -236,8 +236,7 @@ in
   }
 end
 
-fun send_command (r: request) : void =
-  println!("goto: ", r.floor)
+fun send_command (r: request) : void = ()
   
 fun arrived () : bool = a where {
   val (free, pf | p) = state()
@@ -249,19 +248,14 @@ fun arrived () : bool = a where {
 
 implement main (clr | (**)) = {
   val (set | ()) = sei(clr | (**))
-  var a : request 
-  var b : request
-  var c : request
-  var d : request
-  val () = a.direction := UP
-  val () = a.floor := 1
-  val () = a.onboard := false
-  val () = b.direction := DOWN
-  val () = b.floor := 8
-  val () = b.onboard := false
-  val () = add_request(a)
-  val () = add_request(b)
+  //Set the queue's size.
+  val (free, pf | p) = state()
+  val () = p->queue.size := 10
+  prval () = return_global(free, pf)
+//  
   val () = $USART.atmega328p_init(9600)
+  val () = setbits(DDRB, DDB3)
+//  
   fun loop(set:INT_SET | s: control_state) : (INT_CLEAR | void) =
     case+ s of
       | READY => let
