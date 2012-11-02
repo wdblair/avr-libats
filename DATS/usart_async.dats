@@ -29,9 +29,7 @@ ATSinline()
 ats_void_type set_callback(ats_ptr_type c){
   callback = c;
 }
-
 %}
-
 
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
@@ -74,11 +72,11 @@ implement
 USART_TX_vect (locked | (* *) ) = let
   val (gpf, pf | p) = get_write_buffer()
  in
-  if empty(pf | p) then {
+  if empty(!p) then {
     prval () = return_global(gpf, pf)
   } else {
     var tmp : char
-    val () = remove<char>(locked, pf | p , tmp)
+    val () = remove<char>(!p , tmp)
     val () = setval(UDR0, tmp)
     prval () = return_global(gpf, pf)
   }
@@ -87,15 +85,14 @@ end
 implement
 USART_RX_vect (locked | (* *)) = let
   val (gpf, pf | p) = get_read_buffer()
-  val full = full(pf | p)
   var contents : char = (char) UDR0
  in
-   if full then {
+   if full(!p) then {
       prval () = return_global(gpf, pf)
    } else {
         val call = get_callback()
         val () = call(!p)
-      	val () = insert<char>(locked, pf | p, contents)
+      	val () = insert<char>(!p, contents)
 	prval () = return_global(gpf, pf)
    }
  end
@@ -124,20 +121,21 @@ local
   }
 in
 
-implement
-atmega328p_async_init_stdio (locked | baud) = {
-  fun nop {n,p:nat | n <= p} (
-    f: &fifo(char, n, p)
-  ) : void = ()
-  val () = set_callback(nop)
-  val () = atmega328p_async_setup(baud)
-}
+  implement
+  atmega328p_async_init_stdio (locked | baud) = {
+    fun nop {n,p:nat | n <= p} (
+     f: &fifo(char, n, p)
+    ) : void = ()
+    val () = set_callback(nop)
+    val () = atmega328p_async_setup(baud)
+  }
 
-implement
-atmega328p_async_init_callback(locked | baud, callback) = {
-  val () = set_callback(callback)
-  val () = atmega328p_async_setup(baud)
-}
+  implement
+  atmega328p_async_init_callback(locked | baud, callback) = {
+    val () = set_callback(callback)
+    val () = atmega328p_async_setup(baud)
+  }
+  
 end
 
 implement
@@ -158,11 +156,11 @@ atmega328p_async_tx (pf0 | c, f) = 0 where {
           prval () = pf0 := enabled
         in loop(pf0, g, pf | p, c) end
       else let
-          val () = insert<char>(locked, pf | p, c)
+          val () = insert<char>(!p, c)
        in
         if bit_is_set(UCSR0A, UDRE0) then {
           var tmp : char
-	  val () = remove<char>(locked, pf | p, tmp)
+	  val () = remove<char>(!p, tmp)
           val (enabled | () ) = sei(locked | (* *))
 	  val () = setval(UDR0, tmp)
           prval () = return_global(g, pf)
@@ -185,13 +183,13 @@ atmega328p_async_rx (pf0 | f) = let
   ) : char = let
     val (locked | () ) = cli(pf0 | (* *))
   in 
-    if empty<char>(pf | p) then let
+    if empty<char>(!p) then let
       val (enabled | () ) = sei_and_sleep_cpu(locked | (* *) )
       prval () = pf0 := enabled
      in loop(pf0, g, pf | p) end
     else let
       var tmp : char
-      val () = remove<char>(locked, pf | p, tmp)
+      val () = remove<char>(!p, tmp)
       val (enabled | () ) = sei(locked | (* *))
       prval () = return_global(g, pf)
       prval () = pf0 := enabled
@@ -209,7 +207,7 @@ atmega328p_async_flush (pf0 | (* *)) = let
     val _ = fflush(stdout_ref)
     val (locked | () ) = cli(pf0 | (* *) )
   in 
-    if empty<char>(pf | p) then let
+    if empty<char>(!p) then let
         val (enabled | () ) = sei(locked | (* *))
         prval () = return_global(g, pf)
         prval () = pf0 := enabled
