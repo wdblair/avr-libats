@@ -55,7 +55,7 @@ fun {a:t@ype} cycbuf_is_empty {s,n:nat | n <= s}
     f: &cycbuf_array(a,n,s,w,r)
 ) : bool(n == 0) = f.n = 0
 
-implement {a} empty (f) =
+implement {a} empty (pf | f) =
   cycbuf_is_empty(f)
 
 fun {a:t@ype} cycbuf_is_full {s:pos}
@@ -63,5 +63,5 @@ fun {a:t@ype} cycbuf_is_full {s:pos}
     f: &cycbuf_array(a,n,s,w,r)
 ) : bool(n == s) = f.size = f.n
 
-implement {a} full (f) =
+implement {a} full (pf | f) =
   cycbuf_is_full(f)

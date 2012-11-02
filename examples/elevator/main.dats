@@ -8,8 +8,10 @@ staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/global.sats"
 staload "SATS/sleep.sats"
+staload "SATS/fifo.sats"
 
 staload USART = "SATS/usart.sats"
+
 
 (* ****** ****** *)
 
@@ -45,6 +47,8 @@ typedef struct {
   uint8_t floor;
 } elevator_state_t;
 
+//Would like to do the trick I do in the TWI driver,
+//make this a global variable in ATS.
 static elevator_state_t elevator_state;
 %}
 
@@ -247,21 +251,24 @@ fun arrived () : bool = a where {
 (* ****** ****** *)
 
 fun new_message {n,p:nat | n <= p} (
-  pf: !INT_CLEAR, pf0: !fifo(a,n,s) | f: &fifo(char, n, p)
+  pf: !INT_CLEAR | f: &fifo(char, n, p)
 ) : void = {
-
+  val () = println! "hey"
 }
 
 (* ****** ****** *)
 
+//Initialize the Size of the Queue.
+val (free, pf | p) = state()
+val () = p->queue.size := 10
+prval () = return_global(free, pf)
+
+(* ****** ****** *)
+
 implement main (clr | (**)) = {
+  //enable communication
+  val () = $USART.atmega328p_async_init(clr | 9600, new_message)
   val (set | ()) = sei(clr | (**))
-  //Set the queue's size.
-  val (free, pf | p) = state()
-  val () = p->queue.size := 10
-  prval () = return_global(free, pf)
-//  
-  val () = $USART.atmega328p_async_init(9600)
   val () = setbits(DDRB, DDB3)
 //  
   fun loop(set:INT_SET | s: control_state) : (INT_CLEAR | void) =

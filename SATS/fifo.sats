@@ -16,9 +16,9 @@ fun {a:t@ype} peek {s,n:pos | n <= s} (
 ) : void
 
 fun {a:t@ype} empty {s,n:nat | n <= s} (
-  f: &fifo(a, n, s)
+  lpf: !INT_CLEAR | f: &fifo(a, n, s)
 ) : bool (n == 0)
 
 fun {a:t@ype} full {s,n:nat | n <= s} (
-  f: &fifo(a,n,s)
+  lpf: !INT_CLEAR | f: &fifo(a,n,s)
 ) : bool (n == s)
