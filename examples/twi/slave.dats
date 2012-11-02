@@ -8,9 +8,7 @@
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
-staload "SATS/global.sats"
 staload TWI = "SATS/twi.sats"
-staload USART = "SATS/usart.sats"
 
 %{^
 static unsigned char information[5] = {'a','b','c','d','e'};
@@ -25,7 +23,9 @@ fun set_data {n:nat | n < 5} (
 ) : void = "mac#set_data"
 
 extern
-fun get_data {n:nat | n < 5} (n:int n) : uchar = "mac#get_data"
+fun get_data {n:nat | n < 5} (
+  n:int n
+) : uchar = "mac#get_data"
 
 fun response {n:nat | n <= $TWI.buff_size} (
   src: &(@[uchar][$TWI.buff_size]), sz: int n, m: $TWI.mode

@@ -17,9 +17,6 @@ staload "SATS/stdio.sats"
 
 (* ****** ****** *)
 
-extern
-castfn _c(i:int) : uchar
-
 (*
   Every AVR program has some setup followed by an infinite
   loop. Why just not make the loop a template?
@@ -41,7 +38,7 @@ implement main (pf0 | (* *) ) = {
   val () = $TWI.add_msg(trans, 2)
   val (set | ()) = sei(pf0 | (**))
 //Our main buffer.
-  var !buf = @[uchar][4](_c(0))
+  var !buf = @[uchar][4]((uchar)'\0')
 //The infinite loop
   fun loop {l:addr} {sz: pos | $TWI.transaction(4, sz, sz)} (
     set: INT_SET, rdy: !($TWI.TWI_READY) 
@@ -51,14 +48,14 @@ implement main (pf0 | (* *) ) = {
     val () = $TWI.setup_addr_byte(buf, 2, 0x2, $TWI.READ)
     val c  = getchar()
     val () = println! 's'
-    val () = buf.[1] := uchar_of_int(c - 0x30)
+    val () = buf.[1] := (uchar) (c - 0x30)
   //Send the transaction
     val (busy | ()) =
       $TWI.start_transaction(set, rdy | buf, trans)
   //Sleep until ready
     val (status | ()) = $TWI.wait(set, busy | (* *))
     val _ = $TWI.get_data(set, status | buf, 4)
-    val c = char_of_uchar(buf.[3])
+    val c = (char) buf.[3]
     val () = println! ("resp: ", c)
     prval () = rdy := status
   in loop(set, rdy | buf, trans) end

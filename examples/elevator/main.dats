@@ -9,7 +9,7 @@ staload "SATS/interrupt.sats"
 staload "SATS/global.sats"
 staload "SATS/sleep.sats"
 
-//staload USART = "SATS/usart.sats"
+staload USART = "SATS/usart.sats"
 
 (* ****** ****** *)
 
