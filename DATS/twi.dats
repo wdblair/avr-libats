@@ -26,10 +26,10 @@ staload "SATS/twi.sats"
 absprop global (view)
 
 extern
-praxi global_get{v:view}(g: global(v)) : (v)
+praxi global_get{v:view} (g: global(v)) : (v)
 
 extern
-praxi global_return{v:view} (pf: v)  : void
+praxi global_return{v:view} (pf: v) : void
 
 extern
 praxi global_new{v:view} (pf: v) : global(v)

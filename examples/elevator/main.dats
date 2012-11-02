@@ -246,6 +246,14 @@ fun arrived () : bool = a where {
 
 (* ****** ****** *)
 
+fun new_message {n,p:nat | n <= p} (
+  pf: !INT_CLEAR, pf0: !fifo(a,n,s) | f: &fifo(char, n, p)
+) : void = {
+
+}
+
+(* ****** ****** *)
+
 implement main (clr | (**)) = {
   val (set | ()) = sei(clr | (**))
   //Set the queue's size.
@@ -253,7 +261,7 @@ implement main (clr | (**)) = {
   val () = p->queue.size := 10
   prval () = return_global(free, pf)
 //  
-  val () = $USART.atmega328p_init(9600)
+  val () = $USART.atmega328p_async_init(9600)
   val () = setbits(DDRB, DDB3)
 //  
   fun loop(set:INT_SET | s: control_state) : (INT_CLEAR | void) =

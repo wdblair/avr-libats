@@ -8,6 +8,8 @@ declare_isr(USART_TX_vect);
 static cycbuf_t read = {0, 0, 0, 25, {[0 ... 24] = 0}};
 static cycbuf_t write = {0, 0, 0, 25, {[0 ... 24] = 0}};
 
+static ats_ptr_type callback;
+
 ATSinline()
 ats_ptr_type get_read_buffer() {
   return (cycbuf_t *)&read;
@@ -18,7 +20,18 @@ ats_ptr_type get_write_buffer() {
   return (cycbuf_t *)&write;
 }
 
+ATSinline()
+ats_ptr_type get_callback (){
+  return callback;
+}
+
+ATSinline()
+ats_void_type set_callback(ats_ptr_type c){
+  callback = c;
+}
+
 %}
+
 
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
@@ -47,6 +60,14 @@ fun get_write_buffer
   global(l), fifo(char, n, s) @ l | ptr l
 ) = "mac#get_write_buffer"
 
+extern
+fun get_callback
+  () : usart_callback = "mac#get_callback"
+
+extern
+fun set_callback
+  (c: usart_callback) : void = "mac#set_callback"
+  
 (* ****** ****** *)
 
 implement 
@@ -72,6 +93,8 @@ USART_RX_vect (locked | (* *)) = let
    if full then {
       prval () = return_global(gpf, pf)
    } else {
+        val call = get_callback()
+        val () = call(!p)
       	val () = insert<char>(locked, pf | p, contents)
 	prval () = return_global(gpf, pf)
    }
@@ -88,17 +111,34 @@ val F_CPU = $extval(lint, "F_CPU")
 
 (* ****** ****** *)
 
+local
+  fun atmega328p_async_setup {n:nat | uint16(n)} (n: int n) : void = {
+    val ubrr = ubrr_of_baud(n)
+    val () = set_regs_to_int(UBRR0H, UBRR0L, ubrr)
+    //Set mode to asynchronous, no parity bit, 8 bit frame, and 1 stop bit
+    val () = setbits(UCSR0C, UCSZ01, UCSZ00)
+    //Enable TX and RX and interrupts
+    val () = setbits(UCSR0B, RXEN0, TXEN0, RXCIE0, TXCIE0)
+    //Enable the standard library
+    val () = redirect_stdio()
+  }
+in
+
 implement
-atmega328p_async_init (locked | baud) = {
-  val ubrr = ubrr_of_baud(baud)
-  val () = set_regs_to_int(UBRR0H, UBRR0L, ubrr_of_baud(baud))
-  //Set mode to asynchronous, no parity bit, 8 bit frame, and 1 stop bit
-  val () = setbits(UCSR0C, UCSZ01, UCSZ00)
-  //Enable TX and RX and interrupts
-  val () = setbits(UCSR0B, RXEN0, TXEN0, RXCIE0, TXCIE0)
-  //Enable the standard library
-  val () = redirect_stdio()
+atmega328p_async_init_stdio (locked | baud) = {
+  fun nop {n,p:nat | n <= p} (
+    f: &fifo(char, n, p)
+  ) : void = ()
+  val () = set_callback(nop)
+  val () = atmega328p_async_setup(baud)
 }
+
+implement
+atmega328p_async_init_callback(locked | baud, callback) = {
+  val () = set_callback(callback)
+  val () = atmega328p_async_setup(baud)
+}
+end
 
 implement
 atmega328p_async_tx (pf0 | c, f) = 0 where {

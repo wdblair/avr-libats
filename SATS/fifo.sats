@@ -12,6 +12,12 @@ fun {a:t@ype} remove {l:agz} {s,n:pos | n <= s} (
   p: ptr l, x: &a? >> a
 ) : void
 
+fun {a:t@ype} peek {l:agz} {s,n:pos | n <= s} (
+  lpf: !INT_CLEAR,
+  pf: !fifo(a, n, s) @ l |
+  p: ptr l, x: &a? >> a
+) : void
+
 fun {a:t@ype} empty {l:agz} {s,n:nat | n <= s} (
   pf: !fifo(a,n,s) @ l | 
   p: ptr l
