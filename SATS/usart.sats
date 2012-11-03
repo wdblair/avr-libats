@@ -27,7 +27,9 @@ fun ubrr_of_baud {n:nat | uint16(n)} (
 ) : uint16 = "mac#avr_libats_ubrr_of_baud"
 
 typedef usart_callback =
-  {n,p:nat | n <= p} (!INT_CLEAR | &fifo(char, n, p)) -<fun1> void
+  {n,p:pos | n <= p} (
+    !INT_CLEAR | &fifo(char, n, p) >> fifo(char, n', p)
+  ) -<fun1> #[n':nat | n' <= p] void
   
 (* ****** ****** *)
 

@@ -8,7 +8,7 @@ staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/global.sats"
 staload "SATS/sleep.sats"
-staload "SATS/fifo.sats"
+staload FIFO = "SATS/fifo.sats"
 
 staload USART = "SATS/usart.sats"
 
@@ -250,15 +250,32 @@ fun arrived () : bool = a where {
 
 (* ****** ****** *)
 
-fun new_message {n,p:nat | n <= p} (
-  pf: !INT_CLEAR | f: &fifo(char, n, p)
-) : void = {
-  val () = println! "hey"
-}
+fun new_message {n,p:pos | n <= p} (
+  pf: !INT_CLEAR | f: &($FIFO.fifo(char, n, p)) >> $FIFO.fifo(char, n', p)
+) : #[n':nat | n' <= p] void = let
+  var x : char
+  val () = $FIFO.peek<char>(pf | f, x)
+in
+  if x = '\n' then
+    loop(pf | f) where {
+      fun loop {n,p:pos | n <= p} (
+        pf: !INT_CLEAR | f: &($FIFO.fifo(char, n, p))
+          >> $FIFO.fifo(char, 0, p)
+      ) : void = let
+        var tmp: char
+        val () = $FIFO.remove<char>(pf | f, tmp)
+      in
+        if $FIFO.empty<char>(pf | f) then
+          println! "hey"
+        else
+          loop(pf | f)
+      end
+    }
+end
 
 (* ****** ****** *)
 
-//Initialize the Size of the Queue.
+//Initialize the size of the queue
 val (free, pf | p) = state()
 val () = p->queue.size := 10
 prval () = return_global(free, pf)

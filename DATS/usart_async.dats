@@ -90,9 +90,9 @@ USART_RX_vect (locked | (* *)) = let
    if full(locked | !p) then {
       prval () = return_global(gpf, pf)
    } else {
-        val call = get_callback()
-        val () = call(!p)
       	val () = insert<char>(locked | !p, contents)
+        val call = get_callback()
+        val () = call(locked | !p)
 	prval () = return_global(gpf, pf)
    }
  end
@@ -125,9 +125,9 @@ in
 
   implement
   atmega328p_async_init_stdio (locked | baud) = {
-    fun nop {n,p:nat | n <= p} (
-     pf: !INT_CLEAR | f: &fifo(char, n, p)
-    ) : void = ()
+    fun nop {n,p:pos | n <= p} (
+     pf: !INT_CLEAR | f: &fifo(char, n, p) >> fifo(char, n', p)
+    ) : #[n':nat | n' <= p] void = ()
     val () = set_callback(nop)
     val () = atmega328p_async_hardware(baud)
   }
