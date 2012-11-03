@@ -245,11 +245,18 @@ in
   }
 end
 
-fun send_command (r: request) : void = ()
+fun send_command (r: request) : void = 
+  println!("floor",r.floor)
   
 fun arrived () : bool = a where {
   val (free, pf | p) = state()
   val a = p->arrived
+  prval () = return_global(free, pf)
+}
+
+fun set_arrived(b: bool) : void = {
+  val (free, pf | p) = state()
+  val () = p->arrived := b
   prval () = return_global(free, pf)
 }
 
@@ -270,7 +277,7 @@ in
     ) : int = let
       var tmp: char
       val () = $FIFO.remove<char>(pf | f, tmp)
-      val res = 
+      val res =
         if isdigit((int)tmp) then
           res*10 + ((int)tmp - 0x30)
         else
@@ -286,12 +293,31 @@ in
       ()
     else let
       val value = fifo_atoi(pf | f, 0)
+      var tmp : request
+      val () = tmp.floor := value
+      val () = tmp.onboard := false
+      val () = tmp.direction := UP
     in
       case+ cmd of
-        | 'u' => println!("up ", value)
-        | 'd' => println!("down ", value)
-        | 'r' => println!("drop ", value)
-        | 'a' => println!("arrive ", value)
+        | 'u' => {
+          val () = tmp.direction := UP
+          val () = add_request(tmp)
+        }
+        | 'd' => {
+          val () = tmp.direction := DOWN
+          val () = add_request(tmp)
+        }
+        | 'r' => {
+          val () = tmp.direction := UP
+          val () = tmp.onboard := true
+          val () = add_request(tmp)
+        }
+        | 'a' => {
+          val (free, pf | p) = state()
+          val () = p->arrived := true
+          val () = p->floor := value
+          prval () = return_global(free, pf)
+        }
         | _ => ()
     end
   end
@@ -310,33 +336,34 @@ implement main (clr | (**)) = {
   //enable communication
   val () = $USART.atmega328p_async_init(clr | 9600, new_message)
   val (set | ()) = sei(clr | (**))
-  val () = setbits(DDRB, DDB3)
-//  
-  fun loop(set:INT_SET | s: control_state) : (INT_CLEAR | void) =
-    case+ s of
-      | READY => let
-        in
-          if has_request() then let
-            val next = next_request()
-            val () =
-              if new_direction(next) then
-                switch_direction()
-            val () = send_command(next)
-          in loop(set | MOVING) end
+//
+  val (pf0 | ()) = loop(set | READY) where {
+    fun loop(set:INT_SET | s: control_state) : (INT_CLEAR | void) =
+      case+ s of
+        | READY => let
+          in
+            if has_request() then let
+              val next = next_request()
+              val () =
+                if new_direction(next) then
+                  switch_direction()
+              val () = send_command(next)
+            in loop(set | MOVING) end
+            else let
+              val () = sleep_enable()
+              val () = sleep_cpu()
+              val () = sleep_disable()
+            in loop(set | s) end
+          end
+        | MOVING =>
+          if arrived() then let
+            val () = set_arrived(false)
+          in loop(set | READY) end
           else let
             val () = sleep_enable()
             val () = sleep_cpu()
             val () = sleep_disable()
           in loop(set | s) end
-        end
-      | MOVING =>
-        if arrived() then
-          loop(set | READY)
-        else let
-          val () = sleep_enable()
-          val () = sleep_cpu()
-          val () = sleep_disable()
-        in loop(set | s) end
-  val (pf0 | ()) = loop(set | READY)
+  }
   prval () = clr := pf0
 }
