@@ -8,15 +8,20 @@ staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/global.sats"
 staload "SATS/sleep.sats"
-staload FIFO = "SATS/fifo.sats"
 
+staload FIFO = "SATS/fifo.sats"
 staload USART = "SATS/usart.sats"
 
+(* ****** ****** *)
+
+staload _ = "DATS/usart_async.dats"
 
 (* ****** ****** *)
 
 staload "SATS/stdlib.sats"
 staload "DATS/stdlib.dats"
+
+staload "SATS/stdio.sats"
 
 (* ****** ****** *)
 
@@ -253,24 +258,43 @@ fun arrived () : bool = a where {
 fun new_message {n,p:pos | n <= p} (
   pf: !INT_CLEAR | f: &($FIFO.fifo(char, n, p)) >> $FIFO.fifo(char, n', p)
 ) : #[n':nat | n' <= p] void = let
-  var x : char
-  val () = $FIFO.peek<char>(pf | f, x)
+  var eol : char
+  val () = $FIFO.peek_tail<char>(pf | f, eol)
 in
-  if x = '\n' then
-    loop(pf | f) where {
-      fun loop {n,p:pos | n <= p} (
-        pf: !INT_CLEAR | f: &($FIFO.fifo(char, n, p))
-          >> $FIFO.fifo(char, 0, p)
-      ) : void = let
-        var tmp: char
-        val () = $FIFO.remove<char>(pf | f, tmp)
-      in
-        if $FIFO.empty<char>(pf | f) then
-          println! "hey"
+  if eol = '\r' then let
+    var cmd : char
+    val () = $FIFO.remove(pf | f, cmd)
+    fun fifo_atoi {n,p:pos | n <= p} (
+      pf: !INT_CLEAR | f: &($FIFO.fifo(char, n, p))
+        >> $FIFO.fifo(char, 0, p), res: int
+    ) : int = let
+      var tmp: char
+      val () = $FIFO.remove<char>(pf | f, tmp)
+      val res = 
+        if isdigit((int)tmp) then
+          res*10 + ((int)tmp - 0x30)
         else
-          loop(pf | f)
-      end
-    }
+          res
+    in
+      if $FIFO.empty<char>(pf | f) then
+        res
+      else 
+        fifo_atoi(pf | f, res)
+    end
+  in
+    if $FIFO.empty(pf | f) then
+      ()
+    else let
+      val value = fifo_atoi(pf | f, 0)
+    in
+      case+ cmd of
+        | 'u' => println!("up ", value)
+        | 'd' => println!("down ", value)
+        | 'r' => println!("drop ", value)
+        | 'a' => println!("arrive ", value)
+        | _ => ()
+    end
+  end
 end
 
 (* ****** ****** *)

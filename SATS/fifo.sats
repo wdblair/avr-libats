@@ -6,12 +6,17 @@ fun {a:t@ype} insert {s:pos} {n:nat | n < s} (
 ) : void
 
 fun {a:t@ype} remove {s,n:pos | n <= s} (
-  lpf: !INT_CLEAR | 
+  lpf: !INT_CLEAR |
   f: &fifo(a,n,s) >> fifo(a, n-1, s), x: &a? >> a
 ) : void
 
 fun {a:t@ype} peek {s,n:pos | n <= s} (
-  lpf: !INT_CLEAR | 
+  lpf: !INT_CLEAR |
+  f: &fifo(a, n, s), x: &a? >> a
+) : void
+
+fun {a:t@ype} peek_tail {s, n:pos | n <= s} (
+  lpf: !INT_CLEAR |
   f: &fifo(a, n, s), x: &a? >> a
 ) : void
 

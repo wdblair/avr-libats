@@ -17,3 +17,5 @@ fun puts
 
 fun fflush 
   (f: FILEref) : int = "mac#fflush"
+  
+fun isdigit(c: int) : bool = "mac#isdigit"

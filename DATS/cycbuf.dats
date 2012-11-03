@@ -53,6 +53,15 @@ local
         f: &cycbuf_array(a, n, s, w, r), x: &a? >> a
   ) : void = x := f.base.[f.r]
 
+  fun {a:t@ype} cycbuf_peek_tail
+      {s,n,r,w:nat | cycbuf_not_empty(s,n,r,w) } (
+        f: &cycbuf_array(a, n, s, w, r), x: &a? >> a
+  ) : void =
+    if f.w = 0 then
+      x := f.base.[f.size - 1]
+    else
+      x := f.base.[f.w - 1]
+      
   fun {a:t@ype} cycbuf_is_empty {s,n:nat | n <= s}
       {w,r:nat | w < s; r < s} (
       f: &cycbuf_array(a,n,s,w,r)
@@ -74,10 +83,12 @@ in
   implement {a} peek (lpf | f, x) =
     cycbuf_peek(f, x)
     
+  implement {a} peek_tail (lpf | f, x) =
+    cycbuf_peek_tail(f, x)
+    
   implement {a} empty (pf | f) =
     cycbuf_is_empty(f)
 
   implement {a} full (pf | f) =
     cycbuf_is_full(f)
-    
 end
