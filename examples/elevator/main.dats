@@ -9,19 +9,16 @@ staload "SATS/interrupt.sats"
 staload "SATS/global.sats"
 staload "SATS/sleep.sats"
 
+staload "SATS/stdlib.sats"
+staload "SATS/stdio.sats"
+
 staload FIFO = "SATS/fifo.sats"
 staload USART = "SATS/usart.sats"
 
 (* ****** ****** *)
 
 staload _ = "DATS/usart_async.dats"
-
-(* ****** ****** *)
-
-staload "SATS/stdlib.sats"
-staload "DATS/stdlib.dats"
-
-staload "SATS/stdio.sats"
+staload _ = "DATS/stdlib.dats"
 
 (* ****** ****** *)
 
@@ -376,6 +373,7 @@ in
           prval (pf) = lock(locked, state_lock)
           val () = state->arrived := true
           val () = state->floor := value
+          val () = state->closed := false
           prval () = unlock(locked, pf)
         }
         | 'c' => {
