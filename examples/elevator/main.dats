@@ -25,12 +25,14 @@ staload "SATS/stdio.sats"
 
 (* ****** ****** *)
 
-stadef schedule_size = 10
-
-%{^
 #define SCHEDULE_SIZE 10
 
-#define elevator_get_state() ((elevator_state_t*)&elevator_state)
+stadef schedule_size = SCHEDULE_SIZE
+
+%{^
+//just put this in a hats file...
+#define SCHEDULE_SIZE 10
+
 #define neg_direction(a) (a^1)
 
 typedef struct {
@@ -53,9 +55,6 @@ typedef struct {
   uint8_t closed;
 } elevator_state_t;
 
-//Would like to do the trick I do in the TWI driver,
-//make this a global variable in ATS.
-static elevator_state_t elevator_state;
 %}
 
 typedef control_state = [n:nat | n < 3] int n
@@ -90,8 +89,71 @@ viewtypedef queue (a: t@ype, n:int, sz:int) =
     data= @[a][sz]
   }
   
+viewtypedef request = $extype_struct "request_t" of {
+  direction= direction,
+  floor= int,
+  onboard= bool
+}
+
+typedef ElevatorQueue =
+  [n:nat | n <= schedule_size] queue(request, n , schedule_size)
+
+viewtypedef elevator_state =
+  $extype_struct "elevator_state_t" of {
+    queue= ElevatorQueue,
+    current= direction,
+    floor= int,
+    arrived= bool,
+    closed= bool
+  }
+  
+(* Concurrent Global Variable Interface *)
+
+(* 
+  The simplest locking scheme for AVRs
+  is clearing and enabling interrupts.
+ *)
+absprop global_locked (view)
+
+extern
+praxi lock {v:view} (
+  pf: !INT_CLEAR, g: global_locked(v)
+) : (v)
+
+extern
+praxi unlock {v:view} (
+  pf: !INT_CLEAR, pf: v
+) : void
+
+extern
+praxi lock_new {v:view} (pf: v) : global_locked(v)
+
+(* [end of global variable interface] *)
+
+local
+  fun init(
+    state: &elevator_state? >> elevator_state
+  ) : void = {
+    extern
+    praxi proof_init (
+      s: &elevator_state? >> elevator_state
+    ) : void
+    prval () = proof_init(state)
+    val () = state.queue.size := SCHEDULE_SIZE    
+  }
+  
+  var state : elevator_state with pfstate
+  
+  val () = init(state)
+  
+  viewdef vstate = elevator_state @ state
+in
+  val state = &state
+  prval state_lock = lock_new{vstate}(pfstate)
+end
+
 fun {a:t@ype} enqueue {n, sz:nat | n < sz} (
-  locked: !INT_CLEAR | q: &queue(a, n, sz) >> queue(a, n+1, sz),  
+  locked: !INT_CLEAR | q: &queue(a, n, sz) >> queue(a, n+1, sz),
   x: a, cmp: (!INT_CLEAR | &a, &a) -<fun1> int
 ) : void = {
   val () = q.data.[q.cnt] := x
@@ -122,53 +184,38 @@ in
 end
 
 fun {a:t@ype} empty {s,n:nat | n <= s} (
-  q: &queue(a, n, s)
+  locked: !INT_CLEAR | q: &queue(a, n, s)
 ) : bool (n == 0) = q.cnt = 0
 
 fun {a:t@ype} full {s,n:nat | n <= s; s > 0} (
-  q: &queue(a, n, s)
+  locked: !INT_CLEAR | q: &queue(a, n, s)
 ) : bool (n == s) = q.cnt = q.size
 
-typedef request = $extype_struct "request_t" of {
-  direction= direction,
-  floor= int,
-  onboard= bool
+typedef cmd_id = [n:nat | n < 2] int n
+
+viewtypedef command = @{
+  id= char,
+  value= int
 }
-
-typedef ElevatorQueue =
-  [n:nat | n <= schedule_size] queue(request, n , schedule_size)
-
-viewtypedef elevator_state =
-  $extype_struct "elevator_state_t" of {
-    queue= ElevatorQueue,
-    current= direction,
-    floor= int,
-    arrived= bool,
-    closed= bool
-  }
-  
-extern
-fun state() : [l:agz] (global(l), elevator_state @ l | ptr l)
-  = "mac#elevator_get_state"
 
 (*** The interface for the elevator controller. ***)
 
 fun current_direction (locked: !INT_CLEAR | (**)) : direction = d where {
-  val (free, pf | p) = state()
-  val d = p->current
-  prval () = return_global(free, pf)
+  prval (pf) = lock(locked, state_lock)
+  val d = state->current
+  prval () = unlock(locked, pf)
 }
 
 fun current_floor (locked: !INT_CLEAR | (**)) : int = fl where {
-  val (free, pf | p) = state()
-  val fl = p->floor
-  prval () = return_global(free, pf)
+  prval (pf) = lock(locked, state_lock)
+  val fl = state->floor
+  prval () = unlock(locked, pf)
 }
 
 fun has_request(locked: !INT_CLEAR | (* *)) : bool = ~clr where {
-  val (free, pf | p) = state()
-  val clr =  empty(p->queue)
-  prval () = return_global(free, pf)
+  prval (pf) = lock(locked, state_lock)
+  val clr =  empty(locked | state->queue)
+  prval () = unlock(locked, pf)
 }
 
 fun new_direction (locked: !INT_CLEAR | r: &request) : bool =
@@ -180,9 +227,9 @@ fun new_direction (locked: !INT_CLEAR | r: &request) : bool =
     r.direction != current_direction(locked |(**))
 
 fun switch_direction (locked: !INT_CLEAR | (**)) : void = {
-  val (free, pf | p) = state()
-  val () =  p->current := neg_direction(p->current)
-  prval () = return_global(free, pf)
+  prval (pf) = lock(locked, state_lock)
+  val () =  state->current := neg_direction(state->current)
+  prval () = unlock(locked, pf)
 }
 
 fun add_request(locked: !INT_CLEAR | r: request) : void = let
@@ -190,20 +237,22 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
     fun cmp (locked: !INT_CLEAR | a: &request, b: &request) : int = let
       val dir = current_direction(locked | (**))
     in
-      if a.onboard && b.onboard ||
-         (~a.onboard && ~a.onboard &&
-          a.direction = b.direction) then
+      if a.onboard && b.onboard 
+        || (~a.onboard && ~a.onboard 
+             && a.direction = b.direction) then
         case+ dir of
         | UP => b.floor - a.floor
         | DOWN => a.floor - b.floor
       else if a.onboard && ~b.onboard then
-        if ~new_direction(locked | a) && ~new_direction(locked | b) then
+        if ~new_direction(locked | a) 
+          && ~new_direction(locked | b) then
           case+ dir of
             | UP => b.floor - a.floor
             | DOWN => a.floor - b.floor
         else if new_direction(locked | a) then ~1 else 1
       else if ~a.onboard && b.onboard then
-        if ~new_direction(locked | a) && ~new_direction(locked | b) then
+        if ~new_direction(locked | a)
+          && ~new_direction(locked | b) then
           case+ dir of
             | UP => b.floor - a.floor
             | DOWN => a.floor - b.floor
@@ -212,97 +261,98 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
       else
         if a.direction = dir then 1 else ~1
     end
-    val (free, pf | p) = state()
-    val q = &p->queue
+    prval (pf) = lock(locked, state_lock)
+    val q = &state->queue
   in
-    if full(!q) then
+    if full(locked | !q) then
         if r.onboard then {
           fun remove (r: &request) : bool =
             ~r.onboard
           val () = evict<request>(locked | !q, r, cmp, remove)
-          prval () = return_global(free, pf)
+          prval () = unlock(locked, pf)
         } else {
-          prval () = return_global(free, pf)
+          prval () = unlock(locked, pf)
         }
     else {
       val () = enqueue<request>(locked | !q, r, cmp)
-      prval () = return_global(free, pf)
+      prval () = unlock(locked, pf)
     }
   end
   
 fun next_request(locked: !INT_CLEAR | (**)) : request = let
-  val (free, pf | p) = state()
-  val q = &p->queue
+  prval (pf) = lock(locked, state_lock)
+  val q = &state->queue
   var x : request
 in
   x where {
     val () =
-      if ~empty(!q) then {
+      if ~empty(locked | !q) then {
         val () = dequeue<request>(locked | !q, x)
-        prval () = return_global(free, pf)
+        prval () = unlock(locked, pf)
       } else {
         val () = x.direction := 0
         val () = x.floor := ~1
         val () = x.onboard := false
-        prval () = return_global(free, pf)
+        prval () = unlock(locked, pf)
       }
   }
 end
 
-fun send_command (locked: !INT_CLEAR | r: request) : void = 
-  println!("floor", r.floor)
-  
+fun send_command (locked: !INT_CLEAR | c: command) : void =
+  println!(c.id, c.value)
+
 fun arrived (locked: !INT_CLEAR | (**)) : bool = a where {
-  val (free, pf | p) = state()
-  val a = p->arrived
-  prval () = return_global(free, pf)
+  prval (pf) = lock(locked, state_lock)
+  val a = state->arrived
+  prval () = unlock(locked, pf)
 }
 
 fun set_arrived(locked: !INT_CLEAR | b: bool) : void = {
-  val (free, pf | p) = state()
-  val () = p->arrived := b
-  prval () = return_global(free, pf)
+  prval (pf) = lock(locked, state_lock)
+  val () = state->arrived := b
+  prval () = unlock(locked, pf)
 }
 
 fun closed (locked: !INT_CLEAR | (**)) : bool = b where {
-  val (free, pf | p) = state()
-  val b = p->closed
-  prval () = return_global(free, pf)
+  prval (pf) = lock(locked, state_lock)
+  val b = state->closed
+  prval () = unlock(locked, pf)
 }
 
 (* ****** ****** *)
 
 fun new_message {n,p:pos | n <= p} (
-  pf: !INT_CLEAR | f: &($FIFO.fifo(char, n, p)) >> $FIFO.fifo(char, n', p)
+  locked: !INT_CLEAR | 
+  f: &($FIFO.fifo(char, n, p)) >> $FIFO.fifo(char, n', p)
 ) : #[n':nat | n' <= p] void = let
   var eol : char
-  val () = $FIFO.peek_tail<char>(pf | f, eol)
+  val () = $FIFO.peek_tail<char>(locked | f, eol)
 in
   if eol = '\r' then let
     var cmd : char
-    val () = $FIFO.remove(pf | f, cmd)
+    val () = $FIFO.remove(locked | f, cmd)
     fun fifo_atoi {n,p:pos | n <= p} (
-      pf: !INT_CLEAR | f: &($FIFO.fifo(char, n, p))
+      locked: !INT_CLEAR | f: &($FIFO.fifo(char, n, p))
         >> $FIFO.fifo(char, 0, p), res: int
     ) : int = let
       var tmp: char
-      val () = $FIFO.remove<char>(pf | f, tmp)
+      val () = $FIFO.remove<char>(locked | f, tmp)
       val res =
         if isdigit((int)tmp) then
           res*10 + ((int)tmp - 0x30)
         else
           res
     in
-      if $FIFO.empty<char>(pf | f) then
+      if $FIFO.empty<char>(locked | f) then
         res
       else 
-        fifo_atoi(pf | f, res)
+        fifo_atoi(locked | f, res)
     end
   in
-    if $FIFO.empty(pf | f) then
+    if $FIFO.empty(locked | f) then
       ()
     else let
-      val value = fifo_atoi(pf | f, 0)
+      val value = fifo_atoi(locked | f, 0)
       var tmp : request
       val () = tmp.floor := value
       val () = tmp.onboard := false
@@ -311,27 +361,27 @@ in
       case+ cmd of
         | 'u' => {
           val () = tmp.direction := UP
-          val () = add_request(pf | tmp)
+          val () = add_request(locked | tmp)
         }
         | 'd' => {
           val () = tmp.direction := DOWN
-          val () = add_request(pf | tmp)
+          val () = add_request(locked | tmp)
         }
         | 'r' => {
           val () = tmp.direction := UP
           val () = tmp.onboard := true
-          val () = add_request(pf | tmp)
+          val () = add_request(locked | tmp)
         }
         | 'a' => {
-          val (free, pf | p) = state()
-          val () = p->arrived := true
-          val () = p->floor := value
-          prval () = return_global(free, pf)
+          prval (pf) = lock(locked, state_lock)
+          val () = state->arrived := true
+          val () = state->floor := value
+          prval () = unlock(locked, pf)
         }
         | 'c' => {
-          val (free, pf | p) = state()
-          val () = p->closed := true
-          prval () = return_global(free, pf)
+          prval (pf) = lock(locked, state_lock)
+          val () = state->closed := true
+          prval () = unlock(locked, pf)
         }
         | _ => ()
     end
@@ -340,18 +390,11 @@ end
 
 (* ****** ****** *)
 
-//Initialize the size of the queue
-val (free, pf | p) = state()
-val () = p->queue.size := 10
-prval () = return_global(free, pf)
-
-(* ****** ****** *)
-
 implement main (clr | (**)) = {
   //enable communication
   val () = $USART.atmega328p_async_init(clr | 9600, new_message)
   val (set | ()) = sei(clr | (**))
-//
+  //
   val (pf0 | ()) = loop(set | READY) where {
     fun loop(set:INT_SET | s: control_state) : (INT_CLEAR | void) = let
         val (locked | ()) = cli(set | (**))
@@ -363,7 +406,8 @@ implement main (clr | (**)) = {
               val () =
                 if new_direction(locked | next) then
                   switch_direction(locked | (**))
-              val () = send_command(locked | next)
+              val () =
+                send_command(locked | @{id='f',value=next.floor})
               val (set | ()) = sei(locked | (**))
             in loop(set | MOVING) end
             else let
@@ -379,7 +423,7 @@ implement main (clr | (**)) = {
         | MOVING =>
           if arrived(locked | (**)) then let
             val () = set_arrived(locked | false)
-            //open doors, set timer.
+            val () = send_command(locked | @{id='o', value=0})
             val (set | ()) = sei(locked | (**))
           in loop(set | WAITING) end
           else let
