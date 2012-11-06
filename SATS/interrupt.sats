@@ -42,7 +42,7 @@ overload USART_TX_vect with USART_TX_vect_interrupts_disabled
 
 symintr TWI_vect
 
-fun TWI_vect_interrupts_enabled 
+fun TWI_vect_interrupts_enabled
   () : void = "TWI_vect"
   
 overload TWI_vect with TWI_vect_interrupts_enabled
@@ -51,3 +51,15 @@ fun TWI_vect_interrupts_disabled
   (pf: !INT_CLEAR | (* none *) ) : void = "TWI_vect"
   
 overload TWI_vect with TWI_vect_interrupts_disabled
+
+symintr TIMER0_OVF_vect
+
+fun TIMER0_OVF_vect_interrupts_enabled
+  () : void = "TIMER0_OVF_vect"
+
+overload TIMER0_OVF_vect with TIMER0_OVF_vect_interrupts_enabled
+
+fun TIMER0_OVF_vect_interrupts_disabled
+  (pf: !INT_CLEAR | (* none *)) : void = "TIMER0_OVF_vect"
+  
+overload TIMER0_OVF_vect with TIMER0_OVF_vect_interrupts_disabled

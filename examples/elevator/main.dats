@@ -51,7 +51,6 @@ typedef struct {
   uint8_t floor;
   uint8_t closed;
 } elevator_state_t;
-
 %}
 
 typedef control_state = [n:nat | n < 3] int n

@@ -26,4 +26,3 @@ implement main () = let
       loop(brightness+delta, delta)
   end
 in loop(0,1) end
-
