@@ -34,13 +34,13 @@ end
 implement main (locked | (**)) = {
   fun tick () : bool = true where {
     val () = print "\b\b\b"
+    fun loop (rem: int) : void = ()
     prval (pf) = global_get(gseconds)
     val () = !seconds := !seconds + 1u
     val () = print !seconds
     prval () = global_return(gseconds, pf)
   }
   val () = atmega328p_async_init(locked | 9600)
-  val () = setbits(DDRB, DDB3)
   val (set | ()) = sei(locked | (**))
   val () = delayed_task0(1ul, tick)
   val () = while(true) {

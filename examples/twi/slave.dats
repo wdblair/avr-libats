@@ -46,7 +46,7 @@ implement main (pf0 | (**)) = let
     $TWI.slave_init(pf0 | address, true)
   val (set | ()) = sei(pf0 | (**))
   val () =
-    $TWI.start_server(set, status | response)
+    $TWI.start_server(set, status | response, 2)
   val () = while (true) {
     val () = sleep_enable()
     val () = sleep_cpu()

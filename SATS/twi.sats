@@ -82,9 +82,9 @@ viewtypedef buffer_t
   = $extype_struct "buffer_t" of {
   data= @[uchar][buff_size],
   trans= @[uchar][buff_size/2],
-  msg_size= [n:nat | n <= buff_size] int n,
+  msg_size= [n:pos | n <= buff_size] int n,
   recvd_size= [p:nat | p <= buff_size] int p,
-  trans_size= [t:nat | t <= buff_size/2] int t,
+  trans_size= [t:pos | t <= buff_size/2] int t,
   curr_trans= [c:nat | c < buff_size/2] int c
 }
 
@@ -255,8 +255,8 @@ fun start_transaction {l:addr} {
   trans: !transaction(l, sum, sz, sz)
 ) : (TWI_BUSY | void)
 
-fun start_server (
-  pf: !INT_SET, ready: TWI_READY | process: {n:nat | n <= buff_size} (&(@[uchar][buff_size]), int n, mode) -<fun1> void
+fun start_server {sz:pos | sz <= buff_size} (
+  pf: !INT_SET, ready: TWI_READY | process: {n:nat | n <= buff_size} (&(@[uchar][buff_size]), int n, mode) -<fun1> void, sz: int sz
 ) : void
 
 fun get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (

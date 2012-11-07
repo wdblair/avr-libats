@@ -162,11 +162,13 @@ local
         val () = dest.[i] := src.[i]
       }
   }
-  
+
+    
+
   //The last byte of the current message in reference to the 
   //total buffer.
   fun current_msg_last_byte () :
-    [n:nat | n < buff_size] int n = 0 where {
+    [n:nat | n <= buff_size] int n = let
       prval (pf) = global_get(gstate)
       var sum : [s:nat] int s = 0
       var i : [n:nat] int n
@@ -174,11 +176,16 @@ local
       val () = for(i := 0; i <= curr; i := i + 1) {
         val () = sum := sum + (int1)state->buffer.trans.[i]
       }
-      prval () = global_return(gstate,pf)
-  }
+  in 
+      if sum > state->buffer.msg_size then 0 where {
+        prval () = global_return(gstate, pf)
+      } else sum where {
+        prval () = global_return(gstate, pf)
+      }
+  end
   
   fun current_msg_first_byte () :
-    [n:nat | n < buff_size] int n = 0 where {
+    [n:nat | n < buff_size] int n = let
     prval (pf) = global_get(gstate)
     var sum : [s:nat] int s = 0
     var i : [n:nat] int n
@@ -186,8 +193,13 @@ local
     val () = for(i := 0; i < curr; i := i + 1) {
       val () = sum := sum + (int1) state->buffer.trans.[i]
     }
-    prval () = global_return(gstate,pf)
-  }
+  in
+      if sum >= state->buffer.msg_size then 0 where {
+        prval () = global_return(gstate, pf)
+      } else sum where {
+        prval () = global_return(gstate, pf)
+      }
+  end
   
   fun reset_next_byte_trans () : void = {
     prval (pf) = global_get(gstate)
@@ -201,35 +213,48 @@ local
     prval (pf) = global_get(gstate)
     val () = state->next_byte := 0
     val () = set_mode(state->status_reg, m)
-    prval () = global_return(gstate,pf)
+    prval () = global_return(gstate, pf)
   }
-  
+
+  fun increment {n,p:nat | p > 0} (
+    n: &int n >> int n', p: int p
+  ) : #[n':nat | n' < p] void =
+    if n + 1 < p then
+      n := n + 1
+    else
+      n := 0
+      
   fun copy_recvd_byte_trans () : bool = let
     prval (pf) = global_get(gstate)
     val () = state->buffer.data.[state->next_byte] := (uchar) TWDR
     val sum = current_msg_last_byte()
-    val () = state->next_byte := state->next_byte + 1
+    val () = increment(state->next_byte, state->buffer.msg_size)
   in
     if state->next_byte = sum then true where {
-      val () = state->buffer.curr_trans := state->buffer.curr_trans + 1
+      val () =
+        increment(state->buffer.curr_trans, state->buffer.trans_size)
       prval () = global_return(gstate, pf)
     } else false where {
       prval () = global_return(gstate, pf)
     }
   end
   
-  fun copy_recvd_byte () : void = {
+  fun copy_recvd_byte () : void = let
     prval (pf) = global_get(gstate)
     val () = state->buffer.data.[state->next_byte] := (uchar)TWDR
-    val sum = current_msg_last_byte()
-    val () = state->next_byte := state->next_byte + 1
-    prval () = global_return(gstate, pf)
-  }
+  in
+      if state->next_byte < state->buffer.msg_size - 1 then {
+        val () = state->next_byte := state->next_byte + 1
+        val () = global_return(gstate, pf)
+      } else {
+        prval () = global_return(gstate, pf)
+      }
+  end
   
   fun read_next_byte () : void = {
     val () = copy_recvd_byte()
     prval (pf) = global_get(gstate)
-    val () = state->buffer.recvd_size := state->buffer.recvd_size + 1
+    val () = increment(state->buffer.recvd_size, state->buffer.msg_size)
     val () = set_last_trans_ok(state->status_reg, true)
     val () = state->enable()
     prval () = global_return(gstate,pf)
@@ -243,13 +268,13 @@ local
       in
           //Reached the end of a message, restart.
           if state->next_byte = sum then {
-            val () = 
-              state->buffer.curr_trans := state->buffer.curr_trans + 1
+            val () =
+              increment(state->buffer.curr_trans, state->buffer.trans_size)
             val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
             prval () = global_return(gstate,pf)
           } else {
               val () = setval(TWDR, state->buffer.data.[state->next_byte])
-              val () = state->next_byte := state->next_byte + 1
+              val () = increment(state->next_byte, state->buffer.msg_size)
               val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT)
               prval () = global_return(gstate,pf)
           }
@@ -383,12 +408,13 @@ implement start(enabled, rdy | (* *)) = (busy | () ) where {
   prval () = global_return(gstate,pf)
 }
 
-implement start_server(enabled, rdy | process) = {
+implement start_server(enabled, rdy | process, sz) = {
   val () = sleep_until_ready(enabled | (* *))
   val () = clear_state()
   prval (pf) = global_get(gstate)
   val () = state->process := process
   val () = state->enable()
+  val () = state->buffer.msg_size := sz
   prval () = remove_rdy(rdy)
   prval () = global_return(gstate, pf)
 }
