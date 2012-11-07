@@ -220,10 +220,6 @@ fun set_mode (
 
 (* ****** ****** *)
 
-fun get_twi_state () : [l:agz] (
-  global(l), twi_state_t @ l | ptr l
-) = "mac#get_twi_state"
-
 fun slave_init (
   pf: !INT_CLEAR | addr: twi_address, gen_addr: bool
 ) : (TWI_READY | void )
@@ -260,7 +256,7 @@ fun start_transaction {l:addr} {
 ) : (TWI_BUSY | void)
 
 fun start_server (
-  pf: !INT_SET, ready: TWI_READY | process: {n:nat | n <= buff_size} (&(@[uchar][buff_size]), int n, mode) -<fun1> bool
+  pf: !INT_SET, ready: TWI_READY | process: {n:nat | n <= buff_size} (&(@[uchar][buff_size]), int n, mode) -<fun1> void
 ) : void
 
 fun get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (

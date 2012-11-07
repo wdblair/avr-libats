@@ -102,6 +102,7 @@ typedef unsigned char ats_uchar_type ;
 typedef uint8_t ats_bool_type ;
 typedef double ats_double_type ;
 typedef size_t ats_size_type ;
+typedef unsigned long ats_ulint_type;
 
 struct ats_struct_type ;
 
@@ -161,6 +162,25 @@ atspre_eq_char_char
 } // end of [atspre_eq_char_char]
 
 #define ptrof_error(x) ((void*)&x)
+
+/* ****** ****** */
+
+#define atspre_ult atspre_lt_uint_uint
+#define atspre_ulte atspre_lte_uint_uint
+#define atspre_ugt atspre_gt_uint_uint
+#define atspre_ugte atspre_gte_uint_uint
+#define atspre_ueq atspre_eq_uint_uint
+#define atspre_uneq atspre_neq_uint_uint
+
+/* ****** ****** */
+
+#define atspre_uadd atspre_add_uint_uint
+#define atspre_usub atspre_sub_uint_uint
+#define atspre_umul atspre_mul_uint_uint
+#define atspre_udiv atspre_div_uint_uint
+#define atspre_umod atspre_mod_uint_uint
+// HX: there is no [nmod1]
+#define atspre_umod2 atspre_mod_uint_uint
 
 /* ****** ****** */
 
@@ -268,6 +288,30 @@ ATSinline()
 ats_int_type
 atspre_min_int_int (ats_int_type i1, ats_int_type i2) {
   return (i1 <= i2) ? i1 : i2 ;
+}
+
+ATSinline()
+ats_uint_type
+atspre_add_uint_uint (ats_uint_type i1, ats_uint_type i2) {
+  return (i1 + i2) ;
+}
+
+ATSinline()
+ats_bool_type
+atspre_eq_uint_uint (ats_uint_type i1, ats_uint_type i2) {
+  return (i1 == i2) ;
+}
+
+ATSinline()
+ats_ulint_type
+atspre_mul_ulint_ulint (ats_ulint_type i1, ats_ulint_type i2) {
+  return (i1 * i2) ;
+}
+
+ATSinline()
+ats_ulint_type
+atspre_div_ulint_ulint (ats_ulint_type i1, ats_ulint_type i2) {
+  return (i1 / i2) ;
 }
 
 //
@@ -536,6 +580,24 @@ atspre_print_int (ats_int_type i) {
   return ;
 }
 
+ATSinline()
+ats_void_type
+atspre_fprint_uint (ats_ptr_type out, ats_uint_type i) {
+  int n = fprintf ((FILE*)out, "%u", i) ;
+  if (n < 0) {
+    ats_exit_errmsg (n);
+  }
+  return ;
+}
+
+ATSinline()
+ats_void_type
+atspre_print_uint (ats_uint_type i) {
+//  atspre_stdout_view_get () ;
+  atspre_fprint_uint ((ats_ptr_type)stdout, i) ;
+//  atspre_stdout_view_set () ;
+  return ;
+}
 
 ATSinline()
 ats_void_type

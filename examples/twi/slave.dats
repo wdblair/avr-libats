@@ -29,7 +29,7 @@ fun get_data {n:nat | n < 5} (
 
 fun response {n:nat | n <= $TWI.buff_size} (
   src: &(@[uchar][$TWI.buff_size]), sz: int n, m: $TWI.mode
-) : bool = true where {
+) : void = {
   val curr = (int1)src.[0]
   val () =
     if curr >= 0 && curr < 5 then

@@ -98,6 +98,18 @@ castfn int_reg (r: reg(8)) : int
 
 overload int with int_reg
 
+symintr uint
+
+castfn uint_ulint (ul: ulint) : uint
+
+overload uint with uint_ulint
+
+symintr uint1
+
+castfn uint1_ulint (ul: ulint) : [n:nat] uint n
+
+overload uint1 with uint1_ulint
+
 symintr setbits
 
 fun loop_until_bit_is_clear {n:nat} ( 

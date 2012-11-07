@@ -341,7 +341,7 @@ in
     in
       if $FIFO.empty<char>(locked | f) then
         res
-      else 
+      else
         fifo_atoi(locked | f, res)
     end
   in
