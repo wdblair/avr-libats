@@ -17,17 +17,6 @@ staload "SATS/stdio.sats"
 
 (* ****** ****** *)
 
-(*
-  Every AVR program has some setup followed by an infinite
-  loop. Why just not make the loop a template?
-  
-  Linear resources would often be used in the template, and
-  this example demonstrates how much syntax is needed to
-  to modify those resources.
-  
-  There's also cleanup needed for a lot of proofs, so a
-  generic loop could be infeasible.
-*)
 implement main (pf0 | (* *) ) = {
   val () = $USART.atmega328p_init(9600)
   val () = setbits(DDRB, DDB3)

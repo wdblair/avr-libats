@@ -163,8 +163,6 @@ local
       }
   }
 
-    
-
   //The last byte of the current message in reference to the 
   //total buffer.
   fun current_msg_last_byte () :
@@ -216,21 +214,18 @@ local
     prval () = global_return(gstate, pf)
   }
 
+  extern
   fun increment {n,p:nat | p > 0} (
     n: &int n >> int n', p: int p
-  ) : #[n':nat | n' < p] void =
-    if n + 1 < p then
-      n := n + 1
-    else
-      n := 0
-      
+  ) : #[n':nat | n' < p] void = "mac#increment"
+    
   fun copy_recvd_byte_trans () : bool = let
     prval (pf) = global_get(gstate)
     val () = state->buffer.data.[state->next_byte] := (uchar) TWDR
     val sum = current_msg_last_byte()
     val () = increment(state->next_byte, state->buffer.msg_size)
   in
-    if state->next_byte = sum then true where {
+    if state->next_byte = sum - 1 then true where {
       val () =
         increment(state->buffer.curr_trans, state->buffer.trans_size)
       prval () = global_return(gstate, pf)
@@ -271,12 +266,12 @@ local
             val () =
               increment(state->buffer.curr_trans, state->buffer.trans_size)
             val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT, TWSTA)
-            prval () = global_return(gstate,pf)
+            prval () = global_return(gstate, pf)
           } else {
               val () = setval(TWDR, state->buffer.data.[state->next_byte])
               val () = increment(state->next_byte, state->buffer.msg_size)
               val () = clear_and_setbits(TWCR, TWEN, TWIE, TWINT)
-              prval () = global_return(gstate,pf)
+              prval () = global_return(gstate, pf)
           }
       end
       else { //finished
@@ -372,6 +367,7 @@ start_transaction {l} {sum, sz} (
   val () = copy_buffer(state->buffer.data, buf, sum)
   val () = state->buffer.msg_size := sum
   val () = state->buffer.curr_trans := 0
+  val () = state->next_byte := 0
   val () = state->buffer.trans_size := sz
   fun loop  {l1:agz} {s:nat} {n1:pos | transaction(s,n1,sz)} (
       pf: !twi_state_t @ l1 | t: !transaction(l, s, n1, sz) >>
@@ -415,6 +411,7 @@ implement start_server(enabled, rdy | process, sz) = {
   val () = state->process := process
   val () = state->enable()
   val () = state->buffer.msg_size := sz
+  val () = state->next_byte := 0
   prval () = remove_rdy(rdy)
   prval () = global_return(gstate, pf)
 }
@@ -472,7 +469,7 @@ implement TWI_vect (pf | (* *)) = let
         val _ = copy_recvd_byte_trans()
         prval (pf) = global_get(gstate)
      in
-        if state->next_byte = state->buffer.msg_size then {
+        if state->next_byte = (state->buffer.msg_size - 1) then {
           //This was the last message.
           val () = set_last_trans_ok(state->status_reg, true)
           val () = clear_and_setbits(TWCR, TWEN, TWINT, TWSTO)

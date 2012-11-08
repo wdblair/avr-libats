@@ -77,6 +77,13 @@
 #define avr_libats_setup_addr_byte(buffer, index, addr, read)  \
   ((unsigned char *)buffer)[index] = (addr << 1) | read
 
+ATSinline()
+ats_void_type
+increment(ats_uint8_type *i, ats_uint8_type max) {
+  if((*i + 1) < max)
+    *i += 1;
+}
+
 typedef struct {
   unsigned char cnt;
   unsigned char curr;

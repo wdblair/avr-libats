@@ -19,7 +19,7 @@ local
 in
   val timer0 = &timer0
   
-  prval gtimer0 = lock_new{vtimer0}(pftimer0)
+  prval gtimer0 = global_new{vtimer0}(pftimer0)
 end
 
 implement TIMER0_OVF_vect (locked | (**)) = {
