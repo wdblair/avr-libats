@@ -112,7 +112,7 @@ local
       s: &elevator_state? >> elevator_state
     ) : void
     prval () = proof_init(state)
-    val () = state.queue.size := SCHEDULE_SIZE    
+    val () = state.queue.size := SCHEDULE_SIZE 
   }
   
   var state : elevator_state with pfstate
