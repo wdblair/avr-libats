@@ -245,7 +245,7 @@ local
   in
       if state->next_byte < state->buffer.msg_size - 1 then {
         val () = state->next_byte := state->next_byte + 1
-        val () = global_return(gstate, pf)
+        prval () = global_return(gstate, pf)
       } else {
         prval () = global_return(gstate, pf)
       }

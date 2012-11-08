@@ -103,29 +103,6 @@ viewtypedef elevator_state =
     closed= bool
   }
   
-(* Concurrent Global Variable Interface *)
-
-(* 
-  The simplest locking scheme for AVRs
-  is clearing and enabling interrupts.
- *)
-absprop global_locked (view)
-
-extern
-praxi lock {v:view} (
-  pf: !INT_CLEAR, g: global_locked(v)
-) : (v)
-
-extern
-praxi unlock {v:view} (
-  pf: !INT_CLEAR, pf: v
-) : void
-
-extern
-praxi lock_new {v:view} (pf: v) : global_locked(v)
-
-(* [end of global variable interface] *)
-
 local
   fun init(
     state: &elevator_state? >> elevator_state
@@ -199,19 +176,19 @@ viewtypedef command = @{
 fun current_direction (locked: !INT_CLEAR | (**)) : direction = d where {
   prval (pf) = lock(locked, state_lock)
   val d = state->current
-  prval () = unlock(locked, pf)
+  prval () = unlock(locked, state_lock, pf)
 }
 
 fun current_floor (locked: !INT_CLEAR | (**)) : int = fl where {
   prval (pf) = lock(locked, state_lock)
   val fl = state->floor
-  prval () = unlock(locked, pf)
+  prval () = unlock(locked, state_lock, pf)
 }
 
 fun has_request(locked: !INT_CLEAR | (* *)) : bool = ~clr where {
   prval (pf) = lock(locked, state_lock)
   val clr =  empty(locked | state->queue)
-  prval () = unlock(locked, pf)
+  prval () = unlock(locked, state_lock, pf)
 }
 
 fun new_direction (locked: !INT_CLEAR | r: &request) : bool =
@@ -225,7 +202,7 @@ fun new_direction (locked: !INT_CLEAR | r: &request) : bool =
 fun switch_direction (locked: !INT_CLEAR | (**)) : void = {
   prval (pf) = lock(locked, state_lock)
   val () =  state->current := neg_direction(state->current)
-  prval () = unlock(locked, pf)
+  prval () = unlock(locked, state_lock, pf)
 }
 
 fun add_request(locked: !INT_CLEAR | r: request) : void = let
@@ -265,13 +242,13 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
           fun remove (r: &request) : bool =
             ~r.onboard
           val () = evict<request>(locked | !q, r, cmp, remove)
-          prval () = unlock(locked, pf)
+          prval () = unlock(locked, state_lock, pf)
         } else {
-          prval () = unlock(locked, pf)
+          prval () = unlock(locked, state_lock, pf)
         }
     else {
       val () = enqueue<request>(locked | !q, r, cmp)
-      prval () = unlock(locked, pf)
+      prval () = unlock(locked, state_lock, pf)
     }
   end
   
@@ -284,12 +261,12 @@ in
     val () =
       if ~empty(locked | !q) then {
         val () = dequeue<request>(locked | !q, x)
-        prval () = unlock(locked, pf)
+        prval () = unlock(locked, state_lock, pf)
       } else {
         val () = x.direction := 0
         val () = x.floor := ~1
         val () = x.onboard := false
-        prval () = unlock(locked, pf)
+        prval () = unlock(locked, state_lock, pf)
       }
   }
 end
@@ -300,19 +277,19 @@ fun send_command (locked: !INT_CLEAR | c: command) : void =
 fun arrived (locked: !INT_CLEAR | (**)) : bool = a where {
   prval (pf) = lock(locked, state_lock)
   val a = state->arrived
-  prval () = unlock(locked, pf)
+  prval () = unlock(locked, state_lock, pf)
 }
 
 fun set_arrived(locked: !INT_CLEAR | b: bool) : void = {
   prval (pf) = lock(locked, state_lock)
   val () = state->arrived := b
-  prval () = unlock(locked, pf)
+  prval () = unlock(locked, state_lock, pf)
 }
 
 fun closed (locked: !INT_CLEAR | (**)) : bool = b where {
   prval (pf) = lock(locked, state_lock)
   val b = state->closed
-  prval () = unlock(locked, pf)
+  prval () = unlock(locked, state_lock, pf)
 }
 
 (* ****** ****** *)
@@ -373,12 +350,12 @@ in
           val () = state->arrived := true
           val () = state->floor := value
           val () = state->closed := false
-          prval () = unlock(locked, pf)
+          prval () = unlock(locked, state_lock, pf)
         }
         | 'c' => {
           prval (pf) = lock(locked, state_lock)
           val () = state->closed := true
-          prval () = unlock(locked, pf)
+          prval () = unlock(locked, state_lock, pf)
         }
         | _ => ()
     end

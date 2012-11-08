@@ -5,20 +5,10 @@
 declare_isr(USART_RX_vect);
 declare_isr(USART_TX_vect);
 
-static cycbuf_t read = {0, 0, 0, 25, {[0 ... 24] = 0}};
-static cycbuf_t write = {0, 0, 0, 25, {[0 ... 24] = 0}};
+static cycbuf_t statmp0 = {0, 0, 0, 25, {[0 ... 24] = 0}};
+static cycbuf_t statmp1 = {0, 0, 0, 25, {[0 ... 24] = 0}};
 
 static ats_ptr_type callback;
-
-ATSinline()
-ats_ptr_type get_read_buffer() {
-  return (cycbuf_t *)&read;
-}
-
-ATSinline()
-ats_ptr_type get_write_buffer() {
-  return (cycbuf_t *)&write;
-}
 
 ATSinline()
 ats_ptr_type get_callback (){
@@ -46,17 +36,22 @@ staload "DATS/cycbuf.dats"
 
 (* ****** ****** *)
 
-extern
-fun get_read_buffer 
-  () : [n,s:nat; l:agz | n < s] (
-  global(l), fifo(char, n, s) @ l | ptr l
-) = "mac#get_read_buffer"
-
-extern
-fun get_write_buffer
-  () : [n,s:nat; l:agz | n < s] (
-  global(l), fifo(char, n, s) @ l | ptr l
-) = "mac#get_write_buffer"
+local  
+  //Interesting error, I need to use the ATS 
+  //naming convention for these variable calls.
+  var readbuf : fifo(char, 0, 25) with pfread = 
+    $extval(fifo(char, 0, 25), "statmp0")
+  var writebuf : fifo(char, 0, 25) with pfwrite = 
+    $extval(fifo(char, 0, 25), "statmp1")
+    
+  viewdef read = [n,s:nat | n <= s] fifo(char, n, s) @ readbuf
+  viewdef write = [n,s:nat | n <= s] fifo(char, n, s) @ writebuf
+in
+  val readbuf = &readbuf
+  val writebuf = &writebuf
+  prval gread = lock_new {read} (pfread)
+  prval gwrite = lock_new {write} (pfwrite)
+end
 
 extern
 fun get_callback
@@ -69,31 +64,31 @@ fun set_callback
 (* ****** ****** *)
 
 implement 
-USART_TX_vect (locked | (* *) ) = let
-  val (gpf, pf | p) = get_write_buffer()
+USART_TX_vect (locked | (* *)) = let
+  prval (pf) = lock(locked, gwrite)
  in
-  if empty(locked | !p) then {
-    prval () = return_global(gpf, pf)
+  if empty(locked | !writebuf) then {
+    prval () = unlock(locked, gwrite, pf)
   } else {
     var tmp : char
-    val () = remove<char>(locked | !p , tmp)
+    val () = remove<char>(locked | !writebuf , tmp)
     val () = setval(UDR0, tmp)
-    prval () = return_global(gpf, pf)
+    prval () = unlock(locked, gwrite, pf)
   }
 end
  
 implement
 USART_RX_vect (locked | (* *)) = let
-  val (gpf, pf | p) = get_read_buffer()
+  prval (pf) = lock(locked, gread)
   var contents : char = (char) UDR0
  in
-   if full(locked | !p) then {
-      prval () = return_global(gpf, pf)
+   if full(locked | !readbuf) then {
+      prval () = unlock(locked, gread, pf)
    } else {
-      	val () = insert<char>(locked | !p, contents)
+      	val () = insert<char>(locked | !readbuf, contents)
         val call = get_callback()
-        val () = call(locked | !p)
-	prval () = return_global(gpf, pf)
+        val () = call(locked | !readbuf)
+        prval () = unlock(locked, gread, pf)
    }
  end
  
@@ -141,84 +136,86 @@ end
 
 implement
 atmega328p_async_tx (pf0 | c, f) = 0 where {
-   val (gpf, pf | p) = get_write_buffer()
-   fun loop {l:agz} {n, s:nat | n < s} (
-      pf0: !INT_SET, g: global(l), pf: fifo(char, n, s) @ l 
-        | p: ptr l, c: char
+   fun loop (
+      pf0: !INT_SET | c: char
    ) : void = let
       val () = 
         if c = '\n' then {
             val _ = atmega328p_async_tx(pf0 | '\r', stdout_ref)
         }
       val (locked | () ) = cli(pf0 | (* *))
+      prval (pf) = lock(locked , gwrite)
    in
-      if full (locked | !p) then let
+      if full (locked | !writebuf) then let
+          prval () = unlock(locked, gwrite, pf)
           val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
           prval () = pf0 := enabled
-        in loop(pf0, g, pf | p, c) end
+        in loop(pf0 | c) end
       else let
-          val () = insert<char>(locked | !p, c)
+          val () = insert<char>(locked | !writebuf, c)
        in
         if bit_is_set(UCSR0A, UDRE0) then {
           var tmp : char
-	  val () = remove<char>(locked | !p, tmp)
+	  val () = remove<char>(locked | !writebuf, tmp)
+          prval () = unlock(locked, gwrite, pf)
           val (enabled | () ) = sei(locked | (* *))
 	  val () = setval(UDR0, tmp)
-          prval () = return_global(g, pf)
           prval () = pf0 := enabled
 	} else {
-           prval () = return_global(g, pf)
+           prval () = unlock(locked, gwrite, pf)
            val (enabled | ()) = sei(locked | (* *))
            prval () = pf0 := enabled
         }
        end
    end
-   val () = loop(pf0, gpf, pf | p, c)
+   val () = loop(pf0 | c)
 }
 
 implement
 atmega328p_async_rx (pf0 | f) = let
-  val (gpf, pf | p) = get_read_buffer()
-  fun loop {l:agz} {n,s:nat | n < s} (
-    pf0: !INT_SET, g: global(l), pf: fifo(char, n, s) @ l | p: ptr l
+  fun loop (
+    pf0: !INT_SET | (* *)
   ) : char = let
     val (locked | () ) = cli(pf0 | (* *))
+    prval (pf) = lock(locked, gread)
   in 
-    if empty<char>(locked | !p) then let
+    if empty<char>(locked | !readbuf) then let
+      prval () = unlock(locked, gread, pf)
       val (enabled | () ) = sei_and_sleep_cpu(locked | (* *) )
       prval () = pf0 := enabled
-     in loop(pf0, g, pf | p) end
+     in loop(pf0 | (* *)) end
     else let
       var tmp : char
-      val () = remove<char>(locked | !p, tmp)
+      val () = remove<char>(locked | !readbuf, tmp)
+      prval () = unlock(locked, gread, pf)
       val (enabled | () ) = sei(locked | (* *))
-      prval () = return_global(g, pf)
       prval () = pf0 := enabled
     in tmp end
   end
-in (int)(loop(pf0, gpf, pf | p)) end
+in (int)(loop(pf0| (* *))) end
 
 implement
 atmega328p_async_flush (pf0 | (* *)) = let
-  val (gpf, pf | p) = get_read_buffer()
-  fun loop {l:agz} {n, s:nat | n < s} (
-    pf0: !INT_SET, g: global(l), pf: fifo(char, n, s) @ l | p: ptr l
+  fun loop (
+    pf0: !INT_SET | (**)
   ) : void = let
     //empty stdout first
     val _ = fflush(stdout_ref)
-    val (locked | () ) = cli(pf0 | (* *) )
-  in 
-    if empty<char>(locked | !p) then let
+    val (locked | () ) = cli(pf0 | (* *))
+    prval (pf) = lock(locked, gwrite)
+  in
+    if empty<char>(locked | !writebuf) then let
+        prval () = unlock(locked, gwrite, pf)
         val (enabled | () ) = sei(locked | (* *))
-        prval () = return_global(g, pf)
         prval () = pf0 := enabled
       in  end
     else let
+      prval () = unlock(locked, gwrite, pf)
       val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
       prval () = pf0 := enabled
-     in loop(pf0, g, pf | p) end
+     in loop(pf0 | ) end
   end
-in loop(pf0, gpf, pf | p) end
+in loop(pf0 | ) end
 
 (* ****** ****** *)
 
