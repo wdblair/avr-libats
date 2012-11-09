@@ -13,7 +13,7 @@ static ats_ptr_type callback;
 ATSinline()
 ats_ptr_type get_callback (){
   return callback;
-}
+ }
 
 ATSinline()
 ats_void_type set_callback(ats_ptr_type c){
@@ -38,7 +38,7 @@ staload "DATS/cycbuf.dats"
 
 local  
   //Interesting error, I need to use the ATS 
-  //naming convention for these variable calls.
+  //naming convention for these variables.
   var readbuf : fifo(char, 0, 25) with pfread = 
     $extval(fifo(char, 0, 25), "statmp0")
   var writebuf : fifo(char, 0, 25) with pfwrite = 
@@ -139,7 +139,7 @@ atmega328p_async_tx (pf0 | c, f) = 0 where {
    fun loop (
       pf0: !INT_SET | c: char
    ) : void = let
-      val () = 
+      val () =
         if c = '\n' then {
             val _ = atmega328p_async_tx(pf0 | '\r', stdout_ref)
         }

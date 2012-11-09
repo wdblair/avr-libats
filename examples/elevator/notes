@@ -24,5 +24,3 @@ just use an array and qsort to manage the schedule.
 dataviewtype Request =
   | Pickup(direction, floor)
   | Dropoff(floor)
-
-

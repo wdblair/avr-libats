@@ -295,7 +295,7 @@ fun closed (locked: !INT_CLEAR | (**)) : bool = b where {
 (* ****** ****** *)
 
 fun new_message {n,p:pos | n <= p} (
-  locked: !INT_CLEAR | 
+  locked: !INT_CLEAR |
   f: &($FIFO.fifo(char, n, p)) >> $FIFO.fifo(char, n', p)
 ) : #[n':nat | n' <= p] void = let
   var eol : char
@@ -367,6 +367,7 @@ end
 implement main (clr | (**)) = {
   //enable communication
   val () = $USART.atmega328p_async_init(clr | 9600, new_message)
+  val () = setbits(DDRB, DDB3)
   val (set | ()) = sei(clr | (**))
   //
   val (pf0 | ()) = loop(set | READY) where {
