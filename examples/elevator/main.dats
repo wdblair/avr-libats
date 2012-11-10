@@ -1,5 +1,10 @@
 (*
-   Rough sketch of an elevator simulator.
+  A working elevator scheduler.
+  
+  The device is notified via the serial port
+  of events (requests, current floor, closing of
+  the door), and sends commands over the same
+  line to move to different floors and open doors.
 *)
 
 (* ****** ****** *)
@@ -156,6 +161,20 @@ in
     }
 end
 
+fun {a:t@ype} contains {n, sz:nat | n <= sz} (
+  locked: !INT_CLEAR | q: &queue(a, n, sz), needle: a,
+  eq: (a,a) -<fun1> bool
+) : bool = b where {
+  var i : [n:nat] int n
+  var b : bool = false
+  val () = 
+    for (i := 0; i < q.cnt; i := i + 1)
+      if eq(q.data.[i], needle) then {
+        val () = b := true
+        val () = break
+      }
+}
+
 fun {a:t@ype} empty {s,n:nat | n <= s} (
   locked: !INT_CLEAR | q: &queue(a, n, s)
 ) : bool (n == 0) = q.cnt = 0
@@ -217,7 +236,7 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
         | UP => b.floor - a.floor
         | DOWN => a.floor - b.floor
       else if a.onboard && ~b.onboard then
-        if ~new_direction(locked | a) 
+        if ~new_direction(locked | a)
           && ~new_direction(locked | b) then
           case+ dir of
             | UP => b.floor - a.floor
@@ -236,6 +255,13 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
     end
     prval (pf) = lock(locked, state_lock)
     val q = &state->queue
+    
+    //Test if two requests are equal
+    fun eq(
+      a: request, b: request
+    ) : bool =
+      a.floor = b.floor
+    val has = contains(locked | !q, r, eq)
   in
     if full(locked | !q) then
         if r.onboard then {
@@ -246,9 +272,11 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
         } else {
           prval () = unlock(locked, state_lock, pf)
         }
-    else {
-      val () = enqueue<request>(locked | !q, r, cmp)
+    else if has then {
       prval () = unlock(locked, state_lock, pf)
+    } else {
+      val () = enqueue<request>(locked | !q, r, cmp)
+      prval () = unlock(locked, state_lock, pf) 
     }
   end
   
