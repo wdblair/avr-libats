@@ -24,19 +24,23 @@ def snapshot()
   Time.now.to_f * 1000.0 - $origin
 end
 
+users = []
+
 a = Thread.new {
-  while true
+  10.times do
     #Go to a random floor
     direction = (rand(2) == 0) ? 'u' : 'd'
     floor = rand(FLOORS) + 1
     out = "#{direction}#{floor}"
     semaphore.synchronize {
+      users.push({:start => floor, :dest => 0})
       puts ({:tag => "service",:dir => direction, :flr => floor, :time => snapshot()}.to_json)
       sp.print "#{out}\r"
       sp.flush
     }
     sleep (rand(5)+1)
   end
+  stderr.puts "done"
 }
 
 while true
@@ -58,14 +62,25 @@ while true
     elsif m[1] == 'o'
       semaphore.synchronize {
         puts ({:tag => "open", :time => snapshot()}.to_json)
-        (rand(2)+1).times do
-          flr = rand(FLOORS)+1
-          puts ({:tag => "request", :flr => m[2], :time => snapshot()}.to_json)
-          sp.print "r#{flr}\r"
-          sp.flush
-        end
+        users.delete_if { |u|
+          u[:dest] == curr
+        }
+        users.map! { |u|
+          random_request = lambda {
+            flr = rand(FLOORS)+1
+            puts ({:tag => "request", :flr => flr, :time => snapshot()}.to_json)
+            sp.print "r#{flr}\r"
+            sp.flush
+            sleep 1.0
+            flr
+          }
+          if u[:start] == curr && u[:dest] == 0
+            u[:dest] = random_request.call()
+          end
+          u
+        }
+        
       }
-      sleep 2.0
       puts ({:tag => "close", :time => snapshot()}.to_json)
       sp.print "c\r"
     end
