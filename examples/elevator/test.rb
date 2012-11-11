@@ -26,6 +26,8 @@ end
 
 users = []
 
+json = File.open("output.json", "w+")
+
 a = Thread.new {
   10.times do
     #Go to a random floor
@@ -33,8 +35,8 @@ a = Thread.new {
     floor = rand(FLOORS) + 1
     out = "#{direction}#{floor}"
     semaphore.synchronize {
-      users.push({:start => floor, :dest => 0})
-      puts ({:tag => "service",:dir => direction, :flr => floor, :time => snapshot()}.to_json)
+      users.push({:start => floor, :dest => 0, :direction => direction})
+      json.puts({:tag => "service",:dir => direction, :flr => floor, :time => snapshot()}.to_json)
       sp.print "#{out}\r"
       sp.flush
     }
@@ -51,24 +53,26 @@ while true
     if m[1] == 'f'
       target = m[2].to_i
       diff = (curr - target).abs
-      puts ({:tag => "move", :from => curr, :time => snapshot()}.to_json)
+      json.puts({:tag => "move", :from => curr, :time => snapshot()}.to_json)
       sleep diff
       semaphore.synchronize {
         curr = target
-        puts ({:tag => "arrive", :flr => m[2], :time => snapshot()}.to_json)
+        json.puts({:tag => "arrive", :flr => m[2], :time => snapshot()}.to_json)
         sp.print "a#{m[2]}\r"
         sp.flush
       }
     elsif m[1] == 'o'
       semaphore.synchronize {
-        puts ({:tag => "open", :time => snapshot()}.to_json)
+        json.puts({:tag => "open", :time => snapshot()}.to_json)
         users.delete_if { |u|
           u[:dest] == curr
         }
         users.map! { |u|
           random_request = lambda {
-            flr = rand(FLOORS)+1
-            puts ({:tag => "request", :flr => flr, :time => snapshot()}.to_json)
+            max_floor = u[:direction] == 'u' ? FLOORS : curr
+            lowest_floor = u[:direction] == 'u' ? curr : 1
+            flr = rand(max_floor)+lowest_floor
+            json.puts({:tag => "request", :flr => flr, :time => snapshot()}.to_json)
             sp.print "r#{flr}\r"
             sp.flush
             sleep 1.0
@@ -81,11 +85,12 @@ while true
         }
         
       }
-      puts ({:tag => "close", :time => snapshot()}.to_json)
+      json.puts({:tag => "close", :time => snapshot()}.to_json)
       sp.print "c\r"
     end
   else
     puts resp
     raise
   end
+  json.flush
 end
