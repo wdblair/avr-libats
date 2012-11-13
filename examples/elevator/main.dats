@@ -27,14 +27,25 @@ staload _ = "DATS/stdlib.dats"
 
 (* ****** ****** *)
 
-#define SCHEDULE_SIZE 10
+
+#define SCHEDULE_SIZE 20
 
 stadef schedule_size = SCHEDULE_SIZE
 
-%{^
-//just put this in a hats file...
-#define SCHEDULE_SIZE 10
+#define SETSCHEDULE(value)   \
+stadef schedule_size = value \
+%{^                          \
+#define SCHEDULE_SIZE value  \
+^}                           \
 
+(*
+ General rule: make schedule size MAX_FLOOR * 2
+ Each floor can have two requests (up/down)
+ at any point in time.
+ *)
+SETSCHEDULE(20)
+
+%{^
 #define neg_direction(a) (a^1)
 
 typedef struct {

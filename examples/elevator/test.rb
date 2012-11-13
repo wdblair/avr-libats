@@ -4,8 +4,9 @@ require 'rubygems'
 require 'serialport'
 require 'json'
 
-#Really hacky discrete event simulator for the elevator. Each service request
-#and passenger request should be an object along with total wait time for service.
+#Really hacky discrete event simulator for the elevator.
+#Each service request and passenger request should be an
+#object along with total wait time for service.
 
 semaphore = Mutex.new
 
@@ -15,7 +16,7 @@ curr = 1
 
 sp = SerialPort.new "/dev/tty.usbmodemfd121", 9600, 8 , 1, SerialPort::NONE
 
-#Serial Connection Resets the Chip.
+#Opening the Serial Port
 sleep 1.0
 
 $origin = Time.now.to_f * 1000.0
