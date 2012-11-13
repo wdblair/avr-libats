@@ -1,5 +1,5 @@
 (*
-  A working elevator scheduler.
+  A working elevator controller.
   
   The device is notified via the serial port
   of events (requests, current floor, closing of
@@ -28,24 +28,21 @@ staload _ = "DATS/stdlib.dats"
 (* ****** ****** *)
 
 
-#define SCHEDULE_SIZE 20
-
-stadef schedule_size = SCHEDULE_SIZE
-
-#define SETSCHEDULE(value)   \
-stadef schedule_size = value \
-%{^                          \
-#define SCHEDULE_SIZE value  \
-^}                           \
-
 (*
  General rule: make schedule size MAX_FLOOR * 2
  Each floor can have two requests (up/down)
  at any point in time.
- *)
-SETSCHEDULE(20)
+*)
+
+#define SCHEDULE_SIZE 20
+
+stadef schedule_size = SCHEDULE_SIZE
+
+(* ****** ****** *)
 
 %{^
+#define SCHEDULE_SIZE 20
+
 #define neg_direction(a) (a^1)
 
 typedef struct {
@@ -271,7 +268,9 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
     fun eq(
       a: request, b: request
     ) : bool =
-      a.floor = b.floor
+      (a.onboard = b.onboard 
+        || a.direction = b.direction)
+      && (a.floor = b.floor)
     val has = contains(locked | !q, r, eq)
   in
     if full(locked | !q) then
@@ -310,9 +309,9 @@ in
   }
 end
 
-fun send_command (locked: !INT_CLEAR | c: command) : void =
+fun send_command (locked: !INT_CLEAR | c: command): void =
   println!(c.id, c.value)
-
+  
 fun arrived (locked: !INT_CLEAR | (**)) : bool = a where {
   prval (pf) = lock(locked, state_lock)
   val a = state->arrived
@@ -421,7 +420,7 @@ implement main (clr | (**)) = {
                 if new_direction(locked | next) then
                   switch_direction(locked | (**))
               val () =
-                send_command(locked | @{id='f',value=next.floor})
+                send_command(locked | @{id= 'f',value= next.floor})
               val (set | ()) = sei(locked | (**))
             in loop(set | MOVING) end
             else let
@@ -437,7 +436,9 @@ implement main (clr | (**)) = {
         | MOVING =>
           if arrived(locked | (**)) then let
             val () = set_arrived(locked | false)
-            val () = send_command(locked | @{id='o', value=0})
+            val () = send_command (locked | 
+              @{id= 'o', value= current_direction(locked | (**))}
+            )
             val (set | ()) = sei(locked | (**))
           in loop(set | WAITING) end
           else let
