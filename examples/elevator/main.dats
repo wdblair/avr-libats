@@ -232,46 +232,43 @@ fun switch_direction (locked: !INT_CLEAR | (**)) : void = {
   prval () = unlock(locked, state_lock, pf)
 }
 
+fun direction(locked: !INT_CLEAR | r: !request) : direction = 
+  if r.onboard then
+    if r.floor > current_floor(locked | (**)) then
+      UP
+    else
+      DOWN
+  else 
+    r.direction
+    
 fun add_request(locked: !INT_CLEAR | r: request) : void = let
-    // Need a better way to express this...
-    fun cmp (locked: !INT_CLEAR | a: &request, b: &request) : int = let
-      val dir = current_direction(locked | (**))
+    //The scheduling logic goes here.
+    fun cmp (locked: !INT_CLEAR |
+      a: &request, b: &request
+    ) : int = let
+      val adir = direction(locked | a)
+      val bdir = direction(locked | b)
     in
-      if a.onboard && b.onboard 
-        || (~a.onboard && ~a.onboard 
-             && a.direction = b.direction) then
-        case+ dir of
-        | UP => b.floor - a.floor
-        | DOWN => a.floor - b.floor
-      else if a.onboard && ~b.onboard then
-        if ~new_direction(locked | a)
-          && ~new_direction(locked | b) then
-          case+ dir of
-            | UP => b.floor - a.floor
-            | DOWN => a.floor - b.floor
-        else if new_direction(locked | a) then ~1 else 1
-      else if ~a.onboard && b.onboard then
-        if ~new_direction(locked | a)
-          && ~new_direction(locked | b) then
-          case+ dir of
-            | UP => b.floor - a.floor
-            | DOWN => a.floor - b.floor
-        else
-          if new_direction(locked | b) then 1 else ~1
+      if adir != bdir then
+        if adir = current_direction(locked | (**)) then 
+          1
+        else 
+          ~1
       else
-        if a.direction = dir then 1 else ~1
+        case+ adir of
+          | UP => b.floor - a.floor
+          | DOWN => a.floor - b.floor
     end
     prval (pf) = lock(locked, state_lock)
     val q = &state->queue
-    
     //Test if two requests are equal
     fun eq(
       a: request, b: request
     ) : bool =
-      (a.onboard = b.onboard 
+      (a.onboard = b.onboard
         || a.direction = b.direction)
       && (a.floor = b.floor)
-    val has = contains(locked | !q, r, eq)
+    val dup = contains(locked | !q, r, eq)
   in
     if full(locked | !q) then
         if r.onboard then {
@@ -282,11 +279,11 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
         } else {
           prval () = unlock(locked, state_lock, pf)
         }
-    else if has then {
+    else if dup then {
       prval () = unlock(locked, state_lock, pf)
     } else {
       val () = enqueue<request>(locked | !q, r, cmp)
-      prval () = unlock(locked, state_lock, pf) 
+      prval () = unlock(locked, state_lock, pf)
     }
   end
   
