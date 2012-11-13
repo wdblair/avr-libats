@@ -64,6 +64,8 @@ class Elevator
   
   
   def board(users)
+    return if users.nil?
+
     users.delete_if { |u|
       res = u.board(self)
       @onboard.push(u) if res
