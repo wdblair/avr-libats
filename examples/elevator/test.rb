@@ -26,6 +26,7 @@ class Elevator
     @direction = 'u'
     sleep 1.0
     @origin = Time.now.to_f * 1000.0
+    @onboard = []
   end
   
   #Send a service request from someone
@@ -55,8 +56,21 @@ class Elevator
     @direction = char_of_direction(dir)
     js = {:direction=>@direction}
     publish_event("open", js)
+    
+    @onboard.delete_if { |u|
+      u.leave(self)
+    }
   end
-
+  
+  
+  def board(users)
+    users.delete_if { |u|
+      res = u.board(self)
+      @onboard.push(u) if res
+      res
+    }
+  end
+  
   #Close the doors
   def close()
     send_message("c\r")
@@ -118,6 +132,8 @@ class Elevator
 end
 
 class Passenger
+  attr_accessor :start
+  
   @@nextid = 0
 
   def initialize()
@@ -151,9 +167,11 @@ class Passenger
       @destination = flr
       elevator.request(@id, flr)
       sleep 1.0
+      return true
     end
+    false
   end
-
+  
   def leave(elevator)
     res = @destination == elevator.floor()
     if res
@@ -164,7 +182,8 @@ class Passenger
   
 end
 
-users = []
+#Users waiting to board the elevator by floor
+waiting = {}
 
 elevator = Elevator.new()
 
@@ -173,7 +192,8 @@ a = Thread.new {
     #Go to a random floor
     pass = Passenger.new()
     pass.arrive(elevator)
-    users.push(pass)
+    waiting[pass.start] ||= []
+    waiting[pass.start].push(pass)
     sleep (rand(5)+1)
   end
 }
@@ -186,12 +206,7 @@ while true
     elevator.move(target)
   when 'o' then
     elevator.open(cmd[2].to_i)
-    users.delete_if { |u|
-      u.leave(elevator)
-    }
-    users.each { |u|
-      u.board(elevator)
-    }
+    elevator.board(waiting[elevator.floor()])
     elevator.close()
   end
   STDOUT.flush()
