@@ -242,7 +242,6 @@ fun direction(locked: !INT_CLEAR | r: !request) : direction =
     r.direction
     
 fun add_request(locked: !INT_CLEAR | r: request) : void = let
-    //The scheduling logic goes here.
     fun cmp (locked: !INT_CLEAR |
       a: &request, b: &request
     ) : int = let
@@ -265,7 +264,7 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
     fun eq(
       a: request, b: request
     ) : bool =
-      (a.onboard = b.onboard
+      ((a.onboard && a.onboard = b.onboard)
         || a.direction = b.direction)
       && (a.floor = b.floor)
     val dup = contains(locked | !q, r, eq)
