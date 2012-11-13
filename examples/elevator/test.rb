@@ -11,7 +11,7 @@ semaphore = Mutex.new
 
 FLOORS = 10
 
-curr = 0
+curr = 1
 
 sp = SerialPort.new "/dev/tty.usbmodemfd121", 9600, 8 , 1, SerialPort::NONE
 
@@ -57,7 +57,7 @@ while true
       sleep diff
       semaphore.synchronize {
         curr = target
-        json.puts({:tag => "arrive", :flr => m[2], :time => snapshot()}.to_json)
+        json.puts({:tag => "arrive", :flr => curr, :time => snapshot()}.to_json)
         sp.print "a#{m[2]}\r"
         sp.flush
       }
@@ -83,7 +83,6 @@ while true
           end
           u
         }
-        
       }
       json.puts({:tag => "close", :time => snapshot()}.to_json)
       sp.print "c\r"
