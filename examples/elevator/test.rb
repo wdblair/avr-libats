@@ -6,13 +6,9 @@ require 'rubygems'
 require 'serialport'
 require 'json'
 
+require 'securerandom'
+
 FLOORS = 10
-
-$sp = SerialPort.new "/dev/tty.usbmodemfd121", 9600
-
-#Opening the Serial Port resets
-#the MCU, give it a second...
-sleep 1.0
 
 def char_of_direction(d)
   d == 0 ? 'u' : 'd'
@@ -24,11 +20,13 @@ class Elevator
     @sp = SerialPort.new "/dev/tty.usbmodemfd121", 9600
     @curr = 1
     @direction = 'u'
+    #Opening the Serial Port resets the MCU, give it a
+    #second.
     sleep 1.0
     @origin = Time.now.to_f * 1000.0
     @onboard = []
   end
-  
+
   #Send a service request from someone
   #waiting for the elevator.
   def service(id, direction, flr)
@@ -37,7 +35,7 @@ class Elevator
     js = {:id=> id, :dir => direction, :flr => flr}
     publish_event("service", js)
   end
-
+  
   #Send a request from a passenger
   #inside the elevator to the controller
   def request(id, floor)
@@ -45,10 +43,11 @@ class Elevator
     js = {:id => id, :flr => floor}
     publish_event("request", js)
   end
-  
+
   def exit(id, floor)
     js = {:id => id, :flr => floor}
     publish_event("exit", js)
+    sleep 1.0
   end
   
   #Record doors opening
@@ -61,7 +60,6 @@ class Elevator
       u.leave(self)
     }
   end
-  
   
   def board(users)
     return if users.nil?
@@ -140,13 +138,20 @@ class Passenger
 
   def initialize()
     #Fetch a random direction and floor.
-    direction = char_of_direction(rand(2))
-    floor = rand(FLOORS) + 1
+    direction = char_of_direction(SecureRandom.random_number(2))
+    floor = SecureRandom.random_number(FLOORS) + 1
+    
     @id = @@nextid
     @@nextid += 1
     @start = floor
     @direction = direction
     
+    @direction = case @start
+                   when 10 then 'd'
+                   when 1 then 'u'
+                   else @direction
+                 end
+
     #Not set until boarding the elevator.
     @destination = 0
   end
@@ -158,16 +163,9 @@ class Passenger
   def board(elevator)
     if @destination == 0 && @start == elevator.floor() \
       && @direction == elevator.direction()
-      
-      max_floor = @direction == 'u' ? FLOORS : @start
-      lowest_floor = @direction == 'u' ? @start : 1
-      dist = max_floor - lowest_floor
-      flr = rand(dist)+lowest_floor
-      if flr > FLOORS
-        flr = rand(FLOORS)+1
-      end
-      @destination = flr
-      elevator.request(@id, flr)
+     
+      make_destination()
+      elevator.request(@id, @destination)
       sleep 1.0
       return true
     end
@@ -181,7 +179,19 @@ class Passenger
     end
     res
   end
-  
+
+  def make_destination()
+    max_floor = @direction == 'u' ? FLOORS : @start
+    lowest_floor = @direction == 'u' ? @start : 1
+    dist = max_floor - lowest_floor
+    flr = @start
+
+    #Shouldn't request the current floor
+    while flr == @start
+      flr = SecureRandom.random_number(dist+1)+lowest_floor
+    end
+    @destination = flr
+  end
 end
 
 #Users waiting to board the elevator by floor
@@ -196,7 +206,7 @@ a = Thread.new {
     pass.arrive(elevator)
     waiting[pass.start] ||= []
     waiting[pass.start].push(pass)
-    sleep (rand(5)+1)
+    sleep (SecureRandom.random_number(5)+1)
   end
 }
 
