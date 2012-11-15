@@ -33,7 +33,6 @@ staload _ = "DATS/stdlib.dats"
  Each floor can have two requests (up/down)
  at any point in time.
 *)
-
 #define SCHEDULE_SIZE 20
 
 stadef schedule_size = SCHEDULE_SIZE
@@ -149,8 +148,9 @@ fun {a:t@ype} enqueue {n, sz:nat | n < sz} (
 
 fun {a:t@ype} dequeue {n, sz:nat | n > 0; n <= sz} (
   locked: !INT_CLEAR | q: &queue(a, n, sz) >> queue(a, n-1, sz),
-  x: &a? >> a
+  x: &a? >> a, cmp: (!INT_CLEAR | &a, &a) -<fun1> int
 ) : void = {
+  val () = qsort_sync(locked | q.data, q.cnt, cmp)
   val () = x := q.data.[q.cnt - 1]
   val () = q.cnt := q.cnt - 1
 }
@@ -240,24 +240,26 @@ fun direction(locked: !INT_CLEAR | r: !request) : direction =
       DOWN
   else 
     r.direction
-    
-fun add_request(locked: !INT_CLEAR | r: request) : void = let
-    fun cmp (locked: !INT_CLEAR |
+
+(* The main scheduling logic for requests. *)
+fun compare (locked: !INT_CLEAR |
       a: &request, b: &request
-    ) : int = let
-      val adir = direction(locked | a)
-      val bdir = direction(locked | b)
-    in
-      if adir != bdir then
-        if adir = current_direction(locked | (**)) then 
-          1
-        else 
-          ~1
-      else
-        case+ adir of
-          | UP => b.floor - a.floor
-          | DOWN => a.floor - b.floor
-    end
+) : int = let
+  val adir = direction(locked | a)
+  val bdir = direction(locked | b)
+in
+  if adir != bdir then
+    if adir = current_direction(locked | (**)) then
+      1
+    else 
+      ~1
+  else
+    case+ adir of
+      | UP => b.floor - a.floor
+      | DOWN => a.floor - b.floor
+end
+
+fun add_request(locked: !INT_CLEAR | r: request) : void = let
     prval (pf) = lock(locked, state_lock)
     val q = &state->queue
     //Test if two requests are equal
@@ -273,7 +275,7 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
         if r.onboard then {
           fun remove (r: &request) : bool =
             ~r.onboard
-          val () = evict<request>(locked | !q, r, cmp, remove)
+          val () = evict<request>(locked | !q, r, compare, remove)
           prval () = unlock(locked, state_lock, pf)
         } else {
           prval () = unlock(locked, state_lock, pf)
@@ -281,7 +283,7 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
     else if dup then {
       prval () = unlock(locked, state_lock, pf)
     } else {
-      val () = enqueue<request>(locked | !q, r, cmp)
+      val () = enqueue<request>(locked | !q, r, compare)
       prval () = unlock(locked, state_lock, pf)
     }
   end
@@ -294,7 +296,7 @@ in
   x where {
     val () =
       if ~empty(locked | !q) then {
-        val () = dequeue<request>(locked | !q, x)
+        val () = dequeue<request>(locked | !q, x, compare)
         prval () = unlock(locked, state_lock, pf)
       } else {
         val () = x.direction := 0
@@ -401,7 +403,6 @@ end
 implement main (clr | (**)) = {
   //enable communication
   val () = $USART.atmega328p_async_init(clr | 9600, new_message)
-  val () = setbits(DDRB, DDB3)
   val (set | ()) = sei(clr | (**))
   //
   val (pf0 | ()) = loop(set | READY) where {

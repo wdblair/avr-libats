@@ -7,19 +7,9 @@ declare_isr(USART_TX_vect);
 
 static cycbuf_t statmp0 = {0, 0, 0, 25, {[0 ... 24] = 0}};
 static cycbuf_t statmp1 = {0, 0, 0, 25, {[0 ... 24] = 0}};
-
-static ats_ptr_type callback;
-
-ATSinline()
-ats_ptr_type get_callback (){
-  return callback;
- }
-
-ATSinline()
-ats_void_type set_callback(ats_ptr_type c){
-  callback = c;
-}
 %}
+
+(* ****** ****** *)
 
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
@@ -43,24 +33,25 @@ local
     $extval(fifo(char, 0, 25), "statmp0")
   var writebuf : fifo(char, 0, 25) with pfwrite = 
     $extval(fifo(char, 0, 25), "statmp1")
-    
+
+  fun nop {n,p:pos | n <= p} (
+    pf: !INT_CLEAR | f: &fifo(char, n, p) >> fifo(char, n', p)
+  ) : #[n' :nat | n' <= p] void = ()
+  
+  var callback : usart_callback with pfcall = nop
+  
   viewdef read = [n,s:nat | n <= s] fifo(char, n, s) @ readbuf
   viewdef write = [n,s:nat | n <= s] fifo(char, n, s) @ writebuf
+  viewdef call = usart_callback @ callback
 in
   val readbuf = &readbuf
   val writebuf = &writebuf
+  val callback = &callback
   prval gread = lock_new {read} (pfread)
   prval gwrite = lock_new {write} (pfwrite)
+  prval gcall = lock_new {call} (pfcall)
 end
 
-extern
-fun get_callback
-  () : usart_callback = "mac#get_callback"
-
-extern
-fun set_callback
-  (c: usart_callback) : void = "mac#set_callback"
-  
 (* ****** ****** *)
 
 implement 
@@ -86,8 +77,9 @@ USART_RX_vect (locked | (* *)) = let
       prval () = unlock(locked, gread, pf)
    } else {
       	val () = insert<char>(locked | !readbuf, contents)
-        val call = get_callback()
-        val () = call(locked | !readbuf)
+        prval (pfcall) = lock(locked, gcall)
+        val () = !callback(locked | !readbuf)
+        prval () = unlock(locked, gcall, pfcall)
         prval () = unlock(locked, gread, pf)
    }
  end
@@ -123,13 +115,14 @@ in
     fun nop {n,p:pos | n <= p} (
      pf: !INT_CLEAR | f: &fifo(char, n, p) >> fifo(char, n', p)
     ) : #[n':nat | n' <= p] void = ()
-    val () = set_callback(nop)
     val () = atmega328p_async_hardware(baud)
   }
 
   implement
-  atmega328p_async_init_callback(locked | baud, callback) = {
-    val () = set_callback(callback)
+  atmega328p_async_init_callback(locked | baud, call) = {
+    prval (pf) = lock(locked, gcall)
+    val () = !callback := call
+    prval () = unlock(locked, gcall, pf)
     val () = atmega328p_async_hardware(baud)
   }
 end
