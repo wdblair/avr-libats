@@ -122,7 +122,7 @@ local
         val (locked | ()) = cli( pf | (**))
   in 
     if transceiver_busy () then let
-      val (enabled | ()) = sei_and_sleep_cpu(locked | (**))
+      val (enabled | ()) = sleep_cpu(locked | (**))
       prval () = pf := enabled
     in sleep_until_ready(pf | (**)) end
     else let

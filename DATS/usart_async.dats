@@ -141,7 +141,7 @@ atmega328p_async_tx (pf0 | c, f) = 0 where {
    in
       if full (locked | !writebuf) then let
           prval () = unlock(locked, gwrite, pf)
-          val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
+          val (enabled | () ) = sleep_cpu(locked | (* *))
           prval () = pf0 := enabled
         in loop(pf0 | c) end
       else let
@@ -174,7 +174,7 @@ atmega328p_async_rx (pf0 | f) = let
   in 
     if empty<char>(locked | !readbuf) then let
       prval () = unlock(locked, gread, pf)
-      val (enabled | () ) = sei_and_sleep_cpu(locked | (* *) )
+      val (enabled | () ) = sleep_cpu(locked | (* *) )
       prval () = pf0 := enabled
      in loop(pf0 | (* *)) end
     else let
@@ -204,7 +204,7 @@ atmega328p_async_flush (pf0 | (* *)) = let
       in  end
     else let
       prval () = unlock(locked, gwrite, pf)
-      val (enabled | () ) = sei_and_sleep_cpu(locked | (* *))
+      val (enabled | () ) = sleep_cpu(locked | (* *))
       prval () = pf0 := enabled
      in loop(pf0 | ) end
   end
