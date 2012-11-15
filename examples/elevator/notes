@@ -24,3 +24,22 @@ just use an array and qsort to manage the schedule.
 dataviewtype Request =
   | Pickup(direction, floor)
   | Dropoff(floor)
+
+
+The following events froze/crashed the device. Curious How that happened...
+
+{"id":0,"dir":"d","flr":7,"tag":"service","time":0.786865234375}
+{"from":1,"tag":"move","time":11.458740234375}
+{"id":1,"dir":"d","flr":3,"tag":"service","time":2002.176025390625}
+{"id":2,"dir":"u","flr":6,"tag":"service","time":5003.447998046875}
+{"flr":7,"tag":"arrive","time":6012.59619140625}
+{"direction":"d","tag":"open","time":6023.744140625}
+{"id":0,"flr":6,"tag":"request","time":6023.88525390625}
+{"id":3,"dir":"d","flr":10,"tag":"service","time":7004.765869140625}
+{"tag":"close","time":7024.18994140625}
+{"id":4,"dir":"u","flr":7,"tag":"service","time":12005.953857421875}
+{"id":5,"dir":"u","flr":6,"tag":"service","time":15007.18408203125}
+{"id":6,"dir":"u","flr":5,"tag":"service","time":16007.80517578125}
+{"id":7,"dir":"d","flr":3,"tag":"service","time":18009.093994140625}
+{"id":8,"dir":"d","flr":2,"tag":"service","time":20010.406982421875}
+{"id":9,"dir":"d","flr":5,"tag":"service","time":23011.6728515625}

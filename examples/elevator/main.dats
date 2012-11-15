@@ -232,15 +232,6 @@ fun switch_direction (locked: !INT_CLEAR | (**)) : void = {
   prval () = unlock(locked, state_lock, pf)
 }
 
-fun direction(locked: !INT_CLEAR | r: !request) : direction = 
-  if r.onboard then
-    if r.floor > current_floor(locked | (**)) then
-      UP
-    else
-      DOWN
-  else 
-    r.direction
-
 (* The main scheduling logic for requests. *)
 fun compare (locked: !INT_CLEAR |
       a: &request, b: &request
