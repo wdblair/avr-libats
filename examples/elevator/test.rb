@@ -25,6 +25,7 @@ class Elevator
     sleep 1.0
     @origin = Time.now.to_f * 1000.0
     @onboard = []
+    @events = []
   end
 
   #Send a service request from someone
@@ -124,6 +125,14 @@ class Elevator
     msg[:tag] = tag
     msg[:time] = snapshot()
     puts msg.to_json()
+    @events.push msg
+  end
+
+  #Output a nice history in JSON to file
+  def output_events(filename)
+    File.open(filename, "w+") { |out|
+      out.write @events.to_json()
+    }
   end
 
   def snapshot()
@@ -198,6 +207,16 @@ end
 waiting = {}
 
 elevator = Elevator.new()
+
+if ARGV.length == 0
+  puts "Need an output file."
+  exit 1
+end
+
+Signal.trap("USR1") {
+  elevator.output_events(ARGV[0])
+  puts "File Written..."
+}
 
 a = Thread.new {
   10.times do
