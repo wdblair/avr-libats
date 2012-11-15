@@ -8,35 +8,35 @@
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
+staload "SATS/global.sats"
 staload TWI = "SATS/twi.sats"
 staload USART = "SATS/usart.sats"
 
 %{^
-static unsigned char information[5] = {'a','b','c','d','e'};
-
-#define set_data(n, c) information[n] = c
-#define get_data(n) information[n]
+static unsigned char statmp0[5] = {'a','b','c','d','e'};
 %}
 
-extern
-fun set_data {n:nat | n < 5} (
-  n:int n, c: uchar
-) : void = "mac#set_data"
-
-extern
-fun get_data {n:nat | n < 5} (
-  n:int n
-) : uchar = "mac#get_data"
+local
+  var information : @[uchar][5] with pfinfo = 
+    $extval(@[uchar][5], "statmp0")
+    
+  viewdef info = @[uchar][5] @ information
+in
+  val information = &information
+  prval ginfo = global_new {info} (pfinfo)
+end
 
 fun response {n:nat | n <= $TWI.buff_size} (
   src: &(@[uchar][$TWI.buff_size]), sz: int n, m: $TWI.mode
 ) : void = {
+  prval (pf) = global_get(ginfo)
   val curr = (int1)src.[0]
   val () =
     if curr >= 0 && curr < 5 then
-      src.[0] := get_data(curr)
+      src.[0] := !information.[curr]
     else 
       src.[0] := (uchar) '0'
+  prval () = global_return(ginfo, pf)
 }
 
 (* ****** ****** *)
