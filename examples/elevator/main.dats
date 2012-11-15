@@ -232,22 +232,48 @@ fun switch_direction (locked: !INT_CLEAR | (**)) : void = {
   prval () = unlock(locked, state_lock, pf)
 }
 
+fun direction(locked: !INT_CLEAR | r: !request) : direction = 
+  if r.onboard then
+    if r.floor > current_floor(locked | (**)) then
+      UP
+    else
+      DOWN
+  else 
+    r.direction
+    
 (* The main scheduling logic for requests. *)
 fun compare (locked: !INT_CLEAR |
       a: &request, b: &request
 ) : int = let
-  val adir = direction(locked | a)
-  val bdir = direction(locked | b)
+  fun elevator_direction(locked: !INT_CLEAR |
+    r: !request
+  ) : direction =
+    if r.floor > current_floor(locked | (**)) then
+      UP
+    else
+      DOWN
+  val adir = elevator_direction(locked | a)
+  val bdir = elevator_direction(locked | b)
 in
   if adir != bdir then
     if adir = current_direction(locked | (**)) then
       1
-    else 
+    else
       ~1
-  else
-    case+ adir of
-      | UP => b.floor - a.floor
-      | DOWN => a.floor - b.floor
+  else let 
+    val adir = direction(locked | a)
+    val bdir = direction(locked | b)
+  in
+    if adir != bdir then
+      if adir = current_direction(locked | (**))then
+        1
+      else
+        ~1
+    else
+      case+ adir of
+        | UP => b.floor - a.floor
+        | DOWN => a.floor - b.floor
+  end
 end
 
 fun add_request(locked: !INT_CLEAR | r: request) : void = let
