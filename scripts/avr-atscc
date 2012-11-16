@@ -51,6 +51,9 @@ while( my $arg = shift @ARGV ) {
         push(@cflags, "-L");
         push(@cflags, $arg);
     }
+    elsif ($arg =~ /^-Wl.*/) {
+        push(@cflags, $arg);
+    }
     elsif ($arg eq "-tc") {
         $typecheck = 1;
         push(@atsopt_flags,"--typecheck");

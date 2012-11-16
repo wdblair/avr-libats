@@ -14,13 +14,29 @@ staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/fifo.sats"
 
-datasort arch =
-  | atmega328p
-  
 (* baud rate in bits per second *)
-fun atmega328p_init{n:nat | uint16(n)} (
+fun atmega328p_init {n:nat | uint16(n)} (
   baud: int n
 ) : void
+
+fun atmega328p_init_stdio {n:nat | uint16(n)} (
+  baud: int n
+) : void
+
+(*  Polling Based *)
+
+
+fun atmega328p_rx_stdio
+  (f: FILEref) : int = "atmega328p_rx_stdio"
+
+fun atmega328p_tx_stdio
+  (c: char, f: FILEref) : int = "atmega328p_tx_stdio"
+  
+fun atmega328p_rx () : int
+
+fun atmega328p_tx (c: char) : int
+
+(* ****** ****** *)
 
 fun ubrr_of_baud {n:nat | uint16(n)} (
   baud: int n
