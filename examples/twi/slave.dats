@@ -46,7 +46,7 @@ implement main (pf0 | (**)) = let
   val (status | ()) =
     $TWI.slave_init(pf0 | address, true)
   val () = 
-    $USART.atmega328p_init(9600)
+    $USART.atmega328p_init_stdio(9600)
   val (set | ()) = sei(pf0 | (**))
   val () =
     $TWI.start_server(set, status | response, 2)

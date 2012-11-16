@@ -60,7 +60,7 @@ implement main () = loop () where {
   val () = set_sleep_mode(SLEEP_MODE_PWR_DOWN)
   val () = setbits(DDRB, DDB3)
   fun loop () : void = let
-    val () = $USART.atmega328p_init(baudrate)
+    val () = $USART.atmega328p_init_stdio(baudrate)
     val () = init()
     val adc = average_sample(8, MUX3)
     // adc = (v_in * 1024) / vref and vref = 1100 
