@@ -110,6 +110,26 @@ castfn uint1_ulint (ul: ulint) : [n:nat] uint n
 
 overload uint1 with uint1_ulint
 
+(* 
+  Write a script to automatically generate the 
+  all the required overloaded symbols and such...
+*)
+castfn uint8 {n:nat} (n:int n) : uint8 n
+
+castfn int8 {n:int} (n:int n) : int8 n
+
+castfn int16 {n:int} (n:int n) : int16 n
+
+castfn uint16 {n:nat} (n:int n) : uint16 n
+
+castfn uint32 {n:nat} (n:int n) : uint32 n
+
+castfn int32 {n:int} (n:int n) : int32 n
+
+castfn uint64 {n:nat} (n:int n) : uint64 n
+
+castfn int64 {n:int} (n:int n) : int64 n
+
 symintr setbits
 
 fun loop_until_bit_is_clear {n:nat} ( 
