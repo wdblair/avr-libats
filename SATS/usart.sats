@@ -15,12 +15,12 @@ staload "SATS/interrupt.sats"
 staload "SATS/fifo.sats"
 
 (* baud rate in bits per second *)
-fun atmega328p_init {n:nat | uint16(n)} (
-  baud: int n
+fun atmega328p_init {n:nat} (
+  baud: uint16 n
 ) : void
 
-fun atmega328p_init_stdio {n:nat | uint16(n)} (
-  baud: int n
+fun atmega328p_init_stdio {n:nat} (
+  baud: uint16 n
 ) : void
 
 (*  Polling Based *)
@@ -38,9 +38,9 @@ fun atmega328p_tx (c: char) : int
 
 (* ****** ****** *)
 
-fun ubrr_of_baud {n:nat | uint16(n)} (
-  baud: int n
-) : uint16 = "mac#avr_libats_ubrr_of_baud"
+fun ubrr_of_baud {n:nat} (
+  baud: uint16 n
+) : [p:nat] uint16 p = "mac#avr_libats_ubrr_of_baud"
 
 typedef usart_callback =
   {n,p:pos | n <= p} (
@@ -51,14 +51,14 @@ typedef usart_callback =
 
 symintr atmega328p_async_init
 
-fun atmega328p_async_init_stdio {n:nat | uint16(n)} (
-  pf: !INT_CLEAR | baud: int n
+fun atmega328p_async_init_stdio {n:nat} (
+  pf: !INT_CLEAR | baud: uint16 n
 ) : void
 
 overload atmega328p_async_init with atmega328p_async_init_stdio
 
-fun atmega328p_async_init_callback {n:nat | uint16(n)} (
-  pf: !INT_CLEAR | buad: int n,
+fun atmega328p_async_init_callback {n:nat} (
+  pf: !INT_CLEAR | buad: uint16 n,
   callback: usart_callback
 ) : void
 

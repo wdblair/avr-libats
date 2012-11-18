@@ -18,7 +18,7 @@ staload "SATS/stdio.sats"
 
 staload USART = "SATS/usart.sats"
 
-val baudrate = 9600
+val baudrate = (uint16) 9600
 
 extern
 fun wdt_enable (mode: int) : void = "mac#wdt_enable"

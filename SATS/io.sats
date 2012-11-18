@@ -34,8 +34,8 @@ fun int_of_regs {n,p:nat} (
 ) : int = "mac#avr_libats_int_of_regs"
 
 (* Set an integer across two 8 bit registers *)
-fun set_regs_to_int {n,p:nat} (
-  high: reg(n), low: reg(p), value: uint16
+fun set_regs_to_int {n,p,q:nat} (
+  high: reg(n), low: reg(p), value: uint16 q
 ) : void = "mac#avr_libats_set_regs_to_int"
 
 (* A few useful castfunctions. *)

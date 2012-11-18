@@ -96,8 +96,8 @@ val F_CPU = $extval(lint, "F_CPU")
 (* ****** ****** *)
 
 local
-  fun atmega328p_async_hardware {n:nat | uint16(n)} (
-    n: int n
+  fun atmega328p_async_hardware {n:nat} (
+    n: uint16 n
   ) : void = {
     val ubrr = ubrr_of_baud(n)
     val () = set_regs_to_int(UBRR0H, UBRR0L, ubrr)
