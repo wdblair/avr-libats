@@ -16,8 +16,8 @@ praxi lemma_reg_int8 {n:nat} (r: reg(n) ) : [0 <= n; n < 256] void
 
 macdef F_CPU = $extval(ulint, "F_CPU")
 
-stadef uint16(n:int) = n < 65536
-stadef uint8(n:int) = n < 256
+//stadef uint16(n:int) = n < 65536
+//stadef uint8(n:int) = n < 256
 
 fun bit_is_set {n:nat} (
   r: reg(n), b: natLt(8)
@@ -38,97 +38,34 @@ fun set_regs_to_int {n,p:nat} (
   high: reg(n), low: reg(p), value: uint16
 ) : void = "mac#avr_libats_set_regs_to_int"
 
-castfn char_of_reg(r:reg(8)) : char
-
-castfn uchar_of_reg(r:reg(8)) : uchar
-
-castfn int_of_reg(r:reg(8)) : [n:nat | n < 256] int n
-
-(* Cast Functions (For char, uchar, register, etc. *)
- 
-symintr uchar
- 
-castfn uchar_char (c:char) : uchar
-
-overload uchar with uchar_char
-
-castfn uchar_int (i:int) : uchar
-
-overload uchar with uchar_int
-
-castfn uchar_int1 {n:nat} (i:int n) : uchar
-
-overload uchar with uchar_int1
-
-castfn uchar_reg {n:nat} (r:reg(n)) : uchar
-
-overload uchar with uchar_reg
-
-symintr char
-
-castfn char_uchar (c:uchar) : char
-
-overload char with char_uchar
-
-castfn char_reg (r:reg(8)) : char
-
-overload char with char_reg
-
-symintr int1
-
-castfn int1_uchar (c:uchar) : [n:nat] int n
-
-overload int1 with int1_uchar
-
-castfn int1_char (c:char) : [n:nat] int n
-
-overload int1 with int1_char
-
-castfn int1_reg (r: reg(8)) : [n:nat | uint8(n)] int n
-
-overload int1 with int1_reg
-
-symintr int 
-
-castfn int_char (c:char) : int
-
-overload int with int_char
+(* A few useful castfunctions. *)
 
 castfn int_reg (r: reg(8)) : int
 
 overload int with int_reg
 
-symintr uint
+castfn int1_reg (r: reg(8)) : [n:nat | n < 256] int n
+
+overload int1 with int1_reg
+
+castfn uchar_reg {n:nat} (r:reg(n)) : uchar
+
+overload uchar with uchar_reg
+
+castfn char_reg (r:reg(8)) : char
+
+overload char with char_reg
+
 
 castfn uint_ulint (ul: ulint) : uint
 
 overload uint with uint_ulint
 
-symintr uint1
-
-castfn uint1_ulint (ul: ulint) : [n:nat] uint n
+castfn uint1_ulint (ul: ulint): [n:nat] uint n
 
 overload uint1 with uint1_ulint
 
-(* 
-  Write a script to automatically generate the 
-  all the required overloaded symbols and such...
-*)
-castfn uint8 {n:nat} (n:int n) : uint8 n
-
-castfn int8 {n:int} (n:int n) : int8 n
-
-castfn int16 {n:int} (n:int n) : int16 n
-
-castfn uint16 {n:nat} (n:int n) : uint16 n
-
-castfn uint32 {n:nat} (n:int n) : uint32 n
-
-castfn int32 {n:int} (n:int n) : int32 n
-
-castfn uint64 {n:nat} (n:int n) : uint64 n
-
-castfn int64 {n:int} (n:int n) : int64 n
+(* **** **** *)
 
 symintr setbits
 
