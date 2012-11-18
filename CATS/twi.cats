@@ -188,6 +188,4 @@ typedef struct {
   ats_ptr_type process;
 } twi_state_t;
 
-#define get_twi_state() (twi_state_t *)&twi_state
-
 #endif

@@ -82,10 +82,10 @@ viewtypedef buffer_t
   = $extype_struct "buffer_t" of {
   data= @[uchar][buff_size],
   trans= @[uchar][buff_size/2],
-  msg_size= [n:pos | n <= buff_size] int n,
-  recvd_size= [p:nat | p <= buff_size] int p,
-  trans_size= [t:pos | t <= buff_size/2] int t,
-  curr_trans= [c:nat | c < buff_size/2] int c
+  msg_size= [n:pos | n <= buff_size] uint8 n,
+  recvd_size= [p:nat | p <= buff_size] uint8 p,
+  trans_size= [t:pos | t <= buff_size/2] uint8 t,
+  curr_trans= [c:nat | c < buff_size/2] uint8 c
 }
 
 viewtypedef twi_state_t
@@ -93,10 +93,10 @@ viewtypedef twi_state_t
     buffer=  buffer_t,
     status_reg= status_reg_t,
     state=uchar,
-    next_byte= [m:nat | m < buff_size] int m,
+    next_byte= [m:nat | m < buff_size] uint8 m,
     enable= () -<fun1> void,
     busy= () -<fun1> bool,
-    process= {n:nat | n <= buff_size} (&(@[uchar][buff_size]), int n, mode) -<fun1> void
+    process= {n:nat | n <= buff_size} (&(@[uchar][buff_size]), uint8 n, mode) -<fun1> void
 }
 
 (* ****** ****** *)
@@ -104,7 +104,7 @@ viewtypedef twi_state_t
 viewtypedef transaction_t =  $extype_struct "transaction_t" of {
   cnt= uchar,
   curr= uchar,
-  sz= int,
+  sz= uint8,
   fmt= @[uchar][buff_size/2]
 }
 
@@ -132,14 +132,14 @@ fun transaction_init {n:pos | transaction(0,0,n)} {l:agz} (
 ) : transaction(l, 0, 0, n) = "mac#transaction_init"
 
 fun size {l:addr} {sum, n, sz:nat | transaction(sum, n, sz)}
-  (trans: !transaction(l, sum, n ,sz)) : int sz = "mac#transaction_size"
+  (trans: !transaction(l, sum, n ,sz)): uint8 sz = "mac#transaction_size"
 
 fun count {l:addr} {sum, n, sz:nat | transaction(sum, n, sz)}
-  (trans: !transaction(l, sum, n, sz)) : int n = "mac#transaction_count"
+  (trans: !transaction(l, sum, n, sz)) : uint8 n = "mac#transaction_count"
   
 fun sum {l:addr} {sum, n, sz:nat | transaction(sum, n, sz)} (
   trans: !transaction(l, sum, n, sz)
-) : int sum = "mac#transaction_sum"
+) : uint8 sum = "mac#transaction_sum"
 
 fun add_msg {l:addr} {s, n, sz, v:nat | v >= 2; transaction(s+v, n, sz)} (
     trans: !transaction(l, s, n, sz) >> transaction(l, s+v, n+1, sz),
@@ -242,10 +242,10 @@ fun wait(pf: !INT_SET, busy: TWI_BUSY | (* *)) : (TWI_READY | void)
 
 fun last_trans_ok (pf: !TWI_READY  | (* *)) : bool
 
-fun rx_data_in_buf (pf: !TWI_READY | (* *)) : [n:nat | n <= buff_size] int n
+fun rx_data_in_buf (pf: !TWI_READY | (* *)) : [n:nat | n <= buff_size] uint8 n
 
 fun start_with_data {n, p:pos | n <= buff_size; p <= buff_size; p <= n} (
-  pf: !INT_SET, ready: !TWI_READY >> TWI_BUSY | msg: &(@[uchar][n]), sz: int p
+  pf: !INT_SET, ready: !TWI_READY >> TWI_BUSY | msg: &(@[uchar][n]), sz: uint8 p
 ) : void
 
 fun start_transaction {l:addr} {
@@ -256,11 +256,11 @@ fun start_transaction {l:addr} {
 ) : (TWI_BUSY | void)
 
 fun start_server {sz:pos | sz <= buff_size} (
-  pf: !INT_SET, ready: TWI_READY | process: {n:nat | n <= buff_size} (&(@[uchar][buff_size]), int n, mode) -<fun1> void, sz: int sz
+  pf: !INT_SET, ready: TWI_READY | process: {n:nat | n <= buff_size} (&(@[uchar][buff_size]), uint8 n, mode) -<fun1> void, sz: uint8 sz
 ) : void
 
 fun get_data {n,p:pos | n <= buff_size; p <= buff_size; p <= n} (
-  pf: !INT_SET, ready: !TWI_READY | msg: &(@[uchar][n]), sz: int p
+  pf: !INT_SET, ready: !TWI_READY | msg: &(@[uchar][n]), sz: uint8 p
 ) : bool
 
 fun start (

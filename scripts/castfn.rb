@@ -9,8 +9,10 @@ targets = ["char","uchar", "int", "int1", "uint","uint1"]
 
 types.each do |from|
 
-  static = from =~ /^u/ ? "nat" : "int"
-  
+  #static = from =~ /^u/ ? "nat" : "int"
+
+  static = "int"
+
   puts "(* **** #{from} **** *)\n\n"
 
   puts "symintr #{from}\n\n"
@@ -23,7 +25,7 @@ types.each do |from|
                when "int1"
                  "{n:#{static}} (n: int n)"
                when "uint1"
-                 "{n:#{static}} (n: uint n)"
+                 "{n:nat} (n: uint n)"
                else
                  "(n: #{to})"
                end
@@ -31,6 +33,8 @@ types.each do |from|
     res = case to
           when "int1", "uint1"
             "#{from} n"
+          when "uchar"
+            "[n:nat] #{from} n"
           else
             "[n:#{static}] #{from} n"
           end
@@ -111,6 +115,8 @@ FUN
               "bool (i1 >= i2)"
             when "!="
               "bool (i1 != i2)"
+            when "="
+              "bool (i1 == i2)"
             else
               "[i3:#{static}] #{from} i3"
             end

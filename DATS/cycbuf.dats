@@ -25,10 +25,10 @@ local
       f: &cycbuf_array(a, n, s, w, r)
           >> cycbuf_array(a, n+1, s, w', r), x: a
   ) : #[w':nat | w' < s] void = let
-      val () = f.n := f.n + 1
+      val () = f.n := f.n + (uint8)1
       val () = f.base.[f.w] := x
     in
-      f.w := (f.w + 1) nmod1 f.size
+      f.w := (f.w + (uint8)1) mod f.size
     end
 
   stadef cycbuf_not_empty (
@@ -42,10 +42,10 @@ local
       f: &cycbuf_array(a, n, s, w, r)
           >> cycbuf_array(a, n-1, s, w, r'), x: &a? >> a
   ) : #[r':nat | r' < s] void = let
-      val () = f.n := f.n - 1
+      val () = f.n := f.n - (uint8)1
       val () = x := f.base.[f.r]
     in
-      f.r := (f.r + 1) nmod1 f.size
+      f.r := (f.r + (uint8)1) mod f.size
     end
 
   fun {a:t@ype} cycbuf_peek
@@ -57,15 +57,15 @@ local
       {s,n,r,w:nat | cycbuf_not_empty(s,n,r,w) } (
         f: &cycbuf_array(a, n, s, w, r), x: &a? >> a
   ) : void =
-    if f.w = 0 then
-      x := f.base.[f.size - 1]
+    if f.w = (uint8) 0 then
+      x := f.base.[f.size - (uint8)1]
     else
-      x := f.base.[f.w - 1]
+      x := f.base.[f.w - (uint8)1]
       
   fun {a:t@ype} cycbuf_is_empty {s,n:nat | n <= s}
       {w,r:nat | w < s; r < s} (
       f: &cycbuf_array(a,n,s,w,r)
-  ) : bool(n == 0) = f.n = 0
+  ) : bool(n == 0) = f.n = (uint8)0
 
   fun {a:t@ype} cycbuf_is_full {s:pos}
         {n,w,r:nat | n <= s; w < s; r < s} (

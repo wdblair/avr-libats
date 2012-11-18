@@ -25,7 +25,6 @@ fun atmega328p_init_stdio {n:nat} (
 
 (*  Polling Based *)
 
-
 fun atmega328p_rx_stdio
   (f: FILEref) : int = "atmega328p_rx_stdio"
 

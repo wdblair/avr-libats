@@ -27,7 +27,7 @@ in
 end
 
 fun response {n:nat | n <= $TWI.buff_size} (
-  src: &(@[uchar][$TWI.buff_size]), sz: int n, m: $TWI.mode
+  src: &(@[uchar][$TWI.buff_size]), sz: uint8 n, m: $TWI.mode
 ) : void = {
   prval (pf) = global_get(ginfo)
   val curr = (int1)src.[0]
