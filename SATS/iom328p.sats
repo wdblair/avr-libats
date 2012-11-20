@@ -711,8 +711,12 @@ macdef UDR0_5 = $extval(natLt(8), "UDR0_5")
 macdef UDR0_6 = $extval(natLt(8), "UDR0_6")
 macdef UDR0_7 = $extval(natLt(8), "UDR0_7")
 
-macdef SPM_PAGESIZE = $extval(natLt(8), "SPM_PAGESIZE")
-macdef FUSE_MEMORY_SIZE = $extval(natLt(8), "FUSE_MEMORY_SIZE")
-macdef SIGNATURE_0 = $extval(natLt(8), "SIGNATURE_0")
-macdef SIGNATURE_1 = $extval(natLt(8), "SIGNATURE_1")
-macdef SIGNATURE_2 = $extval(natLt(8), "SIGNATURE_2")
+//Stadefs could be useful for constants like the page size.
+stadef SPM_PAGESIZE = 128
+stadef PAGECOUNT = 256
+
+macdef SPM_PAGESIZE = $extval(int 128, "SPM_PAGESIZE")
+macdef FUSE_MEMORY_SIZE = $extval(int 3, "FUSE_MEMORY_SIZE")
+macdef SIGNATURE_0 = $extval(natLt(256), "SIGNATURE_0")
+macdef SIGNATURE_1 = $extval(natLt(256), "SIGNATURE_1")
+macdef SIGNATURE_2 = $extval(natLt(256), "SIGNATURE_2")

@@ -101,6 +101,10 @@ viewtypedef twi_state_t
 
 (* ****** ****** *)
 
+
+
+(* ****** ****** *)
+
 viewtypedef transaction_t =  $extype_struct "transaction_t" of {
   cnt= uchar,
   curr= uchar,
