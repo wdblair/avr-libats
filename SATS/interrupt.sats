@@ -12,7 +12,10 @@ fun cli
 fun sei
   (pf: INT_CLEAR | (* none *) ) : (INT_SET | void ) = "mac#sei"
 
-(* All these definitions should go inside io.sats instead (chip dependent). *)
+(* 
+  All these definitions should go inside io.sats instead since
+  they are chip dependent.
+*)
 
 fun PCINT0_vect () : void = "PCINT0_vect"
 
@@ -23,8 +26,10 @@ fun USART_RX_vect_interrupts_enabled
 
 overload USART_RX_vect with USART_RX_vect_interrupts_enabled 
 
+absviewtype UDR0_READ
+
 fun USART_RX_vect_interrupts_disabled 
-  (pf: !INT_CLEAR | (* none *)) : void = "USART_RX_vect"
+  (pf: !INT_CLEAR, pf0: UDR0_READ  | (* none *)) : void = "USART_RX_vect"
 
 overload USART_RX_vect with USART_RX_vect_interrupts_disabled 
 

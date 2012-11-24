@@ -67,11 +67,20 @@ USART_TX_vect (locked | (* *)) = let
     prval () = unlock(locked, gwrite, pf)
   }
 end
- 
+
+fun read_udr0 (
+  pf: UDR0_READ | (**)
+) : reg(8) = UDR0 where {
+  prval () = consume(pf) where {
+     extern praxi
+     consume(pf: UDR0_READ) : void
+  }
+}
+  
 implement
-USART_RX_vect (locked | (* *)) = let
+USART_RX_vect (locked, read | (* *)) = let
   prval (pf) = lock(locked, gread)
-  var contents : char = (char) UDR0
+  var contents : char = (char)(read_udr0(read | (**)))
  in
    if full(locked | !readbuf) then {
       prval () = unlock(locked, gread, pf)

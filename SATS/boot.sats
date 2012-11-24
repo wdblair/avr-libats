@@ -13,27 +13,24 @@ staload "SATS/io.sats"
 
 typedef Uint8 = [n:nat] uint8 n
 
-fun program_page( 
-  buf: &(@[Uint8][SPM_PAGESIZE])
+fun program_page(
+  pf: INT_CLEAR | buf: &(@[Uint8][SPM_PAGESIZE])
 ) : void
 
 fun page_erase {n:nat} (
-  page: uint32 n
+  pf: INT_CLEAR | page: uint32 n
 ) : void = "mac#boot_page_erase"
 
 fun page_write {n:nat} (
-  page: uint32 n
+  pf: INT_CLEAR | page: uint32 n
 ) : void = "mac#boot_page_write"
 
-fun spm_busy_wait () : void = "mac#boot_spm_busy_wait"
+fun spm_busy_wait (
+  pf: INT_CLEAR | (**)
+) : void = "mac#boot_spm_busy_wait"
 
 fun page_fill {n,p:nat} (
-  address: uint32 p, data: uint16 n
+  pf: INT_CLEAR | address: uint32 p, data: uint16 n
 ) : void = "mac#boot_page_fill"
 
 fun rww_enable () : void = "mac#boot_rww_enable"
-
-
-
-
-
