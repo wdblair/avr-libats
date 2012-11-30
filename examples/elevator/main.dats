@@ -279,15 +279,15 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
     prval (pf) = lock(locked, state_lock)
     val q = &state->queue
     //Test if two requests are equal
-    fun eq(
+    fun equal(
       a: request, b: request
     ) : bool =
       ((a.onboard && a.onboard = b.onboard)
         || (~(a.onboard || b.onboard)
             && a.direction = b.direction))
       && (a.floor = b.floor)
-    val dup = contains(locked | !q, r, eq)
-  in
+    val dup = contains(locked | !q, r, equal)
+in
     if full(locked | !q) then
         if r.onboard then {
           fun remove (r: &request) : bool =
@@ -303,7 +303,7 @@ fun add_request(locked: !INT_CLEAR | r: request) : void = let
       val () = enqueue<request>(locked | !q, r, compare)
       prval () = unlock(locked, state_lock, pf)
     }
-  end
+end
   
 fun next_request(locked: !INT_CLEAR | (**)) : request = let
   prval (pf) = lock(locked, state_lock)

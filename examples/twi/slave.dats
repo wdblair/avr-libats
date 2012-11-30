@@ -30,11 +30,11 @@ fun response {n:nat | n <= $TWI.buff_size} (
   src: &(@[uchar][$TWI.buff_size]), sz: uint8 n, m: $TWI.mode
 ) : void = {
   prval (pf) = global_get(ginfo)
-  val curr = (int1)src.[0]
+  val curr = (int1) src.[0]
   val () =
     if curr >= 0 && curr < 5 then
       src.[0] := !information.[curr]
-    else 
+    else
       src.[0] := (uchar) '0'
   prval () = global_return(ginfo, pf)
 }

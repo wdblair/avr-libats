@@ -96,12 +96,10 @@ viewtypedef twi_state_t
     next_byte= [m:nat | m < buff_size] uint8 m,
     enable= () -<fun1> void,
     busy= () -<fun1> bool,
-    process= {n:nat | n <= buff_size} (&(@[uchar][buff_size]), uint8 n, mode) -<fun1> void
+    process= {n:nat | n <= buff_size} (
+      &(@[uchar][buff_size]), uint8 n, mode
+    ) -<fun1> void
 }
-
-(* ****** ****** *)
-
-
 
 (* ****** ****** *)
 

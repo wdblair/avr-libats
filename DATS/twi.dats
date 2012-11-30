@@ -125,10 +125,10 @@ local
       val (enabled | ()) = sleep_cpu(locked | (**))
       prval () = pf := enabled
     in sleep_until_ready(pf | (**)) end
-    else let
+    else {
       val (enabled | ()) = sei(locked | (* *))
       prval () = pf := enabled
-    in end
+    }
   end
   
   local
@@ -236,10 +236,11 @@ local
   
   fun copy_recvd_byte () : void = let
     prval (pf) = global_get(gstate)
-    val () = state->buffer.data.[state->next_byte] := (uchar)TWDR
+    val nxt = state->next_byte
+    val () = state->buffer.data.[nxt] := (uchar)TWDR
   in
-      if state->next_byte < state->buffer.msg_size - (uint8) 1 then {
-        val () = state->next_byte := state->next_byte + (uint8) 1
+      if nxt < state->buffer.msg_size - (uint8) 1 then {
+        val () = state->next_byte := nxt + (uint8) 1
         prval () = global_return(gstate, pf)
       } else {
         prval () = global_return(gstate, pf)
