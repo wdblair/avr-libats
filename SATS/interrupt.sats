@@ -6,17 +6,48 @@
 
 #define ATS_STALOADFLAG 0
 
-fun cli
+absviewt@ype saved_sreg
+
+symintr cli
+
+fun cli_explicit
   (pf: INT_SET | (* none *) ) : (INT_CLEAR | void ) = "mac#cli"
 
-fun sei
+overload cli with cli_explicit
+
+fun cli_saved
+  (saved: !saved_sreg) : (INT_CLEAR | void ) = "mac#cli"
+  
+overload cli with cli_saved
+
+symintr sei
+
+fun sei_explicit
   (pf: INT_CLEAR | (* none *) ) : (INT_SET | void ) = "mac#sei"
+  
+overload sei with sei_explicit
+
+fun sei_saved
+  (saved: !saved_sreg) : (INT_SET | void ) = "mac#sei"
+
+overload sei with sei_saved
+
+fun save_interrupts () : saved_sreg = "mac#save_interrupts"
+
+symintr restore_interrupts
+
+fun restore_interrupts_clear (pf: INT_CLEAR | saved: saved_sreg) : void = "mac#restore_interrupts"
+
+overload restore_interrupts with restore_interrupts_clear
+
+fun restore_interrupts_set (pf: INT_SET | saved: saved_sreg) : void = "mac#restore_interrupts"
+
+overload restore_interrupts with restore_interrupts_set
 
 (* 
   All these definitions should go inside io.sats instead since
   they are chip dependent.
 *)
-
 fun PCINT0_vect () : void = "PCINT0_vect"
 
 symintr USART_RX_vect
