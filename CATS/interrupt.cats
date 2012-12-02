@@ -6,4 +6,7 @@
 #define declare_isr(vector, ...)                                        \
   void vector (void) __attribute__ ((signal,__INTR_ATTRS)) __VA_ARGS__
 
+#define save_interrupts() SREG
+#define restore_interrupts(regs) SREG = regs
+
 #endif

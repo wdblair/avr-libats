@@ -6,7 +6,7 @@
 
 #define ATS_STALOADFLAG 0
 
-absviewt@ype saved_sreg
+absviewt@ype saved_sreg = uint8
 
 symintr cli
 

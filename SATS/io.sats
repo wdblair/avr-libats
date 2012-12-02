@@ -56,7 +56,6 @@ castfn char_reg (r:reg(8)) : char
 
 overload char with char_reg
 
-
 castfn uint_ulint (ul: ulint) : uint
 
 overload uint with uint_ulint
