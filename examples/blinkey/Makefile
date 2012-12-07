@@ -8,7 +8,7 @@ $(PROJECT).hex: $(PROJECT)
 	$(OBJCOPY) -j .text -O ihex $(PROJECT).out $(PROJECT).hex
 
 $(PROJECT):
-	avr-atscc -DF_CPU=$(F_CPU) -mmcu=$(MMCU) -O2 -o $(PROJECT).out main.dats
+	avr-atscc -DF_CPU=$(F_CPU) -mmcu=$(MMCU) -o $(PROJECT).out main.dats
 
 program: $(PROJECT).hex
 	avrdude -p m8 -c avrusb500 -e -U flash:w:$(PROJECT).hex
