@@ -47,11 +47,16 @@ fun global_get {v:view} {l:addr} (
 
 absprop interrupt_lock (view)
 
-praxi lock {v:view} (
+typedef sharedkey(v:view, l:addr) = @{
+  lock= interrupt_lock(v),
+  p = ptr l
+}
+
+praxi lock_interrupt {v:view} (
   pf: !INT_CLEAR, g: interrupt_lock(v)
 ) : (v)
 
-praxi unlock {v:view} (
+praxi unlock_interrupt {v:view} (
   pf: !INT_CLEAR, g: interrupt_lock(v), pf: v
 ) : void
 
@@ -59,11 +64,11 @@ praxi interrupt_lock_new {v:view} (
   pf: v
 ) : interrupt_lock(v)
 
-typedef sharedkey(v:view, l:addr) = @{
-  lock= interrupt_lock(v),
-  p = ptr l
-}
-
-fun global_shared_get {v:view} {l:addr} (
-  pf: !INT_CLEAR, g: sharedkey(v,l)
+fun lock {v:view} {l:addr} (
+  pf: !INT_CLEAR | g: sharedkey(v,l)
 ) : global(v, l) = "mac#global_shared_get"
+
+praxi unlock {v:view} {l:addr} (
+  pf: !INT_CLEAR, sh: sharedkey(v,l), g: global(v, l)
+) : void = "mac#global_shared_get"
+

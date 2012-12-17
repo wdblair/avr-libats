@@ -29,61 +29,47 @@ staload "DATS/cycbuf.dats"
 local  
   //Interesting error, I need to use the ATS 
   //naming convention for these variables.
-  (*
   var readbuf : fifo(char, 0, 25) with pfread =
     $extval(fifo(char, 0, 25), "statmp0")
   var writebuf : fifo(char, 0, 25) with pfwrite =
     $extval(fifo(char, 0, 25), "statmp1")
-  *)
-  
+    
   fun nop {n,p:pos | n <= p} (
     pf: !INT_CLEAR | f: &fifo(char, n, p) >> fifo(char, n', p)
   ) : #[n' :nat | n' <= p] void = ()
-
   
-  viewtypedef buffer(read:int, write:int) = @{
-    read= fifo(char, read, 25), 
-    write= fifo(char, write, 25), 
-    callback= usart_callback
-  }
+  var callback : usart_callback with pfcall = nop
   
-  var buf : buffer(0,0) = @{
-    read= $extval(fifo(char, 0, 25), "statmp0"),
-    write= $extval(fifo(char, 0, 25), "statmp1"),
-    callback= nop
-  }
+  viewdef read = [n,s:nat | n <= s] fifo(char, n, s) @ readbuf
+  viewdef write = [n,s:nat | n <= s] fifo(char, n, s) @ writebuf
+  viewdef call = usart_callback @ callback
   
-  viewdef vbuffer = buffer(0,0) @ buf
-//  viewdef read = [n,s:nat | n <= s] fifo(char, n, s) @ readbuf
-//  viewdef write = [n,s:nat | n <= s] fifo(char, n, s) @ writebuf
-//  viewdef call = usart_callback @ callback
+  prval readlock = interrupt_lock_new{read}(pfread)
+  prval writelock = interrupt_lock_new{write}(pfwrite)
+  prval backlock = interrupt_lock_new{call}(pfcall)
 in
-  
-//  val readbuf = &readbuf
-//  val writebuf = &writebuf
-//  val callback = &callback
-//  prval gread = lock_new {read} (pfread)
-//  prval gwrite = lock_new {write} (pfwrite)
-//  prval gcall = lock_new {call} (pfcall)
+  val readbuf = @{lock= readlock, p= &readbuf}
+  val writebuf = @{lock= writelock, p= &writebuf}
+  val callback = @{lock= backlock, p= &callback}
 end
 
-////
 (* ****** ****** *)
 
 implement 
 USART_TX_vect (locked | (* *)) = let
-  prval (pf) = lock(locked, gwrite)
+  val @{ at= pf, p= buf } = lock(locked | writebuf)
  in
-  if empty(locked | !writebuf) then {
-    prval () = unlock(locked, gwrite, pf)
+  if empty(locked | !buf) then {
+    prval () = unlock(locked, writebuf, global_new(pf | buf))
   } else {
     var tmp : char
-    val () = remove<char>(locked | !writebuf , tmp)
+    val () = remove<char>(locked | !buf, tmp)
     val () = setval(UDR0, tmp)
-    prval () = unlock(locked, gwrite, pf)
+    prval () = unlock(locked, writebuf, global_new(pf | buf))
   }
 end
 
+////
 fun read_udr0 (
   pf: UDR0_READ | (**)
 ) : char = (char) UDR0 where {
