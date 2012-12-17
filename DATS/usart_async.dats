@@ -29,29 +29,45 @@ staload "DATS/cycbuf.dats"
 local  
   //Interesting error, I need to use the ATS 
   //naming convention for these variables.
-  var readbuf : fifo(char, 0, 25) with pfread = 
+  (*
+  var readbuf : fifo(char, 0, 25) with pfread =
     $extval(fifo(char, 0, 25), "statmp0")
-  var writebuf : fifo(char, 0, 25) with pfwrite = 
+  var writebuf : fifo(char, 0, 25) with pfwrite =
     $extval(fifo(char, 0, 25), "statmp1")
-
+  *)
+  
   fun nop {n,p:pos | n <= p} (
     pf: !INT_CLEAR | f: &fifo(char, n, p) >> fifo(char, n', p)
   ) : #[n' :nat | n' <= p] void = ()
+
   
-  var callback : usart_callback with pfcall = nop
+  viewtypedef buffer(read:int, write:int) = @{
+    read= fifo(char, read, 25), 
+    write= fifo(char, write, 25), 
+    callback= usart_callback
+  }
   
-  viewdef read = [n,s:nat | n <= s] fifo(char, n, s) @ readbuf
-  viewdef write = [n,s:nat | n <= s] fifo(char, n, s) @ writebuf
-  viewdef call = usart_callback @ callback
+  var buf : buffer(0,0) = @{
+    read= $extval(fifo(char, 0, 25), "statmp0"),
+    write= $extval(fifo(char, 0, 25), "statmp1"),
+    callback= nop
+  }
+  
+  viewdef vbuffer = buffer(0,0) @ buf
+//  viewdef read = [n,s:nat | n <= s] fifo(char, n, s) @ readbuf
+//  viewdef write = [n,s:nat | n <= s] fifo(char, n, s) @ writebuf
+//  viewdef call = usart_callback @ callback
 in
-  val readbuf = &readbuf
-  val writebuf = &writebuf
-  val callback = &callback
-  prval gread = lock_new {read} (pfread)
-  prval gwrite = lock_new {write} (pfwrite)
-  prval gcall = lock_new {call} (pfcall)
+  
+//  val readbuf = &readbuf
+//  val writebuf = &writebuf
+//  val callback = &callback
+//  prval gread = lock_new {read} (pfread)
+//  prval gwrite = lock_new {write} (pfwrite)
+//  prval gcall = lock_new {call} (pfcall)
 end
 
+////
 (* ****** ****** *)
 
 implement 
