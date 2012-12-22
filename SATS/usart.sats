@@ -45,7 +45,11 @@ typedef usart_callback =
   {n,p:pos | n <= p} (
     !INT_CLEAR | &fifo(char, n, p) >> fifo(char, n', p)
   ) -<fun1> #[n':nat | n' <= p] void
-  
+
+fun read_udr0 (
+  pf: UDR0_READ | (* *)
+) : char = "mac#avr_libats_read_udr0"
+
 (* ****** ****** *)
 
 symintr atmega328p_async_init

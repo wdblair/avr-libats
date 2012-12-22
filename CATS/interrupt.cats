@@ -9,4 +9,7 @@
 #define save_interrupts() SREG
 #define restore_interrupts(regs) SREG = regs
 
+#define sei_saved(flag) sei()
+#define cli_saved(flag) cli()
+
 #endif

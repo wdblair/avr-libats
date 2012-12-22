@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-//Would like to move this to ATS when I port the basic stdlib interface.
+//Would like to move this to ATS if I make an interface around stdlib
 ATSinline()
 ats_uint16_type
 avr_libats_ubrr_of_baud (ats_uint16_type baud) {
@@ -13,10 +13,15 @@ avr_libats_ubrr_of_baud (ats_uint16_type baud) {
   div = ldiv((F_CPU >> 4), baud);
   ubrr = (uint16_t)div.quot;
   
-  if((uint32_t)(div.rem) < baud) {
+  if((uint32_t)(div.rem) < baud)
     ubrr--;
-  }
   return ubrr;
+}
+
+ATSinline()
+ats_char_type
+avr_libats_read_udr0() {
+  return UDR0;
 }
 
 #endif

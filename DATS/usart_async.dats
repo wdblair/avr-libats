@@ -57,41 +57,31 @@ end
 
 implement 
 USART_TX_vect (locked | (* *)) = let
-  val @{ at= pf, p= buf } = lock(locked | writebuf)
+  val (pf | buf) = lock(locked | writebuf)
  in
   if empty(locked | !buf) then {
-    prval () = unlock(locked, writebuf, global_new(pf | buf))
+    prval () = unlock(locked, writebuf, pf , buf)
   } else {
     var tmp : char
     val () = remove<char>(locked | !buf, tmp)
     val () = setval(UDR0, tmp)
-    prval () = unlock(locked, writebuf, global_new(pf | buf))
+    prval () = unlock(locked, writebuf, pf , buf)
   }
 end
 
-////
-fun read_udr0 (
-  pf: UDR0_READ | (**)
-) : char = (char) UDR0 where {
-  prval () = consume(pf) where {
-     extern praxi
-     consume(pf: UDR0_READ) : void
-  }
-}
-  
 implement
 USART_RX_vect (locked, read | (* *)) = let
-  prval (pf) = lock(locked, gread)
+  val (pf | buf) = lock(locked | readbuf)
   var contents : char = read_udr0(read | (**))
  in
-   if full(locked | !readbuf) then {
-      prval () = unlock(locked, gread, pf)
+   if full(locked | !buf) then {
+      prval () = unlock(locked, readbuf, pf, buf)
    } else {
-      	val () = insert<char>(locked | !readbuf, contents)
-        prval (pfcall) = lock(locked, gcall)
-        val () = !callback(locked | !readbuf)
-        prval () = unlock(locked, gcall, pfcall)
-        prval () = unlock(locked, gread, pf)
+      	val () = insert<char>(locked | !buf, contents)
+        val (pfcall | call) = lock(locked | callback)
+        val () = !call(locked | !buf)
+        prval () = unlock(locked, callback, pfcall, call)
+        prval () = unlock(locked, readbuf, pf, buf)
    }
  end
  
@@ -99,10 +89,6 @@ USART_RX_vect (locked, read | (* *)) = let
 
 extern
 fun redirect_stdio () : void = "redirect_stdio"
-
-(* ****** ****** *)
-
-val F_CPU = $extval(lint, "F_CPU")
 
 (* ****** ****** *)
 
@@ -120,7 +106,6 @@ local
     val () = redirect_stdio()
   }
 in
-
   implement
   atmega328p_async_init_stdio (locked | baud) = {
     fun nop {n,p:pos | n <= p} (
@@ -130,10 +115,10 @@ in
   }
 
   implement
-  atmega328p_async_init_callback(locked | baud, call) = {
-    prval (pf) = lock(locked, gcall)
-    val () = !callback := call
-    prval () = unlock(locked, gcall, pf)
+  atmega328p_async_init_callback(locked | baud, c) = {
+    val (pf | call) = lock(locked | callback)
+    val () = !call := c
+    prval () = unlock(locked, callback, pf, call)
     val () = atmega328p_async_hardware(baud)
   }
 end
@@ -148,25 +133,25 @@ atmega328p_async_tx (pf0 | c, f) = 0 where {
             val _ = atmega328p_async_tx(pf0 | '\r', stdout_ref)
         }
       val (locked | () ) = cli(pf0 | (* *))
-      prval (pf) = lock(locked , gwrite)
+      val (pf | buf) = lock(locked | writebuf)
    in
-      if full (locked | !writebuf) then let
-          prval () = unlock(locked, gwrite, pf)
+      if full (locked | !buf) then let
+          prval () = unlock(locked, writebuf, pf, buf)
           val (enabled | () ) = sleep_cpu(locked | (* *))
           prval () = pf0 := enabled
         in loop(pf0 | c) end
       else let
-          val () = insert<char>(locked | !writebuf, c)
+          val () = insert<char>(locked | !buf, c)
        in
         if bit_is_set(UCSR0A, UDRE0) then {
           var tmp : char
-	  val () = remove<char>(locked | !writebuf, tmp)
-          prval () = unlock(locked, gwrite, pf)
+	  val () = remove<char>(locked | !buf, tmp)
+          prval () = unlock(locked, writebuf, pf, buf)
           val (enabled | () ) = sei(locked | (* *))
 	  val () = setval(UDR0, tmp)
           prval () = pf0 := enabled
 	} else {
-           prval () = unlock(locked, gwrite, pf)
+           prval () = unlock(locked, writebuf, pf, buf)
            val (enabled | ()) = sei(locked | (* *))
            prval () = pf0 := enabled
         }
@@ -181,17 +166,17 @@ atmega328p_async_rx (pf0 | f) = let
     pf0: !INT_SET | (* *)
   ) : char = let
     val (locked | () ) = cli(pf0 | (* *))
-    prval (pf) = lock(locked, gread)
+    val (pf | buf) = lock(locked | readbuf)
   in 
-    if empty<char>(locked | !readbuf) then let
-      prval () = unlock(locked, gread, pf)
+    if empty<char>(locked | !buf) then let
+      prval () = unlock(locked, readbuf, pf, buf)
       val (enabled | () ) = sleep_cpu(locked | (* *) )
       prval () = pf0 := enabled
      in loop(pf0 | (* *)) end
     else let
       var tmp : char
-      val () = remove<char>(locked | !readbuf, tmp)
-      prval () = unlock(locked, gread, pf)
+      val () = remove<char>(locked | !buf, tmp)
+      prval () = unlock(locked, readbuf, pf, buf)
       val (enabled | () ) = sei(locked | (* *))
       prval () = pf0 := enabled
     in tmp end
@@ -206,15 +191,15 @@ atmega328p_async_flush (pf0 | (* *)) = let
     //empty stdout first
     val _ = fflush(stdout_ref)
     val (locked | () ) = cli(pf0 | (* *))
-    prval (pf) = lock(locked, gwrite)
+    val (pf | buf) = lock(locked |  writebuf)
   in
-    if empty<char>(locked | !writebuf) then let
-        prval () = unlock(locked, gwrite, pf)
+    if empty<char>(locked | !buf) then let
+        prval () = unlock(locked, writebuf, pf, buf)
         val (enabled | () ) = sei(locked | (* *))
         prval () = pf0 := enabled
       in  end
     else let
-      prval () = unlock(locked, gwrite, pf)
+      prval () = unlock(locked, writebuf, pf, buf)
       val (enabled | () ) = sleep_cpu(locked | (* *))
       prval () = pf0 := enabled
      in loop(pf0 | ) end

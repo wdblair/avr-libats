@@ -36,12 +36,12 @@ typedef viewkey(v:view, l:addr) = @{
 }
 
 praxi global_return {v:view} {l:addr} (
-  l: viewkey(v, l), g: global(v, l)
+  l: viewkey(v, l), pf: v
 ) : void
 
 fun global_get {v:view} {l:addr} (
   g: viewkey(v, l)
-) : global(v, l) = "mac#get_global"
+) : (v | ptr l) = "mac#global_get"
 
 (* Locking Proof Functions (For Variables Shared with ISRs) *)
 
@@ -66,9 +66,9 @@ praxi interrupt_lock_new {v:view} (
 
 fun lock {v:view} {l:addr} (
   pf: !INT_CLEAR | g: sharedkey(v,l)
-) : global(v, l) = "mac#global_shared_get"
+) : (v | ptr l)  = "mac#global_shared_get"
 
 praxi unlock {v:view} {l:addr} (
-  pf: !INT_CLEAR, sh: sharedkey(v,l), g: global(v, l)
+  pf: !INT_CLEAR, sh: sharedkey(v,l), pf: v , p: ptr l
 ) : void = "mac#global_shared_get"
 

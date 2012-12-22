@@ -1,6 +1,4 @@
 (*
-   A basic timer example.
-  
    Runs a stop watch that increments a timer every
    second and sends it to the serial port.
    
@@ -26,19 +24,20 @@ staload "SATS/global.sats"
 local
   var seconds : uint with pfseconds = 0u
   viewdef vseconds = uint @ seconds
+  
+  prval seconds_lock = viewlock_new{vseconds}(pfseconds)
 in
-  val seconds = &seconds
-  prval gseconds = global_new{vseconds}(pfseconds)
+  val seconds = @{lock= seconds_lock, p= &seconds}
 end
 
 implement main (locked | (**)) = {
   fun tick () : bool = true where {
     val () = print "\b\b\b"
     fun loop (rem: int) : void = ()
-    prval (pf) = global_get(gseconds)
-    val () = !seconds := !seconds + 1u
-    val () = print !seconds
-    prval () = global_return(gseconds, pf)
+    val (pf | sec) = global_get(seconds)
+    val () = !sec := !sec + 1u
+    val () = print !sec
+    prval () = global_return(seconds, pf)
   }
   val () = atmega328p_async_init(locked | 9600)
   val (set | ()) = sei(locked | (**))

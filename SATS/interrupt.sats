@@ -16,7 +16,7 @@ fun cli_explicit
 overload cli with cli_explicit
 
 fun cli_saved
-  (saved: !saved_sreg) : (INT_CLEAR | void ) = "mac#cli"
+  (saved: !saved_sreg) : (INT_CLEAR | void ) = "mac#cli_saved"
   
 overload cli with cli_saved
 
@@ -28,7 +28,7 @@ fun sei_explicit
 overload sei with sei_explicit
 
 fun sei_saved
-  (saved: !saved_sreg) : (INT_SET | void ) = "mac#sei"
+  (saved: !saved_sreg) : (INT_SET | void ) = "mac#sei_saved"
 
 overload sei with sei_saved
 
