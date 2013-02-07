@@ -3,6 +3,7 @@
 #define ATS_STALOADFLAG 0
 #define ATS_DYNLOADFLAG 0
 
+staload "SATS/interrupt.sats"
 staload "SATS/fifo.sats"
 staload "SATS/cycbuf.sats"
 

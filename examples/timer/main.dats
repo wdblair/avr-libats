@@ -12,7 +12,6 @@
    going on behind the scenes without having to
    mess up the interface.
 *)
-
 staload "SATS/io.sats"
 staload "SATS/interrupt.sats"
 staload "SATS/sleep.sats"
@@ -30,6 +29,12 @@ in
   val seconds = @{lock= seconds_lock, p= &seconds}
 end
 
+(* ****** ****** *)
+
+implement main_dummy () = ()
+
+(* ****** ****** *)
+
 implement main (locked | (**)) = {
   fun tick () : bool = true where {
     val () = print "\b\b\b"
@@ -42,9 +47,10 @@ implement main (locked | (**)) = {
   val () = atmega328p_async_init(locked | 9600)
   val (set | ()) = sei(locked | (**))
   val () = delayed_task0(1ul, tick)
-  val () = while(true) {
-    val () = sleep_cpu()
-  }
+  val () = 
+    while(true) {
+      val () = sleep_cpu()
+    }
   val (pf | ()) = cli(set | (**))
   prval () = locked := pf
 }

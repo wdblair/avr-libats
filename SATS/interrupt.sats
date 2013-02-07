@@ -6,6 +6,19 @@
 
 #define ATS_STALOADFLAG 0
 
+absview INT_CLEAR
+absview INT_SET
+
+(* ****** ****** *)
+
+fun main_void_interrupts_disabled(
+  pf: !INT_CLEAR | (* none*)
+) : void = "mainats"
+
+overload main with main_void_interrupts_disabled
+
+(* ****** ****** *)
+
 absviewt@ype saved_sreg = uint8
 
 symintr cli

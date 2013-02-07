@@ -9,6 +9,8 @@
 #include "CATS/global.cats"
 %}
 
+staload "SATS/interrupt.sats"
+
 viewtypedef global(v:view, l:addr) = @{
   at= v,
   p= ptr l

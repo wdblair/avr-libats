@@ -1,3 +1,4 @@
+staload "SATS/interrupt.sats"
 staload "SATS/stdlib.sats"
 
 local

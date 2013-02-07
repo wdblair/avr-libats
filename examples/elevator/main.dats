@@ -417,6 +417,10 @@ end
 
 (* ****** ****** *)
 
+implement main_dummy () = ()
+
+(* ****** ****** *)
+
 implement main (clr | (**)) = {
   //enable communication
   val () = $USART.atmega328p_async_init(clr | 9600, new_message)

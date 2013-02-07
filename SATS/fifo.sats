@@ -1,3 +1,5 @@
+staload "SATS/interrupt.sats"
+
 absviewt@ype fifo (t@ype, int, int)
 
 fun {a:t@ype} insert {s:pos} {n:nat | n < s} (
